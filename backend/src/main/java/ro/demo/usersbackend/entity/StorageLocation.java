@@ -20,6 +20,8 @@ public class StorageLocation extends Location {
 	@Column(name = "AISLE")
 	private String aisle;
 
+	private LoadUnit loadUnit;
+
 	public StorageLocation() {
 	}
 
