@@ -2,6 +2,7 @@ package ro.demo.usersbackend.entity;
 
 import java.util.List;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -14,12 +15,14 @@ public class Article {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	String barcode;
+	@Column(nullable = false)
+	private String barcode;
 
-	String description;
+	@Column(nullable = false)
+	private String description;
 
 	@OneToMany(mappedBy = "article")
-	List<PackagingUnitType> packagingUnitTypes;
+	private List<PackagingUnitType> packagingUnitTypes;
 
 	public Article() {
 		super();

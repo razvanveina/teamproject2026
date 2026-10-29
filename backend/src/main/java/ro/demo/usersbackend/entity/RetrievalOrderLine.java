@@ -2,13 +2,16 @@ package ro.demo.usersbackend.entity;
 
 import java.util.List;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 
 @Entity
 public class RetrievalOrderLine {
@@ -16,16 +19,24 @@ public class RetrievalOrderLine {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@OneToOne
+	@ManyToOne
 	@JoinColumn(name = "article_id")
-	Article article;
+	private Article article;
 
-	int quantity;
+	@Column(nullable = false)
+	private int quantity;
 
-	RetrievalOrderLineStatus status;
+	@ManyToOne
+	@JoinColumn(name = "order_id")
+	private RetrievalOrder order;
 
+	@Column(nullable = false)
+	@Enumerated(EnumType.STRING)
+	private RetrievalOrderLineStatus status;
+
+	@Column(nullable = false)
 	@OneToMany(mappedBy = "retrievalOrderLine")
-	List<Reservation> reservations;
+	private List<Reservation> reservations;
 
 	public RetrievalOrderLine() {
 		super();
@@ -47,6 +58,14 @@ public class RetrievalOrderLine {
 		this.quantity = quantity;
 	}
 
+	public RetrievalOrder getOrder() {
+		return order;
+	}
+
+	public void setOrder(RetrievalOrder order) {
+		this.order = order;
+	}
+
 	public RetrievalOrderLineStatus getStatus() {
 		return status;
 	}
@@ -62,5 +81,4 @@ public class RetrievalOrderLine {
 	public void setReservations(List<Reservation> reservations) {
 		this.reservations = reservations;
 	}
-
 }

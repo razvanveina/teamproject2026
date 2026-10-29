@@ -33,7 +33,6 @@ public class UserService {
 	}
 
 	public User create(User user) {
-		user.setId(null);
 		return userRepository.save(user);
 	}
 

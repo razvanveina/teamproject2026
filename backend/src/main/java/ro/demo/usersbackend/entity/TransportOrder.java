@@ -1,11 +1,14 @@
 package ro.demo.usersbackend.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
 
 @Entity
 public class TransportOrder {
@@ -13,17 +16,55 @@ public class TransportOrder {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@OneToOne
-	@JoinColumn(name = "source_location")
-	Location source;
+	@ManyToOne
+	@JoinColumn(name = "source_id")
+	private Location source;
 
-	@OneToOne
-	@JoinColumn(name = "target_location")
-	Location target;
+	@ManyToOne
+	@JoinColumn(name = "target_id")
+	private Location target;
 
-	TransportOrderStatus status;
+	@Column(nullable = false)
+	@Enumerated(EnumType.STRING)
+	private TransportOrderStatus status;
 
-	@OneToOne
-	@JoinColumn(name = "load_unit")
-	LoadUnit loadUnit;
+	@ManyToOne
+	@JoinColumn(name = "loadUnit_id")
+	private LoadUnit loadUnit;
+
+	public TransportOrder() {
+		super();
+	}
+
+	public Location getSource() {
+		return source;
+	}
+
+	public void setSource(Location source) {
+		this.source = source;
+	}
+
+	public Location getTarget() {
+		return target;
+	}
+
+	public void setTarget(Location target) {
+		this.target = target;
+	}
+
+	public TransportOrderStatus getStatus() {
+		return status;
+	}
+
+	public void setStatus(TransportOrderStatus status) {
+		this.status = status;
+	}
+
+	public LoadUnit getLoadUnit() {
+		return loadUnit;
+	}
+
+	public void setLoadUnit(LoadUnit loadUnit) {
+		this.loadUnit = loadUnit;
+	}
 }

@@ -2,7 +2,10 @@ package ro.demo.usersbackend.entity;
 
 import java.util.List;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -16,16 +19,20 @@ public class LoadUnit {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	String barcode;
+	@Column(nullable = false)
+	private String barcode;
 
-	LoadUnitType type;
+	@Column(nullable = false)
+	@Enumerated(EnumType.STRING)
+	private LoadUnitType type;
 
 	@ManyToOne
 	@JoinColumn(name = "location_id")
-	Location location;
+	private Location location;
 
+	@Column(nullable = false)
 	@OneToMany(mappedBy = "loadUnit")
-	List<StockItem> stockItems;
+	private List<StockItem> stockItems;
 
 	public LoadUnit() {
 		super();
@@ -62,5 +69,4 @@ public class LoadUnit {
 	public void setStockItems(List<StockItem> stockItems) {
 		this.stockItems = stockItems;
 	}
-
 }

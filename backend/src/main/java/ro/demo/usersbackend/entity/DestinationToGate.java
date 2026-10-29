@@ -1,11 +1,15 @@
 package ro.demo.usersbackend.entity;
 
+import java.util.List;
+
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 
 @Entity
 public class DestinationToGate {
@@ -13,11 +17,13 @@ public class DestinationToGate {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	String destination;
+	@Column(nullable = false)
+	private String destination;
 
-	@OneToOne
-	@JoinColumn(name = "gate_id")
-	Location gate;
+	@Column(nullable = false)
+	@ManyToMany
+	@JoinTable(name = "destination_gate", joinColumns = @JoinColumn(name = "destination_id"), inverseJoinColumns = @JoinColumn(name = "gate_id"))
+	private List<Location> gates;
 
 	public DestinationToGate() {
 		super();
@@ -31,12 +37,11 @@ public class DestinationToGate {
 		this.destination = destination;
 	}
 
-	public Location getGate() {
-		return gate;
+	public List<Location> getGates() {
+		return gates;
 	}
 
-	public void setGate(Location gate) {
-		this.gate = gate;
+	public void setGates(List<Location> gates) {
+		this.gates = gates;
 	}
-
 }

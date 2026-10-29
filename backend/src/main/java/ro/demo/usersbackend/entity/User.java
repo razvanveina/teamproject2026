@@ -10,7 +10,7 @@ import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "APP_USERS")
+@Table(name = "User_aaaaa")
 public class User {
 
 	@Id
@@ -25,19 +25,7 @@ public class User {
 	private String email;
 
 	public User() {
-	}
-
-	public User(String name, String email) {
-		this.name = name;
-		this.email = email;
-	}
-
-	public Long getId() {
-		return id;
-	}
-
-	public void setId(Long id) {
-		this.id = id;
+		super();
 	}
 
 	public String getName() {

@@ -1,34 +1,39 @@
 package ro.demo.usersbackend.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 
 @Entity
 @DiscriminatorValue("STORAGE")
 public class StorageLocation extends Location {
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
+	@Column(nullable = false)
 	private int x;
 
+	@Column(nullable = false)
 	private int y;
 
+	@Column(nullable = false)
 	private int z;
 
+	@Column(nullable = false)
 	private int aisle;
 
 	@OneToOne
-	@JoinColumn(name = "load_unit_id")
+	@JoinColumn(name = "loadUnit_id")
 	private LoadUnit loadUnit;
 
 	public StorageLocation() {
-	}
-
-	public StorageLocation(int x, int y, int z, int aisle) {
-		this.setX(x);
-		this.setY(y);
-		this.setZ(z);
-		this.setAisle(aisle);
+		super();
 	}
 
 	public int getX() {
@@ -63,4 +68,11 @@ public class StorageLocation extends Location {
 		this.aisle = aisle;
 	}
 
+	public LoadUnit getLoadUnit() {
+		return loadUnit;
+	}
+
+	public void setLoadUnit(LoadUnit loadUnit) {
+		this.loadUnit = loadUnit;
+	}
 }

@@ -2,28 +2,48 @@ package ro.demo.usersbackend.entity;
 
 import java.util.List;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 
 @Entity
 public class RetrievalOrder {
 	@Id
-	String orderId;
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-	RetrievalOrderStatus status;
+	@Column(nullable = false)
+	private String orderId;
 
-	@OneToMany(mappedBy = "") // TODO
-	List<RetrievalOrderLine> lines;
+	@Column(nullable = false)
+	@Enumerated(EnumType.STRING)
+	private RetrievalOrderStatus status;
 
-	@OneToOne
+	@Column(nullable = false)
+	@OneToMany(mappedBy = "order")
+	private List<RetrievalOrderLine> lines;
+
+	@ManyToOne
 	@JoinColumn(name = "destination_id")
-	Destination destination;
+	private Destination destination;
 
 	public RetrievalOrder() {
 		super();
+	}
+
+	public String getOrderId() {
+		return orderId;
+	}
+
+	public void setOrderId(String orderId) {
+		this.orderId = orderId;
 	}
 
 	public RetrievalOrderStatus getStatus() {
@@ -49,5 +69,4 @@ public class RetrievalOrder {
 	public void setDestination(Destination destination) {
 		this.destination = destination;
 	}
-
 }

@@ -1,11 +1,14 @@
 package ro.demo.usersbackend.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
 
 @Entity
 public class ReceivingOrderLine {
@@ -13,13 +16,20 @@ public class ReceivingOrderLine {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@OneToOne
+	@ManyToOne
 	@JoinColumn(name = "article_id")
-	Article article;
+	private Article article;
 
-	int quantity;
+	@Column(nullable = false)
+	private int quantity;
 
-	ReceivingOrderLineStatus status;
+	@ManyToOne
+	@JoinColumn(name = "order_id")
+	private ReceivingOrder order;
+
+	@Column(nullable = false)
+	@Enumerated(EnumType.STRING)
+	private ReceivingOrderLineStatus status;
 
 	public ReceivingOrderLine() {
 		super();
@@ -41,6 +51,14 @@ public class ReceivingOrderLine {
 		this.quantity = quantity;
 	}
 
+	public ReceivingOrder getOrder() {
+		return order;
+	}
+
+	public void setOrder(ReceivingOrder order) {
+		this.order = order;
+	}
+
 	public ReceivingOrderLineStatus getStatus() {
 		return status;
 	}
@@ -48,5 +66,4 @@ public class ReceivingOrderLine {
 	public void setStatus(ReceivingOrderLineStatus status) {
 		this.status = status;
 	}
-
 }

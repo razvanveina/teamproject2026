@@ -1,5 +1,6 @@
 package ro.demo.usersbackend.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -9,9 +10,10 @@ import jakarta.persistence.Id;
 public class Destination {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	Long id;
+	private Long id;
 
-	String name;
+	@Column(nullable = false)
+	private String name;
 
 	public Destination() {
 		super();

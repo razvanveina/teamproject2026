@@ -1,12 +1,12 @@
 package ro.demo.usersbackend.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
 
 @Entity
 public class StockItem {
@@ -14,23 +14,24 @@ public class StockItem {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@OneToOne
+	@ManyToOne
 	@JoinColumn(name = "article_id")
-	Article article;
+	private Article article;
 
-	int quantity;
+	@Column(nullable = false)
+	private int quantity;
 
 	@ManyToOne
-	@JoinColumn(name = "load_unit_id")
-	LoadUnit loadUnit;
+	@JoinColumn(name = "loadUnit_id")
+	private LoadUnit loadUnit;
 
-	@OneToOne
-	@JoinColumn(name = "packaging_unit_type_id")
-	PackagingUnitType packagingUnitType;
+	@ManyToOne
+	@JoinColumn(name = "packagingUnitType_id")
+	private PackagingUnitType packagingUnitType;
 
-	@OneToOne
+	@ManyToOne
 	@JoinColumn(name = "reservation_id")
-	Reservation reservation;
+	private Reservation reservation;
 
 	public StockItem() {
 		super();

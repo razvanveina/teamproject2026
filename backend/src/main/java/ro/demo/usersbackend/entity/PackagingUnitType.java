@@ -1,5 +1,6 @@
 package ro.demo.usersbackend.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -13,15 +14,18 @@ public class PackagingUnitType {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	String barcode;
+	@Column(nullable = false)
+	private String barcode;
 
-	String name;
+	@Column(nullable = false)
+	private String name;
 
 	@ManyToOne
-	@JoinColumn(name = "article_barcode")
-	Article article;
+	@JoinColumn(name = "article_id")
+	private Article article;
 
-	int quantity;
+	@Column(nullable = false)
+	private int quantity;
 
 	public PackagingUnitType() {
 		super();
@@ -58,5 +62,4 @@ public class PackagingUnitType {
 	public void setQuantity(int quantity) {
 		this.quantity = quantity;
 	}
-
 }

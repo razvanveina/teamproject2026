@@ -2,22 +2,42 @@ package ro.demo.usersbackend.entity;
 
 import java.util.List;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 
 @Entity
 public class ReceivingOrder {
 	@Id
-	String orderId;
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-	ReceivingOrderStatus status;
+	@Column(nullable = false)
+	private String orderId;
 
-	@OneToMany
-	List<ReceivingOrderLine> lines;
+	@Column(nullable = false)
+	@Enumerated(EnumType.STRING)
+	private ReceivingOrderStatus status;
+
+	@Column(nullable = false)
+	@OneToMany(mappedBy = "order")
+	private List<ReceivingOrderLine> lines;
 
 	public ReceivingOrder() {
 		super();
+	}
+
+	public String getOrderId() {
+		return orderId;
+	}
+
+	public void setOrderId(String orderId) {
+		this.orderId = orderId;
 	}
 
 	public ReceivingOrderStatus getStatus() {
@@ -35,5 +55,4 @@ public class ReceivingOrder {
 	public void setLines(List<ReceivingOrderLine> lines) {
 		this.lines = lines;
 	}
-
 }

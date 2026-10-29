@@ -6,7 +6,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
 
 @Entity
 public class Reservation {
@@ -14,13 +13,13 @@ public class Reservation {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@OneToOne
-	@JoinColumn(name = "stock_item_id")
-	StockItem stockItem;
+	@ManyToOne
+	@JoinColumn(name = "stockItem_id")
+	private StockItem stockItem;
 
 	@ManyToOne
-	@JoinColumn(name = "retrieval_order_line_id")
-	RetrievalOrderLine retrievalOrderLine;
+	@JoinColumn(name = "retrievalOrderLine_id")
+	private RetrievalOrderLine retrievalOrderLine;
 
 	public Reservation() {
 		super();
@@ -41,5 +40,4 @@ public class Reservation {
 	public void setRetrievalOrderLine(RetrievalOrderLine retrievalOrderLine) {
 		this.retrievalOrderLine = retrievalOrderLine;
 	}
-
 }
