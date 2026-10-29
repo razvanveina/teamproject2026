@@ -1,0 +1,20 @@
+<h1>Dialoguri</h1>
+
+@if (loading()) {
+  <div class="state" role="status">Se încarcă…</div>
+} @else if (error()) {
+  <div class="state state-error" role="alert">
+    <span class="state-label">Eroare</span>
+    <p>{{ error() }}</p>
+  </div>
+} @else if (dialogs().length === 0) {
+  <div class="state state-empty" role="status">
+    <p class="state-title">Nu există dialoguri.</p>
+  </div>
+} @else {
+  <nav class="dialog-grid" aria-label="Dialoguri">
+    @for (dialog of dialogs(); track dialog.id) {
+      <a class="dialog-card" [routerLink]="['/dialogs', dialog.id]">{{ dialog.title }}</a>
+    }
+  </nav>
+}

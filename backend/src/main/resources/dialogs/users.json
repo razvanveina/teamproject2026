@@ -1,0 +1,10 @@
+{
+  "id": "users",
+  "title": "Utilizatori",
+  "entity": "users",
+  "columns": [
+    { "field": "id",    "label": "ID",    "type": "number" },
+    { "field": "name",  "label": "Nume" },
+    { "field": "email", "label": "Email" }
+  ]
+}

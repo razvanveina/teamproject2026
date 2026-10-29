@@ -1,0 +1,25 @@
+<a class="back-link" routerLink="/dialogs">&larr; Toate dialogurile</a>
+
+<header class="page-header">
+  <h1>{{ config()?.title ?? 'Dialog' }}</h1>
+  @if (!loading() && !error()) {
+    <p class="record-count"><strong>{{ rows().length }}</strong> {{ countLabel() }}</p>
+  }
+</header>
+
+<section class="table-area">
+  @if (loading()) {
+    <div class="state" role="status">Se încarcă…</div>
+  } @else if (error()) {
+    <div class="state state-error" role="alert">
+      <span class="state-label">Eroare</span>
+      <p>{{ error() }}</p>
+    </div>
+  } @else if (rows().length === 0) {
+    <div class="state state-empty" role="status">
+      <p class="state-title">Nu există înregistrări.</p>
+    </div>
+  } @else {
+    <app-generic-table [columns]="config()!.columns" [rows]="rows()" />
+  }
+</section>

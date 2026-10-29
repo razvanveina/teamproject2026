@@ -1,0 +1,91 @@
+:host {
+  display: grid;
+  gap: var(--space-4);
+}
+
+h1 {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.dialog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-3);
+}
+
+.dialog-card {
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-text);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  text-decoration: none;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition:
+    border-color 0.18s,
+    color 0.18s,
+    transform 0.18s;
+}
+
+.dialog-card:hover {
+  color: var(--color-accent-text);
+  border-color: var(--color-text-muted);
+  transform: translateY(-2px);
+}
+
+/* Same states as on the dialog page. */
+.state {
+  display: grid;
+  place-content: center;
+  min-height: 200px;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-md);
+}
+
+.state-empty {
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+}
+
+.state-title {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+}
+
+.state-error {
+  place-content: start;
+  min-height: 0;
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-text);
+  background: var(--color-danger-soft);
+  border-left: 4px solid var(--color-danger);
+  border-radius: var(--radius-sm);
+}
+
+.state-error p {
+  margin: var(--space-1) 0 0;
+}
+
+.state-label {
+  color: var(--color-danger);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialog-card {
+    transition: none;
+  }
+
+  .dialog-card:hover {
+    transform: none;
+  }
+}

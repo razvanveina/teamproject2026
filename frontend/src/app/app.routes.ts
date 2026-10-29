@@ -4,6 +4,8 @@ import { UserTable } from './user-table/user-table';
 import { UserDialog } from './user-dialog/user-dialog';
 import { Login } from './login/login';
 import { authGuard } from './guards/auth-guard';
+import { DialogList } from './dialog-list/dialog-list';
+import { DialogPage } from './dialog-page/dialog-page';
 
 export const routes: Routes = [
     { path: 'login', component: Login },
@@ -15,6 +17,8 @@ export const routes: Routes = [
             { path: 'users', component: UserTable },
             { path: 'users/add', component: UserDialog },
             { path: 'users/edit/:id', component: UserDialog },
+            { path: 'dialogs', component: DialogList },
+            { path: 'dialogs/:id', component: DialogPage },
             { path: '', redirectTo: 'home', pathMatch: 'full' }
         ]
     },

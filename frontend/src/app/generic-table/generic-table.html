@@ -1,0 +1,53 @@
+<div class="table-frame">
+  <table>
+    <thead>
+      <tr>
+        @for (column of columns(); track column.field) {
+          <th
+            scope="col"
+            [class.align-right]="column.type === 'number'"
+            [class.align-center]="column.type === 'boolean'"
+            [class.is-sorted]="direction(column.field)"
+            [attr.aria-sort]="isSortable(column) ? ariaSort(column.field) : null"
+          >
+            @if (isSortable(column)) {
+              <button
+                type="button"
+                class="sort-button"
+                title="Click: sortează. Shift+click: adaugă criteriu."
+                (click)="onHeaderClick(column, $event)"
+              >
+                <span>{{ column.label }}</span>
+                @if (direction(column.field); as dir) {
+                  <span class="sort-arrow" aria-hidden="true">{{ dir === 'asc' ? '▲' : '▼' }}</span>
+                }
+                @if (priority(column.field); as rank) {
+                  <span class="sort-priority" aria-hidden="true">{{ rank }}</span>
+                }
+                <span class="visually-hidden">Sortează. Shift+click adaugă criteriu.</span>
+              </button>
+            } @else {
+              {{ column.label }}
+            }
+          </th>
+        }
+      </tr>
+    </thead>
+
+    <tbody>
+      @for (row of sortedRows(); track row) {
+        <tr>
+          @for (column of columns(); track column.field) {
+            <td
+              [class.align-right]="column.type === 'number'"
+              [class.align-center]="column.type === 'boolean'"
+              [class.is-empty]="isEmpty(row[column.field])"
+            >
+              {{ display(row[column.field], column) }}
+            </td>
+          }
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

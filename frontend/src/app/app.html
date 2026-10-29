@@ -4,7 +4,19 @@
     Home
   </a>
 
+  <a routerLink="/dialogs" routerLinkActive="active">
+    Dialoguri
+  </a>
+
   <span class="menu-spacer"></span>
+
+  <button type="button" class="theme-toggle" (click)="themeService.toggle()">
+    @if (themeService.theme() === 'dark') {
+      <span aria-hidden="true">☀</span> Mod luminos
+    } @else {
+      <span aria-hidden="true">☾</span> Mod întunecat
+    }
+  </button>
 
   <button type="button" class="logout-button" (click)="logout()">Logout</button>
 </nav>

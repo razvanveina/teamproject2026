@@ -1,0 +1,5 @@
+{
+  "dialogs": [
+    { "file": "users.json" }
+  ]
+}

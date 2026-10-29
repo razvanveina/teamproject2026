@@ -1,0 +1,139 @@
+/* Colors and sizes come from the variables in styles.css; the values after the comma are fallbacks. */
+:host {
+  display: block;
+}
+
+.table-frame {
+  max-height: 70vh;
+  overflow: auto;
+  background: var(--color-surface, #181b1f);
+  border: 1px solid var(--color-border, #32383f);
+  border-radius: var(--radius-lg, 12px);
+}
+
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  color: var(--color-text, #f2f4f6);
+  font-size: var(--font-size-md, 13px);
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+}
+
+th,
+td {
+  padding: var(--table-cell-padding, 6px 10px);
+  text-align: left;
+  white-space: nowrap;
+  border-right: 1px solid var(--color-border, #32383f);
+  border-bottom: 1px solid var(--color-border, #32383f);
+}
+
+th:last-child,
+td:last-child {
+  border-right: 0;
+}
+
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* Header row stays at the top while the table scrolls. */
+th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  height: var(--table-head-height, 36px);
+  background: var(--color-head-bg, #090b0d);
+  color: var(--color-text-strong, #f7f8f9);
+  font-size: var(--font-size-sm, 12px);
+  font-weight: 700;
+}
+
+td {
+  height: var(--table-row-height, 32px);
+}
+
+tbody tr:nth-child(even) td {
+  background: var(--color-surface-alt, #1e2227);
+}
+
+tbody tr:hover td {
+  background: var(--color-accent-soft, #3b3610);
+}
+
+.align-right {
+  text-align: right;
+}
+
+.align-center {
+  text-align: center;
+}
+
+.is-empty {
+  color: var(--color-text-muted, #929ba5);
+}
+
+/* Sorting */
+th.is-sorted {
+  box-shadow: inset 0 -2px 0 var(--color-accent-text, #ffed00);
+}
+
+.sort-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1, 4px);
+  width: 100%;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.align-right .sort-button {
+  justify-content: flex-end;
+}
+
+.align-center .sort-button {
+  justify-content: center;
+}
+
+.sort-button:hover,
+th.is-sorted .sort-button {
+  color: var(--color-accent-text, #ffed00);
+}
+
+.sort-button:focus-visible {
+  outline: 2px solid var(--color-focus, #ffed00);
+  outline-offset: -2px;
+}
+
+.sort-arrow {
+  font-size: 10px;
+}
+
+.sort-priority {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  color: var(--color-on-accent, #151515);
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--color-accent, #ffed00);
+  border-radius: 50%;
+}
+
+/* Read by screen readers, invisible on screen. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
