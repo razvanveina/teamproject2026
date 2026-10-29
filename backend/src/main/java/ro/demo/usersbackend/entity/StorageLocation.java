@@ -1,6 +1,5 @@
 package ro.demo.usersbackend.entity;
 
-import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
@@ -10,17 +9,13 @@ import jakarta.persistence.OneToOne;
 @DiscriminatorValue("STORAGE")
 public class StorageLocation extends Location {
 
-	@Column(name = "X_COORDINATE")
-	private Integer x;
+	private int x;
 
-	@Column(name = "Y_COORDINATE")
-	private Integer y;
+	private int y;
 
-	@Column(name = "Z_COORDINATE")
-	private Integer z;
+	private int z;
 
-	@Column(name = "AISLE")
-	private String aisle;
+	private int aisle;
 
 	@OneToOne
 	@JoinColumn(name = "load_unit_id")
@@ -29,42 +24,43 @@ public class StorageLocation extends Location {
 	public StorageLocation() {
 	}
 
-	public StorageLocation(Integer x, Integer y, Integer z, String aisle) {
-		this.x = x;
-		this.y = y;
-		this.z = z;
-		this.aisle = aisle;
+	public StorageLocation(int x, int y, int z, int aisle) {
+		this.setX(x);
+		this.setY(y);
+		this.setZ(z);
+		this.setAisle(aisle);
 	}
 
-	public Integer getX() {
+	public int getX() {
 		return x;
 	}
 
-	public void setX(Integer x) {
+	public void setX(int x) {
 		this.x = x;
 	}
 
-	public Integer getY() {
+	public int getY() {
 		return y;
 	}
 
-	public void setY(Integer y) {
+	public void setY(int y) {
 		this.y = y;
 	}
 
-	public Integer getZ() {
+	public int getZ() {
 		return z;
 	}
 
-	public void setZ(Integer z) {
+	public void setZ(int z) {
 		this.z = z;
 	}
 
-	public String getAisle() {
+	public int getAisle() {
 		return aisle;
 	}
 
-	public void setAisle(String aisle) {
+	public void setAisle(int aisle) {
 		this.aisle = aisle;
 	}
+
 }
