@@ -1,0 +1,106 @@
+form {
+    max-width: 480px;
+    padding: 28px;
+    color: #263b55;
+    font-family: "Segoe UI", "Inter", "Aptos", sans-serif;
+    background: #fff;
+    border: 1px solid #e3eaf1;
+    border-radius: 16px;
+    box-shadow: 0 12px 32px rgb(23 43 77 / 8%);
+}
+
+h2 {
+    margin: 0 0 22px;
+    color: #172b4d;
+    font-family: "Segoe UI", "Inter", "Aptos", sans-serif;
+    font-size: 1.55rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+label {
+    color: #354b66;
+    font-size: 0.9rem;
+    font-weight: 650;
+}
+
+input {
+    min-height: 44px;
+    padding: 0 13px;
+    color: #263b55;
+    font: inherit;
+    background: #fbfcfe;
+    border: 1px solid #cbd6e2;
+    border-radius: 9px;
+    transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+input:hover {
+    border-color: #9aafc4;
+}
+
+input:focus {
+    background: #fff;
+    border-color: #2ec4b6;
+    outline: none;
+    box-shadow: 0 0 0 3px rgb(46 196 182 / 18%);
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 26px;
+}
+
+button {
+    min-height: 42px;
+    padding: 0 17px;
+    color: #40536b;
+    font: inherit;
+    font-size: 0.92rem;
+    font-weight: 650;
+    background: #f1f5f9;
+    border: 1px solid #dce5ed;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+button:hover {
+    background: #e7eef5;
+    border-color: #cbd8e4;
+}
+
+button[type="submit"] {
+    color: #f2fffc;
+    background: #176f78;
+    border-color: #176f78;
+}
+
+button[type="submit"]:hover {
+    background: #125c64;
+    border-color: #125c64;
+}
+
+button:active {
+    transform: translateY(1px);
+}
+
+button:focus-visible {
+    outline: 3px solid #72dfd1;
+    outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+    form {
+        padding: 22px;
+    }
+}

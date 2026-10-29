@@ -1,0 +1,250 @@
+.table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    max-width: 800px;
+    margin-bottom: 14px;
+}
+
+h2 {
+    margin: 0;
+    color: #172b4d;
+    font-family: "Segoe UI", "Inter", "Aptos", sans-serif;
+    font-size: 1.55rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+}
+
+.table-header button {
+    min-height: 42px;
+    padding: 0 17px;
+    color: #f2fffc;
+    font-family: "Segoe UI", "Inter", "Aptos", sans-serif;
+    font-size: 0.92rem;
+    font-weight: 650;
+    background: #176f78;
+    border: 1px solid #176f78;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.table-header button:hover {
+    background: #125c64;
+    border-color: #125c64;
+}
+
+.table-header button:active {
+    transform: translateY(1px);
+}
+
+.table-header button:focus-visible,
+.delete-button:focus-visible,
+td a:focus-visible {
+    outline: 3px solid #72dfd1;
+    outline-offset: 2px;
+}
+
+p {
+    max-width: 800px;
+    margin: 0 0 14px;
+    color: #61738a;
+    font-family: "Segoe UI", "Inter", "Aptos", sans-serif;
+    font-size: 0.92rem;
+}
+
+.state-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    max-width: 800px;
+    padding: 22px 24px;
+    font-family: "Segoe UI", "Inter", "Aptos", sans-serif;
+    background: #fff;
+    border: 1px solid #e1e8ef;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgb(23 43 77 / 6%);
+}
+
+.state-card h3 {
+    margin: 0 0 6px;
+    color: #203b5e;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.state-card p {
+    margin: 0;
+    line-height: 1.5;
+}
+
+.error-state {
+    border-color: #f0d4d7;
+    background: #fffafa;
+}
+
+.error-state h3 {
+    color: #812f3c;
+}
+
+.error-icon {
+    display: grid;
+    flex: 0 0 34px;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    color: #8d2938;
+    font-size: 1.15rem;
+    font-weight: 700;
+    background: #fcebed;
+    border-radius: 50%;
+}
+
+.state-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.retry-button {
+    min-height: 38px;
+    margin-top: 2px;
+    padding: 0 14px;
+    color: #f2fffc;
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 650;
+    background: #176f78;
+    border: 1px solid #176f78;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.retry-button:hover {
+    background: #125c64;
+    border-color: #125c64;
+}
+
+.retry-button:focus-visible {
+    outline: 3px solid #72dfd1;
+    outline-offset: 2px;
+}
+
+.loading-state {
+    align-items: center;
+    min-height: 92px;
+}
+
+.state-indicator {
+    width: 22px;
+    height: 22px;
+    border: 3px solid #dce8f5;
+    border-top-color: #2ec4b6;
+    border-radius: 50%;
+    animation: spin 800ms linear infinite;
+}
+
+.empty-state {
+    display: block;
+    padding: 26px 24px;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.table-container {
+    max-width: 800px;
+    overflow-x: auto;
+    background: #fff;
+    border: 1px solid #e1e8ef;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgb(23 43 77 / 6%);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    color: #354b66;
+    font-family: "Segoe UI", "Inter", "Aptos", sans-serif;
+    font-size: 0.94rem;
+}
+
+th,
+td {
+    padding: 13px 16px;
+    text-align: left;
+    border-bottom: 1px solid #e9eef3;
+}
+
+th {
+    color: #dce8f5;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.055em;
+    text-transform: uppercase;
+    background: #203b5e;
+}
+
+tbody tr {
+    transition: background-color 140ms ease;
+}
+
+tbody tr:nth-child(even) {
+    background: #f8fafc;
+}
+
+tbody tr:hover {
+    background: #eff8f7;
+}
+
+tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+td a {
+    color: #176f78;
+    font-weight: 650;
+    text-decoration: none;
+}
+
+td a:hover {
+    color: #125c64;
+    text-decoration: underline;
+}
+
+.delete-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #a64b58;
+    cursor: pointer;
+    transition: color 160ms ease, background-color 160ms ease;
+}
+
+.delete-button:hover {
+    color: #8d2938;
+    background: #fcebed;
+}
+
+@media (max-width: 480px) {
+    th,
+    td {
+        padding: 11px 12px;
+    }
+
+    .state-card {
+        padding: 18px;
+    }
+}
