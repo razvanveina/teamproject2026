@@ -24,10 +24,6 @@ export class AuthService {
     );
   }
 
-  register(username: string, password: string) {
-    return this.http.post<void>(`${this.url}/register`, { username, password });
-  }
-
   logout(): void {
     sessionStorage.removeItem('token');
     this.tokenSignal.set(null);

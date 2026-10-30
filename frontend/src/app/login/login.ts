@@ -20,12 +20,8 @@ export class Login {
 
   login(): void {
     this.auth.login(this.username.trim(), this.password).subscribe({
-      next: () => this.router.navigate(['/users']),
+      next: () => this.router.navigate(['/home']),
       error: () => this.error.set('Login failed. Check your credentials.')
     });
-  }
-
-  goToRegister(): void {
-    this.router.navigate(['/register']);
   }
 }
