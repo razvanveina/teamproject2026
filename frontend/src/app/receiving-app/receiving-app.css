@@ -1,0 +1,79 @@
+.orderDetails {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+.orderDetails p:first-child {
+    text-align: left;
+    padding-right: 10px;
+}
+
+.orderDetails p:last-child {
+    text-align: right;
+    padding-right: 10px;
+}
+
+.container {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto 25% 100px;
+    gap: 10px;
+    height: 80vh;
+    width: 90vw;
+}
+
+.top,
+.bottom {
+    grid-column: 1 / 3;
+    /* start a grid line 1 end at 3 -> 2 columns better explanation at the end*/
+}
+
+.top {
+    background: white;
+}
+
+.left {
+    background: lightgrey;
+}
+
+.right {
+    background-color: lightgrey;
+    display: flex;
+    justify-content: center; 
+    align-items: flex-end;
+    padding-bottom: 20px
+}
+
+.bottom {
+    background: lightgrey;
+}
+
+p {
+    font-size: 30px;
+}
+
+input {
+    width: 90%;
+    height: 20%;
+    font-size: 25px;
+}
+
+button {
+    width: 10%;
+    height: 80%;
+    margin: 10px;
+}
+
+.cancel {
+    font-size: 25px;
+}
+
+
+/*
+Line 1    Line 2     Line 3
+|           |           | 
++-----------+-----------+ 
+| Column 1  | Column 2  | 
++-----------+-----------+
+*/

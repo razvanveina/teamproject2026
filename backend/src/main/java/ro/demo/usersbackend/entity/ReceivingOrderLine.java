@@ -23,6 +23,9 @@ public class ReceivingOrderLine {
 	@Column(nullable = false)
 	private int quantity;
 
+	@Column(nullable = false)
+	private int receivedQuantity;
+
 	@ManyToOne
 	@JoinColumn(name = "order_id")
 	private ReceivingOrder order;

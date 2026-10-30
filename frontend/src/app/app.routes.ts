@@ -6,6 +6,7 @@ import { Login } from './login/login';
 import { authGuard } from './guards/auth-guard';
 import { DialogList } from './dialog-list/dialog-list';
 import { DialogPage } from './dialog-page/dialog-page';
+import { ReceivingApp } from './receiving-app/receiving-app';
 
 export const routes: Routes = [
     { path: 'login', component: Login },
@@ -19,7 +20,8 @@ export const routes: Routes = [
             { path: 'users/edit/:id', component: UserDialog },
             { path: 'dialogs', component: DialogList },
             { path: 'dialogs/:id', component: DialogPage },
-            { path: '', redirectTo: 'home', pathMatch: 'full' }
+            { path: '', redirectTo: 'home', pathMatch: 'full' },
+            { path: 'receiving', component: ReceivingApp}
         ]
     },
     { path: '**', redirectTo: 'home' }
