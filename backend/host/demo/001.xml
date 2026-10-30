@@ -1,0 +1,15 @@
+<order>
+	<id>001</id>
+	<lines>
+		<line>
+			<nr>1</nr>
+			<article>123123</article>
+			<quantity>10</quantity>
+		</line>
+		<line>
+			<nr>2</nr>
+			<article>124124</article>
+			<quantity>5</quantity>
+		</line>
+	</lines>
+</order>
