@@ -7,7 +7,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import ro.demo.usersbackend.dto.AuthResponse;
 import ro.demo.usersbackend.dto.LoginRequest;
-import ro.demo.usersbackend.dto.RegisterRequest;
+//import ro.demo.usersbackend.dto.RegisterRequest;
 import ro.demo.usersbackend.entity.Account;
 import ro.demo.usersbackend.repository.AccountRepository;
 import ro.demo.usersbackend.security.JwtService;
@@ -25,13 +25,13 @@ public class AuthService {
 		this.jwtService = jwtService;
 	}
 
-	public void register(RegisterRequest request) {
+	/*public void register(RegisterRequest request) {
 		if (accounts.existsByUsername(request.username())) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "username already taken");
 		}
 
 		accounts.save(new Account(request.username(), encoder.encode(request.password())));
-	}
+	}*/
 
 	public AuthResponse login(LoginRequest request) {
 		Account account = accounts.findByUsername(request.username())

@@ -23,11 +23,11 @@ public class AuthController {
 		this.authService = authService;
 	}
 
-	@PostMapping("/register")
-	@ResponseStatus(HttpStatus.CREATED)
-	public void register(@Valid @RequestBody RegisterRequest request) {
-		authService.register(request);
-	}
+	//@PostMapping("/register")
+	//@ResponseStatus(HttpStatus.CREATED)
+	//public void register(@Valid @RequestBody RegisterRequest request) {
+	//	authService.register(request);
+	//}
 
 	@PostMapping("/login")
 	public AuthResponse login(@Valid @RequestBody LoginRequest request) {
