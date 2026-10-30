@@ -24,8 +24,14 @@ public class User {
 	@Column(nullable = false, length = 150)
 	private String email;
 
+	
+	
 	public User() {
 		super();
+	}
+	
+	public Long getId() {
+	    return id;
 	}
 
 	public String getName() {
