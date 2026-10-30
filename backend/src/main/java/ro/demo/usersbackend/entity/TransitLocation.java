@@ -18,6 +18,10 @@ public class TransitLocation extends Location {
 		super();
 	}
 
+	public TransitLocation(String name) {
+		setName(name);
+	}
+
 	public List<LoadUnit> getLoadUnits() {
 		return loadUnits;
 	}

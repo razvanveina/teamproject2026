@@ -1,6 +1,4 @@
-package init;
-
-import java.util.Locale;
+package ro.demo.usersbackend.init;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -9,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import ro.demo.usersbackend.entity.StorageLocation;
+import ro.demo.usersbackend.entity.TransitLocation;
 
 @Component
 public class InitialDataCreator implements CommandLineRunner {
@@ -29,12 +28,7 @@ public class InitialDataCreator implements CommandLineRunner {
 			for (int x = 1; x <= 100; x++) {
 				for (int y = 1; y <= 5; y++) {
 					for (int z = 1; z <= 2; z++) {
-						StorageLocation location = new StorageLocation();
-						location.setX(x);
-						location.setY(y);
-						location.setZ(z);
-						location.setAisle(aisle);
-						location.setName(String.format(Locale.ROOT, "HBW%02d%03d%02d%02d", aisle, x, y, z));
+						StorageLocation location = new StorageLocation(x, y, z, aisle);
 						entityManager.persist(location);
 					}
 				}
@@ -43,26 +37,24 @@ public class InitialDataCreator implements CommandLineRunner {
 	}
 
 	private void createTransitLocations() {
-		persistTransitLocation("IN");
+		createTransitLocation("IN");
 
 		for (int gate = 1; gate <= 10; gate++) {
-			persistTransitLocation(String.format(Locale.ROOT, "GATE-%02d", gate));
+			createTransitLocation(String.format("GATE%02d", gate));
 		}
+	}
+
+	private void createTransitLocation(String name) {
+		TransitLocation location = new TransitLocation(name);
+		entityManager.persist(location);
 	}
 
 	private void createPickingLocations() {
 		for (int x = 1; x <= 200; x++) {
 			for (int y = 1; y <= 5; y++) {
-				persistTransitLocation(String.format(Locale.ROOT, "PICKING-%03d-%02d", x, y));
+				StorageLocation location = new StorageLocation(x, y);
+				entityManager.persist(location);
 			}
 		}
-	}
-
-	private void persistTransitLocation(String name) {
-		entityManager.createNativeQuery(
-				"INSERT INTO LOCATION (NAME, X, Y, Z, AISLE, DTYPE) "
-						+ "VALUES (:name, -1, -1, -1, -1, 'TRANSIT')")
-				.setParameter("name", name)
-				.executeUpdate();
 	}
 }
