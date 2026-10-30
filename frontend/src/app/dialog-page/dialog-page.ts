@@ -19,17 +19,21 @@ export class DialogPage implements OnInit {
   rows = signal<any[]>([]);
 
   // Runs once, when the page opens
+  // Runs every time the address changes: /dialogs/users -> /dialogs/articles
   ngOnInit(): void {
-    // 1. Read the id from the address: /dialogs/users -> "users"
-    const id = this.route.snapshot.paramMap.get('id');
+    this.route.paramMap.subscribe((params) => {
+      // 1. Read the entity (class name) from the address, e.g. /dialogs/ReceivingOrder
+      const entity = params.get('entity');
+      this.rows.set([]);
 
-    // 2. Ask for the dialog file: users.json
-    this.service.getDialog(id + '.json').subscribe((dialog: DialogConfig) => {
-      this.dialog.set(dialog);
+      // 2. Ask for the dialog file, e.g. ReceivingOrder.json
+      this.service.getDialog(entity + '.json').subscribe((dialog: DialogConfig) => {
+        this.dialog.set(dialog);
 
-      // 3. Ask for the rows: entity "users" -> /api/users
-      this.service.getRows(dialog.entity).subscribe((rows: any[]) => {
-        this.rows.set(rows);
+        // 3. Ask for the rows, e.g. /api/data/article
+        this.service.getRows(dialog.entity).subscribe((rows: any[]) => {
+          this.rows.set(rows);
+        });
       });
     });
   }

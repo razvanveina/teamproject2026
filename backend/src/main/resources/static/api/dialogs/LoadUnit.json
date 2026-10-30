@@ -1,0 +1,11 @@
+{
+  "id": "lo001",
+  "title": "Load Units",
+  "entity": "LoadUnit",
+  "columns": [
+    { "field": "ID", "label": "ID" },
+    { "field": "BARCODE", "label": "Barcode" },
+    { "field": "TYPE", "label": "Type" },
+    { "field": "LOCATION_ID", "label": "Location ID" }
+  ]
+}

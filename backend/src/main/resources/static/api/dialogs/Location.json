@@ -1,0 +1,15 @@
+{
+  "id": "lo002",
+  "title": "Locations",
+  "entity": "Location",
+  "columns": [
+    { "field": "ID", "label": "ID" },
+    { "field": "NAME", "label": "Name" },
+    { "field": "DTYPE", "label": "Type" },
+    { "field": "AISLE", "label": "Aisle" },
+    { "field": "X", "label": "X" },
+    { "field": "Y", "label": "Y" },
+    { "field": "Z", "label": "Z" },
+    { "field": "LOAD_UNIT_ID", "label": "Load Unit ID" }
+  ]
+}

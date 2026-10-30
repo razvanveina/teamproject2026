@@ -1,0 +1,12 @@
+{
+  "id": "tr001",
+  "title": "Transport Orders",
+  "entity": "TransportOrder",
+  "columns": [
+    { "field": "ID", "label": "ID" },
+    { "field": "LOAD_UNIT_ID", "label": "Load Unit ID" },
+    { "field": "SOURCE_ID", "label": "Source ID" },
+    { "field": "TARGET_ID", "label": "Target ID" },
+    { "field": "STATUS", "label": "Status" }
+  ]
+}

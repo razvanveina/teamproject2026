@@ -1,0 +1,10 @@
+{
+  "id": "ar001",
+  "title": "Articles",
+  "entity": "Article",
+  "columns": [
+    { "field": "ID", "label": "ID" },
+    { "field": "BARCODE", "label": "Barcode" },
+    { "field": "DESCRIPTION", "label": "Description" }
+  ]
+}

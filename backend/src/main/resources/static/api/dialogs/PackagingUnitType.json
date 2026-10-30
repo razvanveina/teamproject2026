@@ -1,0 +1,12 @@
+{
+  "id": "pa001",
+  "title": "Packaging Unit Types",
+  "entity": "PackagingUnitType",
+  "columns": [
+    { "field": "ID", "label": "ID" },
+    { "field": "BARCODE", "label": "Barcode" },
+    { "field": "NAME", "label": "Name" },
+    { "field": "QUANTITY", "label": "Quantity" },
+    { "field": "ARTICLE_ID", "label": "Article ID" }
+  ]
+}

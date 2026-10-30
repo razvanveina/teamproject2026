@@ -19,8 +19,8 @@ export class DialogConfigService {
     return this.http.get<DialogConfig>(DIALOGS_BASE_URL + '/' + file); //dialogul propriu-zis, e.g. users.json
   }
 
-  // The rows of an entity, e.g. "users" -> /api/users
+  // The rows of an entity, e.g. "users" -> /api/data/users
   getRows(entity: string): Observable<any[]> {
-    return this.http.get<any[]>(API_BASE_URL + '/' + entity); //coloanele si datele din tabel, e.g. /api/users
+    return this.http.get<any[]>(API_BASE_URL + '/data/' + entity); //coloanele si datele din tabel, e.g. /api/users
   }
 }

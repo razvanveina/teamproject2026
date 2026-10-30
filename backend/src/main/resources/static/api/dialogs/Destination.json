@@ -1,0 +1,9 @@
+{
+  "id": "de001",
+  "title": "Destinations",
+  "entity": "Destination",
+  "columns": [
+    { "field": "ID", "label": "ID" },
+    { "field": "NAME", "label": "Name" }
+  ]
+}

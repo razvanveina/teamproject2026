@@ -1,0 +1,11 @@
+{
+  "id": "re002",
+  "title": "Retrieval Orders",
+  "entity": "RetrievalOrder",
+  "columns": [
+    { "field": "ID", "label": "ID" },
+    { "field": "ORDER_ID", "label": "Order ID" },
+    { "field": "STATUS", "label": "Status" },
+    { "field": "DESTINATION_ID", "label": "Destination ID" }
+  ]
+}

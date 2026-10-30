@@ -1,5 +1,14 @@
 {
   "dialogs": [
-    { "file": "users.json" }
+    { "file": "Article.json" },
+    { "file": "Destination.json" },
+    { "file": "LoadUnit.json" },
+    { "file": "PackagingUnitType.json" },
+    { "file": "ReceivingOrder.json" },
+    { "file": "RetrievalOrder.json" },
+    { "file": "Reservation.json" },
+    { "file": "StockItem.json" },
+    { "file": "TransportOrder.json" },
+    { "file": "Location.json" }
   ]
 }

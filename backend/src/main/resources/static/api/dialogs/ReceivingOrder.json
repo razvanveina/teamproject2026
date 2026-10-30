@@ -1,0 +1,10 @@
+{
+  "id": "re001",
+  "title": "Receiving Orders",
+  "entity": "ReceivingOrder",
+  "columns": [
+    { "field": "ID", "label": "ID" },
+    { "field": "ORDER_ID", "label": "Order ID" },
+    { "field": "STATUS", "label": "Status" }
+  ]
+}

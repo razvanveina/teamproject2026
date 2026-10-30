@@ -1,0 +1,10 @@
+{
+  "id": "re003",
+  "title": "Reservations",
+  "entity": "Reservation",
+  "columns": [
+    { "field": "ID", "label": "ID" },
+    { "field": "STOCK_ITEM_ID", "label": "Stock Item ID" },
+    { "field": "RETRIEVAL_ORDER_LINE_ID", "label": "Retrieval Order Line ID" }
+  ]
+}

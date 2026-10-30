@@ -1,0 +1,13 @@
+{
+  "id": "st001",
+  "title": "Stock Items",
+  "entity": "StockItem",
+  "columns": [
+    { "field": "ID", "label": "ID" },
+    { "field": "ARTICLE_ID", "label": "Article ID" },
+    { "field": "QUANTITY", "label": "Quantity" },
+    { "field": "LOAD_UNIT_ID", "label": "Load Unit ID" },
+    { "field": "PACKAGING_UNIT_TYPE_ID", "label": "Packaging Unit Type ID" },
+    { "field": "RESERVATION_ID", "label": "Reservation ID" }
+  ]
+}

@@ -17,7 +17,7 @@ export const routes: Routes = [
             { path: 'users', component: UserTable },
             { path: 'users/add', component: UserDialog },
             { path: 'users/edit/:id', component: UserDialog },
-            { path: 'dialogs/:id', component: DialogPage },
+            { path: 'dialogs/:entity', component: DialogPage },
             { path: '', redirectTo: 'home', pathMatch: 'full' },
             { path: 'receiving', component: ReceivingApp}
         ]

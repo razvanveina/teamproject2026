@@ -1,0 +1,9 @@
+{
+  "id": "ac001",
+  "title": "Accounts",
+  "entity": "Account",
+  "columns": [
+    { "field": "ID", "label": "ID" },
+    { "field": "USERNAME", "label": "Username" }
+  ]
+}

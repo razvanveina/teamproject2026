@@ -5,7 +5,7 @@
     <ul class="dropdown-menu">
         @for (dialog of dialogs(); track dialog.id) {
         <li>
-            <a [routerLink]="['/dialogs', dialog.id]" (click)="close()">{{ dialog.title }}</a>
+            <a [routerLink]="['/dialogs', dialog.entity]" (click)="close()">{{ dialog.title }}</a>
         </li>
         }
     </ul>
