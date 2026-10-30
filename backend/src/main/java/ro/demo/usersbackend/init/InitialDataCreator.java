@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import ro.demo.usersbackend.entity.Article;
 import ro.demo.usersbackend.entity.StorageLocation;
 import ro.demo.usersbackend.entity.TransitLocation;
 
@@ -21,6 +22,7 @@ public class InitialDataCreator implements CommandLineRunner {
 		createStorageLocations();
 		createTransitLocations();
 		createPickingLocations();
+		createArticles();
 	}
 
 	private void createStorageLocations() {
@@ -55,6 +57,15 @@ public class InitialDataCreator implements CommandLineRunner {
 				StorageLocation location = new StorageLocation(x, y);
 				entityManager.persist(location);
 			}
+		}
+	}
+	
+	private void createArticles() {
+		for (int i = 1; i <= 25; i++) {
+			Article article = new Article();
+			article.setBarcode(String.valueOf(123 + i * 1));
+			article.setDescription("desc " + (i * 1));
+			entityManager.persist(article);
 		}
 	}
 }
