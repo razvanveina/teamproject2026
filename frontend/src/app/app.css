@@ -41,6 +41,34 @@
     outline-offset: 2px;
 }
 
+.menu-spacer {
+    flex: 1;
+}
+
+.logout-button {
+    min-height: 42px;
+    padding: 0 17px;
+    color: #d3deec;
+    font-family: "Segoe UI", "Inter", "Aptos", sans-serif;
+    font-size: 0.96rem;
+    font-weight: 650;
+    background: transparent;
+    border: 1px solid rgb(255 255 255 / 25%);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: color 160ms ease, background-color 160ms ease;
+}
+
+.logout-button:hover {
+    color: #fff;
+    background: rgb(255 255 255 / 9%);
+}
+
+.logout-button:focus-visible {
+    outline: 3px solid #72dfd1;
+    outline-offset: 2px;
+}
+
 .page-content {
     padding: clamp(20px, 4vw, 40px) clamp(20px, 5vw, 64px);
 }

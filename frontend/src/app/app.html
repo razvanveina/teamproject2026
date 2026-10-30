@@ -1,3 +1,4 @@
+@if (auth.isLoggedIn()) {
 <nav class="main-menu">
   <a routerLink="/users" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
     Users
@@ -7,8 +8,11 @@
     Add User
   </a>
 
+  <span class="menu-spacer"></span>
 
+  <button type="button" class="logout-button" (click)="logout()">Logout</button>
 </nav>
+}
 
 <main class="page-content">
   <router-outlet />
