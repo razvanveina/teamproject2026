@@ -1,91 +1,70 @@
-:host {
-  display: grid;
-  gap: var(--space-4);
+/* The box that holds the button and the list */
+.dropdown {
+    position: relative;
+    display: inline-block;
 }
 
-h1 {
-  margin: 0;
-  font-size: var(--font-size-xl);
-  font-weight: 700;
-  letter-spacing: -0.025em;
+/* The button looks like the other menu links (same as .main-menu a in app.css) */
+.dropdown-button {
+    min-height: 42px;
+    padding: 0 17px;
+    color: #d3deec;
+    font-family: "Segoe UI", "Inter", "Aptos", sans-serif;
+    font-size: 0.96rem;
+    font-weight: 650;
+    letter-spacing: 0.015em;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: color 160ms ease, background-color 160ms ease;
 }
 
-.dialog-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: var(--space-3);
+.dropdown-button:hover,
+.dropdown:focus-within .dropdown-button {
+    color: #fff;
+    background: rgb(255 255 255 / 9%);
 }
 
-.dialog-card {
-  padding: var(--space-3) var(--space-4);
-  color: var(--color-text);
-  font-size: var(--font-size-md);
-  font-weight: 600;
-  text-decoration: none;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  transition:
-    border-color 0.18s,
-    color 0.18s,
-    transform 0.18s;
+.dropdown-button:focus-visible {
+    outline: 3px solid #72dfd1;
+    outline-offset: 2px;
 }
 
-.dialog-card:hover {
-  color: var(--color-accent-text);
-  border-color: var(--color-text-muted);
-  transform: translateY(-2px);
+/* The list that opens under the button: a white card, like the cards in the app */
+.dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    min-width: 200px;
+    margin: 0;
+    padding: 6px;
+    list-style: none;
+    background: #fff;
+    border: 1px solid #e1e8ef;
+    border-radius: 12px;
+    box-shadow: 0 12px 28px rgb(23 43 77 / 16%);
+    z-index: 10;
 }
 
-/* Same states as on the dialog page. */
-.state {
-  display: grid;
-  place-content: center;
-  min-height: 200px;
-  color: var(--color-text-muted);
-  font-size: var(--font-size-md);
+/* Every link in the list */
+.dropdown-menu a {
+    display: block;
+    padding: 10px 14px;
+    color: #354b66;
+    font-family: "Segoe UI", "Inter", "Aptos", sans-serif;
+    font-size: 0.94rem;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 8px;
 }
 
-.state-empty {
-  border: 1px dashed var(--color-border-strong);
-  border-radius: var(--radius-md);
+.dropdown-menu a:hover {
+    color: #176f78;
+    background: #eff8f7;
 }
 
-.state-title {
-  margin: 0;
-  color: var(--color-text);
-  font-size: var(--font-size-lg);
-  font-weight: 600;
-}
-
-.state-error {
-  place-content: start;
-  min-height: 0;
-  padding: var(--space-3) var(--space-4);
-  color: var(--color-text);
-  background: var(--color-danger-soft);
-  border-left: 4px solid var(--color-danger);
-  border-radius: var(--radius-sm);
-}
-
-.state-error p {
-  margin: var(--space-1) 0 0;
-}
-
-.state-label {
-  color: var(--color-danger);
-  font-size: var(--font-size-xs);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .dialog-card {
-    transition: none;
-  }
-
-  .dialog-card:hover {
-    transform: none;
-  }
+.dropdown-menu a:focus-visible {
+    outline: 3px solid #72dfd1;
+    outline-offset: 2px;
 }

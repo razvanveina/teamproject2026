@@ -1,87 +1,36 @@
-import { HttpErrorResponse } from '@angular/common/http';
-import { Component, computed, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterLink } from '@angular/router';
-import { GenericTable } from '../generic-table/generic-table';
-import { DataRow, DialogConfig } from '../models/dialog-config.model';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+import { DialogConfig } from '../models/dialog-config.model';
 import { DialogConfigService } from '../services/dialog-config.service';
-import { EntityDataService } from '../services/entity-data.service';
-import { httpErrorMessage } from '../services/http-error-message';
 
-// Page for /dialogs/:id: loads the dialog configuration, then its data, and shows them in the generic table.
 @Component({
   selector: 'app-dialog-page',
-  standalone: true,
-  imports: [GenericTable, RouterLink],
   templateUrl: './dialog-page.html',
   styleUrl: './dialog-page.css',
 })
-export class DialogPage {
+export class DialogPage implements OnInit {
   private route = inject(ActivatedRoute);
-  private dialogConfigService = inject(DialogConfigService);
-  private entityDataService = inject(EntityDataService);
+  private service = inject(DialogConfigService);
 
-  config = signal<DialogConfig | null>(null);
-  rows = signal<DataRow[]>([]);
-  loading = signal(true);
-  error = signal('');
+  // The dialog description (title, entity, columns). Empty until it arrives.
+  dialog = signal<DialogConfig | null>(null);
 
-  // Romanian: 1 înregistrare, 2 înregistrări, 20 de înregistrări.
-  countLabel = computed(() => {
-    const count = this.rows().length;
-    if (count === 1) {
-      return 'înregistrare';
-    }
-    const lastTwoDigits = count % 100;
-    return count > 0 && (lastTwoDigits === 0 || lastTwoDigits >= 20) ? 'de înregistrări' : 'înregistrări';
-  });
+  // The rows of the table. Empty until they arrive.
+  rows = signal<any[]>([]);
 
-  private currentId = '';
+  // Runs once, when the page opens
+  ngOnInit(): void {
+    // 1. Read the id from the address: /dialogs/users -> "users"
+    const id = this.route.snapshot.paramMap.get('id');
 
-  constructor() {
-    // Angular reuses this page when only :id changes (e.g. browser Back), so we react to every id.
-    this.route.paramMap
-      .pipe(takeUntilDestroyed())
-      .subscribe((params) => this.load(params.get('id') ?? ''));
-  }
+    // 2. Ask for the dialog file: users.json
+    this.service.getDialog(id + '.json').subscribe((dialog: DialogConfig) => {
+      this.dialog.set(dialog);
 
-  private load(id: string): void {
-    this.currentId = id;
-    this.config.set(null);
-    this.rows.set([]);
-    this.error.set('');
-    this.loading.set(true);
-
-    this.dialogConfigService.getDialog(id).subscribe({
-      next: (config) => {
-        if (id !== this.currentId) {
-          return; // the user already went to another dialog
-        }
-        this.config.set(config);
-        this.loadRows(id, config.entity);
-      },
-      error: (err) => this.showError(id, err, 'Dialogul nu există.'),
-    });
-  }
-
-  private loadRows(id: string, entity: string): void {
-    this.entityDataService.getRows(entity).subscribe({
-      next: (rows) => {
-        if (id !== this.currentId) {
-          return;
-        }
+      // 3. Ask for the rows: entity "users" -> /api/users
+      this.service.getRows(dialog.entity).subscribe((rows: any[]) => {
         this.rows.set(rows);
-        this.loading.set(false);
-      },
-      error: (err) => this.showError(id, err, 'Datele dialogului nu au fost găsite.'),
+      });
     });
-  }
-
-  private showError(id: string, err: HttpErrorResponse, notFoundMessage: string): void {
-    if (id !== this.currentId) {
-      return;
-    }
-    this.error.set(httpErrorMessage(err, notFoundMessage));
-    this.loading.set(false);
   }
 }

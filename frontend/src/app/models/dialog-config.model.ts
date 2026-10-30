@@ -1,26 +1,23 @@
-// Shapes of the dialog configuration sent by the backend (GET /api/dialogs, GET /api/dialogs/{id}).
-// Fields the backend may add later are simply ignored.
-
-export type ColumnType = 'text' | 'number' | 'date' | 'boolean';
-
-export interface DialogSummary {
-  id: string;
-  title: string;
-}
-
+// One column of the table, as in users.json
 export interface DialogColumn {
-  field: string;
-  label: string;
-  type?: ColumnType; // missing means 'text'
-  sortable?: boolean; // missing means true
+  field: string; // name of the field in the data, e.g. "email"
+  label: string; // text in the column header, e.g. "Email"
 }
 
+// One dialog = the content of users.json
 export interface DialogConfig {
   id: string;
   title: string;
-  entity: string; // data comes from GET /api/{entity}
+  entity: string; // the rows come from /api/<entity>
   columns: DialogColumn[];
 }
 
-// One row from GET /api/{entity}: any object, read by column field.
-export type DataRow = Record<string, unknown>;
+// dialogs.json = the main list
+export interface DialogsFile {
+  dialogs: DialogEntry[];
+}
+
+// One entry of dialogs.json: { "file": "users.json" }
+export interface DialogEntry {
+  file: string;
+}

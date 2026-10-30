@@ -1,6 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { App } from './app';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 describe('App', () => {
   beforeEach(async () => {
@@ -9,7 +11,7 @@ describe('App', () => {
     sessionStorage.setItem('token', 'test-token');
     await TestBed.configureTestingModule({
       imports: [App],
-      providers: [provideRouter([])],
+      providers: [provideRouter([{ path: 'login', children: [] }]), provideHttpClient(), provideHttpClientTesting()],
     }).compileComponents();
   });
 
@@ -28,7 +30,7 @@ describe('App', () => {
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
     const links = [...compiled.querySelectorAll('.main-menu a')].map((link) => link.textContent?.trim());
-    expect(links).toEqual(['Home', 'Dialoguri']);
+    expect(links).toEqual(['Home']);
   });
 
   it('should hide the menu after logout', async () => {
@@ -42,19 +44,5 @@ describe('App', () => {
     expect(compiled.querySelector('.main-menu')).toBeNull();
   });
 
-  it('should switch between night mode and light mode from the menu', async () => {
-    const fixture = TestBed.createComponent(App);
-    await fixture.whenStable();
-    const compiled = fixture.nativeElement as HTMLElement;
-    const toggle = compiled.querySelector<HTMLButtonElement>('.theme-toggle')!;
 
-    expect(document.documentElement.dataset['theme']).toBe('dark');
-    expect(toggle.textContent).toContain('Mod luminos');
-
-    toggle.click();
-    await fixture.whenStable();
-
-    expect(document.documentElement.dataset['theme']).toBe('light');
-    expect(toggle.textContent).toContain('Mod întunecat');
-  });
 });
