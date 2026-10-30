@@ -17,7 +17,7 @@ public class ReceivingOrder {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(nullable = false)
+	@Column(nullable = false, unique = true)
 	private String orderId;
 
 	@Column(nullable = false)

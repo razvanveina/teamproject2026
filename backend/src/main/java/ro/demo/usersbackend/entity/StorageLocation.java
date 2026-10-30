@@ -17,7 +17,7 @@ public class StorageLocation extends Location {
 	private int aisle;
 
 	@OneToOne
-	@JoinColumn(name = "loadUnit_id")
+	@JoinColumn(name = "loadUnit_id", unique = true)
 	private LoadUnit loadUnit;
 
 	public StorageLocation() {

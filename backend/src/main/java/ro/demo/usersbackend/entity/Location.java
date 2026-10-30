@@ -13,7 +13,7 @@ public abstract class Location {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	protected int id;
 
-	@Column(nullable = false)
+	@Column(nullable = false, unique = true)
 	private String name;
 
 	public Location() {

@@ -18,20 +18,18 @@ public class User {
 	@SequenceGenerator(name = "user_seq", sequenceName = "APP_USERS_SEQ", allocationSize = 1)
 	private Long id;
 
-	@Column(nullable = false, length = 100)
+	@Column(nullable = false, length = 100, unique = true)
 	private String name;
 
-	@Column(nullable = false, length = 150)
+	@Column(nullable = false, length = 150, unique = true)
 	private String email;
 
-	
-	
 	public User() {
 		super();
 	}
-	
+
 	public Long getId() {
-	    return id;
+		return id;
 	}
 
 	public String getName() {
