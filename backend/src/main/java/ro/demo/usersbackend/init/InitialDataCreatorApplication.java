@@ -3,6 +3,7 @@ package ro.demo.usersbackend.init;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.context.ConfigurableApplicationContext;
 
 import ro.demo.usersbackend.entity.Location;
 
@@ -11,6 +12,8 @@ import ro.demo.usersbackend.entity.Location;
 public class InitialDataCreatorApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(InitialDataCreatorApplication.class, args);
+		ConfigurableApplicationContext context = SpringApplication.run(InitialDataCreatorApplication.class, args);
+
+		SpringApplication.exit(context, () -> 0);
 	}
 }
