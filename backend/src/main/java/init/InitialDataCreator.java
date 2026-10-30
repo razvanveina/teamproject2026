@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import ro.demo.usersbackend.entity.StorageLocation;
-import ro.demo.usersbackend.entity.TransitLocation;
 
 @Component
 public class InitialDataCreator implements CommandLineRunner {
@@ -30,7 +29,11 @@ public class InitialDataCreator implements CommandLineRunner {
 			for (int x = 1; x <= 100; x++) {
 				for (int y = 1; y <= 5; y++) {
 					for (int z = 1; z <= 2; z++) {
-						StorageLocation location = new StorageLocation(x, y, z, aisle);
+						StorageLocation location = new StorageLocation();
+						location.setX(x);
+						location.setY(y);
+						location.setZ(z);
+						location.setAisle(aisle);
 						location.setName(String.format(Locale.ROOT, "HBW%02d%03d%02d%02d", aisle, x, y, z));
 						entityManager.persist(location);
 					}
@@ -56,8 +59,10 @@ public class InitialDataCreator implements CommandLineRunner {
 	}
 
 	private void persistTransitLocation(String name) {
-		TransitLocation location = new TransitLocation();
-		location.setName(name);
-		entityManager.persist(location);
+		entityManager.createNativeQuery(
+				"INSERT INTO LOCATION (NAME, X, Y, Z, AISLE, DTYPE) "
+						+ "VALUES (:name, -1, -1, -1, -1, 'TRANSIT')")
+				.setParameter("name", name)
+				.executeUpdate();
 	}
 }
