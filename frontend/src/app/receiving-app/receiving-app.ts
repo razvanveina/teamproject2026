@@ -10,6 +10,8 @@ import { OrderLineStatus, OrderStatus } from '../models/order.model';
 export class ReceivingApp {
   instructions = "Scan barcode to start"
   barcode = ''
+  orderId = ''
+  orderStatus = ''
 
   onScan(barcode: string) {
     if(this.checkBarcode(barcode)){
@@ -27,7 +29,9 @@ export class ReceivingApp {
           {article: "Pere", quantity: 15, receivedQuantity: 0, status: OrderLineStatus.NEw}
         ]
       }
-    } 
+    } else if(barcode == "1234") {
+      
+    }
     return null; 
   }
 
