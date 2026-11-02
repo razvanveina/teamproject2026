@@ -25,9 +25,14 @@ import ro.demo.usersbackend.entity.ReceivingOrder;
 import ro.demo.usersbackend.entity.ReceivingOrderLine;
 import ro.demo.usersbackend.entity.ReceivingOrderLineStatus;
 import ro.demo.usersbackend.entity.ReceivingOrderStatus;
+import ro.demo.usersbackend.server.process.AbstractProcess;
 
-public class HostProcess {
+public class HostProcess extends AbstractProcess {
 	private static final Logger log = LoggerFactory.getLogger(HostProcess.class);
+
+	public HostProcess() {
+		super("hostProcess");
+	}
 
 	public static void main(String[] args) throws Exception {
 
@@ -137,5 +142,10 @@ public class HostProcess {
 		return new MetadataSources(registry).addAnnotatedClass(Article.class).addAnnotatedClass(PackagingUnitType.class)
 				.addAnnotatedClass(ReceivingOrder.class).addAnnotatedClass(ReceivingOrderLine.class).buildMetadata()
 				.buildSessionFactory();
+	}
+
+	@Override
+	protected void doAction() {
+
 	}
 }

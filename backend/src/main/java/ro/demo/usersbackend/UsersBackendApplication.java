@@ -13,6 +13,7 @@ import ro.demo.usersbackend.init.InitialDataCreatorApplication;
 @ComponentScan(excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {
 		InitialDataCreator.class, InitialDataCreatorApplication.class }))
 public class UsersBackendApplication {
+	// public static AbstractProcess[] processes = {new HostProcess()};
 
 	public static void main(String[] args) {
 		SpringApplication.run(UsersBackendApplication.class, args);
