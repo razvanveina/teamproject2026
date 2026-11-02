@@ -17,7 +17,7 @@ public class ReceivingOrderLine {
 	private Long id;
 
 	@ManyToOne
-	@JoinColumn(name = "article_id")
+	@JoinColumn(name = "article_id", nullable = false)
 	private Article article;
 
 	@Column(nullable = false)
@@ -27,7 +27,7 @@ public class ReceivingOrderLine {
 	private int receivedQuantity;
 
 	@ManyToOne
-	@JoinColumn(name = "order_id")
+	@JoinColumn(name = "order_id", nullable = false)
 	private ReceivingOrder order;
 
 	@Column(nullable = false)

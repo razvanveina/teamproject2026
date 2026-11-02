@@ -27,7 +27,7 @@ public class LoadUnit {
 	private LoadUnitType type;
 
 	@ManyToOne
-	@JoinColumn(name = "location_id")
+	@JoinColumn(name = "location_id", nullable = false)
 	private Location location;
 
 	@Column(nullable = false)

@@ -31,7 +31,7 @@ public class RetrievalOrder {
 	private List<RetrievalOrderLine> lines;
 
 	@ManyToOne
-	@JoinColumn(name = "destination_id")
+	@JoinColumn(name = "destination_id", nullable = false)
 	private Destination destination;
 
 	public RetrievalOrder() {

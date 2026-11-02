@@ -14,11 +14,11 @@ public class Reservation {
 	private Long id;
 
 	@ManyToOne
-	@JoinColumn(name = "stockItem_id")
+	@JoinColumn(name = "stockItem_id", nullable = false)
 	private StockItem stockItem;
 
 	@ManyToOne
-	@JoinColumn(name = "retrievalOrderLine_id")
+	@JoinColumn(name = "retrievalOrderLine_id", nullable = false)
 	private RetrievalOrderLine retrievalOrderLine;
 
 	public Reservation() {

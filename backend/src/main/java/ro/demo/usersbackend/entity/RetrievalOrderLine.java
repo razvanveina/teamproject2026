@@ -20,14 +20,14 @@ public class RetrievalOrderLine {
 	private Long id;
 
 	@ManyToOne
-	@JoinColumn(name = "article_id")
+	@JoinColumn(name = "article_id", nullable = false)
 	private Article article;
 
 	@Column(nullable = false)
 	private int quantity;
 
 	@ManyToOne
-	@JoinColumn(name = "order_id")
+	@JoinColumn(name = "order_id", nullable = false)
 	private RetrievalOrder order;
 
 	@Column(nullable = false)

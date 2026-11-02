@@ -17,11 +17,11 @@ public class TransportOrder {
 	private Long id;
 
 	@ManyToOne
-	@JoinColumn(name = "source_id")
+	@JoinColumn(name = "source_id", nullable = false)
 	private Location source;
 
 	@ManyToOne
-	@JoinColumn(name = "target_id")
+	@JoinColumn(name = "target_id", nullable = false)
 	private Location target;
 
 	@Column(nullable = false)
@@ -29,7 +29,7 @@ public class TransportOrder {
 	private TransportOrderStatus status;
 
 	@ManyToOne
-	@JoinColumn(name = "loadUnit_id")
+	@JoinColumn(name = "loadUnit_id", nullable = false)
 	private LoadUnit loadUnit;
 
 	public TransportOrder() {

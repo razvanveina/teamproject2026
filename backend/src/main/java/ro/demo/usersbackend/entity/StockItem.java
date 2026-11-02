@@ -15,18 +15,18 @@ public class StockItem {
 	private Long id;
 
 	@ManyToOne
-	@JoinColumn(name = "article_id")
+	@JoinColumn(name = "article_id", nullable = false)
 	private Article article;
 
 	@Column(nullable = false)
 	private int quantity;
 
 	@ManyToOne
-	@JoinColumn(name = "loadUnit_id")
+	@JoinColumn(name = "loadUnit_id", nullable = false)
 	private LoadUnit loadUnit;
 
 	@ManyToOne
-	@JoinColumn(name = "packagingUnitType_id")
+	@JoinColumn(name = "packagingUnitType_id", nullable = false)
 	private PackagingUnitType packagingUnitType;
 
 	@ManyToOne
