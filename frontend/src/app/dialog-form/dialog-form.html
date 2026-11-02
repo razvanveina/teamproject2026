@@ -14,7 +14,31 @@
             *
             }
         </label>
+
+        @if (field.type === 'select' || field.type === 'lookup') {
+        <!-- A dropdown: click to open the list; in a lookup you can also type to filter it -->
+        <div class="dropdown">
+            <input [id]="field.field" [name]="field.field" [(ngModel)]="values[field.field]" autocomplete="off"
+                [readonly]="field.type === 'select'"
+                [placeholder]="field.type === 'select' ? 'Choose...' : 'Choose or start typing...'"
+                (focus)="openField.set(field.field)" (click)="openField.set(field.field)"
+                (blur)="openField.set('')" (input)="typed(field)" />
+            <span class="dropdown-arrow">▾</span>
+
+            @if (openField() === field.field) {
+            <!-- preventDefault on mousedown: the input keeps its focus, so the list stays open until the click -->
+            <ul class="dropdown-menu" (mousedown)="$event.preventDefault()">
+                @for (choice of matches(field); track choice.id) {
+                <li (click)="choose(field, choice)">{{ choice.text }}</li>
+                } @empty {
+                <li class="dropdown-empty">{{ emptyText(field) }}</li>
+                }
+            </ul>
+            }
+        </div>
+        } @else {
         <input [id]="field.field" [name]="field.field" [type]="field.type" [(ngModel)]="values[field.field]" />
+        }
     </div>
     }
 

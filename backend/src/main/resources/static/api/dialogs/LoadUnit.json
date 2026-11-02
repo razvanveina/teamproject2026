@@ -6,7 +6,7 @@
   "columns": [
     { "field": "ID", "label": "ID" },
     { "field": "BARCODE", "label": "Barcode", "editable": true },
-    { "field": "TYPE", "label": "Type", "editable": true },
-    { "field": "LOCATION_ID", "label": "Location ID", "editable": true }
+    { "field": "TYPE", "label": "Type", "editable": true, "options": ["PALLET", "CARTON"] },
+    { "field": "LOCATION_ID", "label": "Location ID", "editable": true, "lookup": { "entity": "Location", "show": "NAME" } }
   ]
 }

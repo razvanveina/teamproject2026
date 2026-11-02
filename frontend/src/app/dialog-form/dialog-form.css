@@ -53,6 +53,73 @@ input:focus {
     box-shadow: 0 0 0 3px rgb(46 196 182 / 18%);
 }
 
+/* A dropdown: the input plus the list that opens under it */
+.dropdown {
+    position: relative;
+}
+
+.dropdown input {
+    box-sizing: border-box;
+    width: 100%;
+    padding-right: 34px; /* room for the arrow */
+    cursor: pointer;
+}
+
+/* The small arrow on the right side of the input */
+.dropdown-arrow {
+    position: absolute;
+    top: 50%;
+    right: 13px;
+    color: #6b7f96;
+    transform: translateY(-50%);
+    pointer-events: none; /* a click on the arrow goes to the input */
+}
+
+/* The list: a white card, the same as the "Dialogs" menu */
+.dropdown-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    left: 0;
+    max-height: 240px;
+    margin: 0;
+    padding: 6px;
+    overflow-y: auto; /* long lists scroll */
+    list-style: none;
+    background: #fff;
+    border: 1px solid #e1e8ef;
+    border-radius: 12px;
+    box-shadow: 0 12px 28px rgb(23 43 77 / 16%);
+    z-index: 10;
+}
+
+/* Every line of the list */
+.dropdown-menu li {
+    padding: 10px 14px;
+    color: #354b66;
+    font-size: 0.94rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.dropdown-menu li:hover {
+    color: #176f78;
+    background: #eff8f7;
+}
+
+/* The line shown when there is nothing to choose */
+.dropdown-menu .dropdown-empty {
+    color: #8a9bb0;
+    font-weight: 400;
+    cursor: default;
+}
+
+.dropdown-menu .dropdown-empty:hover {
+    color: #8a9bb0;
+    background: transparent;
+}
+
 .form-actions {
     display: flex;
     justify-content: flex-end;
