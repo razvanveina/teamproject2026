@@ -2,6 +2,7 @@
   "id": "tr001",
   "title": "Transport Orders",
   "entity": "TransportOrder",
+  "actions": ["add", "edit", "delete"],
   "columns": [
     { "field": "ID", "label": "ID" },
     { "field": "LOAD_UNIT_ID", "label": "Load Unit ID" },

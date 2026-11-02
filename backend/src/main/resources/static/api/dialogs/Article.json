@@ -2,6 +2,7 @@
   "id": "ar001",
   "title": "Articles",
   "entity": "Article",
+  "actions": ["add", "edit", "delete"],
   "columns": [
     { "field": "ID", "label": "ID" },
     { "field": "BARCODE", "label": "Barcode" },

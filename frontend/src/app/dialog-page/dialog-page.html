@@ -1,10 +1,17 @@
 @if (dialog(); as config) {
 <h1>{{ config.id.toUpperCase() }} - {{ config.title }}</h1>
 
+@if (error()) {
+<p class="error">{{ error() }}</p>
+}
+
 <table>
     <tr>
         @for (column of config.columns; track column.field) {
         <th>{{ column.label }}</th>
+        }
+        @if (config.actions.includes('delete')) {
+        <th>Actions</th>
         }
     </tr>
 
@@ -12,6 +19,9 @@
     <tr>
         @for (column of config.columns; track column.field) {
         <td>{{ row[column.field] }}</td>
+        }
+        @if (config.actions.includes('delete')) {
+        <td><button type="button" class="delete-button" (click)="deleteRow(row)">Delete</button></td>
         }
     </tr>
     }

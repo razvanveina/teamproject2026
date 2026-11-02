@@ -2,6 +2,7 @@
   "id": "re002",
   "title": "Retrieval Orders",
   "entity": "RetrievalOrder",
+  "actions": ["add", "edit", "delete"],
   "columns": [
     { "field": "ID", "label": "ID" },
     { "field": "ORDER_ID", "label": "Order ID" },

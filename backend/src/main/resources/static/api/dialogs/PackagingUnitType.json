@@ -2,6 +2,7 @@
   "id": "pa001",
   "title": "Packaging Unit Types",
   "entity": "PackagingUnitType",
+  "actions": ["add", "edit", "delete"],
   "columns": [
     { "field": "ID", "label": "ID" },
     { "field": "BARCODE", "label": "Barcode" },

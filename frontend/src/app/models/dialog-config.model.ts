@@ -9,6 +9,7 @@ export interface DialogConfig {
   id: string;
   title: string;
   entity: string; // the rows come from /api/<entity>
+  actions: string[]; // what the user may do: "add", "edit", "delete"
   columns: DialogColumn[];
 }
 

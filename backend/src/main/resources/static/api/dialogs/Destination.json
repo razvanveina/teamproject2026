@@ -2,6 +2,7 @@
   "id": "de001",
   "title": "Destinations",
   "entity": "Destination",
+  "actions": ["add", "edit", "delete"],
   "columns": [
     { "field": "ID", "label": "ID" },
     { "field": "NAME", "label": "Name" }

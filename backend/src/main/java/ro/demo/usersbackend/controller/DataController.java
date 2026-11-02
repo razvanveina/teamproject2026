@@ -16,10 +16,19 @@ import org.springframework.web.server.ResponseStatusException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.metamodel.EntityType;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+
 @RestController
 @RequestMapping("/api/data")
 public class DataController {
 
+	// Writes messages in the Eclipse console
+	private static final Logger log = LoggerFactory.getLogger(DataController.class);
+	
 	private final JdbcTemplate jdbcTemplate;
 	private final EntityManager entityManager;
 
@@ -59,5 +68,25 @@ public class DataController {
 
 		// No entity class with this name
 		throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown entity: " + entity);
+	}
+	
+	// Deletes one row, e.g. DELETE /api/data/Article/5
+	@DeleteMapping("/{entity}/{id}")
+	public ResponseEntity<Map<String, String>> delete(@PathVariable String entity, @PathVariable Long id) {
+		if (entity.equals("Account")) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown entity: " + entity);
+		}
+
+		String tableName = tableNameOf(entity);
+
+		try {
+			jdbcTemplate.update("DELETE FROM " + tableName + " WHERE ID = ?", id);
+			return ResponseEntity.ok(Map.of("message", entity + " " + id + " deleted"));
+		} catch (DataIntegrityViolationException e) {
+			// Another table still points to this row, e.g. a stock item uses this article
+			log.error("Could not delete {} {}: {}", entity, id, e.getMostSpecificCause().getMessage());
+			return ResponseEntity.status(HttpStatus.CONFLICT)
+					.body(Map.of("message", "Cannot delete " + entity + " " + id + ": other rows still use it."));
+		}
 	}
 }

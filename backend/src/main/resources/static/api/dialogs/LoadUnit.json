@@ -2,6 +2,7 @@
   "id": "lo001",
   "title": "Load Units",
   "entity": "LoadUnit",
+  "actions": ["add", "edit", "delete"],
   "columns": [
     { "field": "ID", "label": "ID" },
     { "field": "BARCODE", "label": "Barcode" },
