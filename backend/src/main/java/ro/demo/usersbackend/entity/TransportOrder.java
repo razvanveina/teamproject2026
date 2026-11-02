@@ -67,4 +67,12 @@ public class TransportOrder {
 	public void setLoadUnit(LoadUnit loadUnit) {
 		this.loadUnit = loadUnit;
 	}
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
 }

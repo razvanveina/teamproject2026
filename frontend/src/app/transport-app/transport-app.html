@@ -1,0 +1,37 @@
+<div class="container">
+    <div class="top">
+        <div>
+            @if (order(); as currentOrder) {
+                <table>
+                    <tbody>
+                        <tr>
+                            <th scope="row">Pallet Barcode</th>
+                            <td>{{currentOrder.palletBarcode}}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Source Location</th>
+                            <td>{{currentOrder.sourceLocation}}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Destination Location</th>
+                            <td>{{currentOrder.destinationLocation}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+
+    <div class="left" [class.error]="hasError()">
+        <p>{{instructions()}}</p>
+    </div>
+
+    <div class="right">
+        <input type="text" placeholder="Scan barcode" #barcode (keyup.enter)="onScan(barcode.value); barcode.value = ''"
+            [disabled]="!canScan()">
+    </div>
+
+    <div class="bottom">
+        <button (click)=onCancel() class="cancel">Cancel</button>
+    </div>
+</div>

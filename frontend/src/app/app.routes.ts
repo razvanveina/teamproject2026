@@ -7,6 +7,7 @@ import { authGuard } from './guards/auth-guard';
 import { DialogPage } from './dialog-page/dialog-page';
 import { ReceivingApp } from './receiving-app/receiving-app';
 import { DialogForm } from './dialog-form/dialog-form';
+import { TransportApp } from './transport-app/transport-app';
 
 export const routes: Routes = [
     { path: 'login', component: Login },
@@ -21,7 +22,8 @@ export const routes: Routes = [
             { path: 'dialogs/:entity', component: DialogPage },
             { path: 'dialogs/:entity/add', component: DialogForm },
             { path: '', redirectTo: 'home', pathMatch: 'full' },
-            { path: 'receiving', component: ReceivingApp }
+            { path: 'receiving', component: ReceivingApp },
+            { path: 'transport', component: TransportApp }
         ]
     },
     { path: '**', redirectTo: 'home' }
