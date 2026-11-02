@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-configuration PUBLIC
+        "-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+        "https://hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+ 
+<hibernate-configuration>
+    <session-factory>
+ 
+        <property name="hibernate.connection.driver_class">
+            oracle.jdbc.OracleDriver
+        </property>
+ 
+         <property name="hibernate.connection.url">
+            jdbc:oracle:thin:@localhost:1521:orcl
+        </property>
+ 
+        <property name="hibernate.connection.username">rve_internship</property>
+        <property name="hibernate.connection.password">rve_internship</property>
+ 
+        <property name="hibernate.dialect">
+            org.hibernate.dialect.OracleDialect
+        </property>
+ 
+        <property name="hibernate.show_sql">true</property>
+        <property name="hibernate.format_sql">true</property>
+ 
+        <property name="hibernate.hbm2ddl.auto">update</property>
+        
+ <mapping class="ro.demo.usersbackend.entity.Account"/>
+<mapping class="ro.demo.usersbackend.entity.Article"/>
+<mapping class="ro.demo.usersbackend.entity.Destination"/>
+<mapping class="ro.demo.usersbackend.entity.DestinationToGate"/>
+<mapping class="ro.demo.usersbackend.entity.LoadUnit"/>
+<mapping class="ro.demo.usersbackend.entity.Location"/>
+<mapping class="ro.demo.usersbackend.entity.PackagingUnitType"/>
+<mapping class="ro.demo.usersbackend.entity.ReceivingOrder"/>
+<mapping class="ro.demo.usersbackend.entity.ReceivingOrderLine"/>
+<mapping class="ro.demo.usersbackend.entity.Reservation"/>
+<mapping class="ro.demo.usersbackend.entity.RetrievalOrder"/>
+<mapping class="ro.demo.usersbackend.entity.RetrievalOrderLine"/>
+<mapping class="ro.demo.usersbackend.entity.StockItem"/>
+<mapping class="ro.demo.usersbackend.entity.StorageLocation"/>
+<mapping class="ro.demo.usersbackend.entity.TransitLocation"/>
+<mapping class="ro.demo.usersbackend.entity.TransportOrder"/>
+<mapping class="ro.demo.usersbackend.entity.User"/>
+    </session-factory>
+</hibernate-configuration>
