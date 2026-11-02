@@ -5,3 +5,209 @@ h2 {
     font-size: 1.55rem;
     font-weight: 700;
 }
+
+.aisle-picker {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 24px 0 16px;
+    color: #354b66;
+    font-family: "Segoe UI", "Inter", "Aptos", sans-serif;
+    font-weight: 650;
+}
+
+select {
+    min-height: 42px;
+    padding: 0 13px;
+    color: #263b55;
+    font: inherit;
+    background: #fff;
+    border: 1px solid #cbd6e2;
+    border-radius: 9px;
+    cursor: pointer;
+}
+
+.grid-container {
+    overflow-x: auto;
+    background: #fff;
+    border: 1px solid #e1e8ef;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgb(23 43 77 / 6%);
+}
+
+table {
+    border-collapse: separate;
+    border-spacing: 0;
+    color: #354b66;
+    font-family: "Segoe UI", "Inter", "Aptos", sans-serif;
+    font-size: 0.8rem;
+}
+
+th,
+td {
+    text-align: center;
+    border-right: 1px solid #e9eef3;
+    border-bottom: 1px solid #e9eef3;
+}
+
+.x-header th {
+    min-width: 34px;
+    padding: 8px 0;
+    color: #dce8f5;
+    font-weight: 700;
+    background: #203b5e;
+}
+
+th.y {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    min-width: 56px;
+    padding: 0 10px;
+    font-weight: 700;
+    background: #f1f5f9;
+    border-right: 2px solid #cbd6e2;
+}
+
+.x-header th.y {
+    z-index: 2;
+    color: #dce8f5;
+    background: #203b5e;
+}
+
+.side th {
+    padding: 8px 12px;
+    text-align: left;
+    color: #203b5e;
+    background: #e4eef2;
+    border-top: 4px solid #203b5e;
+}
+
+.side span {
+    position: sticky;
+    left: 12px;
+    display: inline-block;
+}
+
+.slot {
+    min-width: 34px;
+    height: 30px;
+    background: #fff;
+}
+
+.slot:hover {
+    background: #eff8f7;
+}
+
+.slot.missing {
+    background: #f1f3f5;
+}
+
+.slot:not(.missing) {
+    cursor: pointer;
+}
+
+.slot.occupied {
+    background: #8fdcd3;
+}
+
+.slot.occupied:hover {
+    background: #5fc9bd;
+}
+
+.backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgb(0 0 0 / 45%);
+}
+
+.popup {
+    width: 100%;
+    max-width: 520px;
+    max-height: 80vh;
+    overflow: auto;
+    padding: 20px 24px;
+    color: #354b66;
+    font-family: "Segoe UI", "Inter", "Aptos", sans-serif;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 12px 40px rgb(0 0 0 / 25%);
+}
+
+.popup header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.popup h3 {
+    margin: 0;
+    color: #172b4d;
+    font-size: 1.1rem;
+}
+
+.popup p {
+    margin: 0;
+}
+
+.close {
+    width: 34px;
+    height: 34px;
+    color: #61738a;
+    font-size: 1.4rem;
+    line-height: 1;
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.close:hover {
+    background: #eff3f6;
+}
+
+.stock {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.stock th,
+.stock td {
+    padding: 8px 10px;
+    text-align: left;
+    border: 0;
+    border-bottom: 1px solid #e9eef3;
+}
+
+.stock th {
+    color: #dce8f5;
+    background: #203b5e;
+}
+
+.slot-button {
+    display: block;
+    width: 14px;
+    height: 14px;
+    margin: 0 auto;
+    padding: 0;
+    background: #203b5e;
+    border: 0;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.slot-button:hover {
+    background: #176f78;
+}
+
+.slot-button:focus-visible {
+    outline: 3px solid #72dfd1;
+    outline-offset: 2px;
+}

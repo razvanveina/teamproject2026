@@ -1,1 +1,86 @@
-<h2>Home</h2>
+<div class="aisle-picker">
+    <label for="aisle">Aisle</label>
+    <select id="aisle" (change)="selectAisle($event)">
+        @for (aisle of aisles(); track aisle) {
+        <option [value]="aisle" [selected]="aisle === selectedAisle()">Aisle {{ aisle }}</option>
+        }
+    </select>
+</div>
+
+@if (grid(); as view) {
+<div class="grid-container">
+    <table>
+        <thead>
+            <tr class="x-header">
+                <th class="y">Y \ X</th>
+                @for (x of view.columns; track x) {
+                <th>{{ x }}</th>
+                }
+            </tr>
+        </thead>
+
+        @for (side of view.sides; track side.z) {
+        <tbody>
+            <tr class="side">
+                <th [attr.colspan]="view.columns.length + 1"><span>{{ side.label }} (Z = {{ side.z }})</span></th>
+            </tr>
+            @for (row of side.rows; track row.y) {
+            <tr>
+                <th class="y">{{ row.y }}</th>
+                @for (slot of row.cells; track $index) {
+                <td class="slot" [class.missing]="slot === null" [class.occupied]="slot?.loadUnitId != null"
+                    [attr.title]="slot?.name">
+                    @if (slot && slot.loadUnitId != null) {
+                    <button type="button" class="slot-button" [attr.aria-label]="'Stock at ' + slot.name"
+                        (click)="openSlot(slot)"></button>
+                    }
+                </td>
+                }
+            </tr>
+            }
+        </tbody>
+        }
+    </table>
+</div>
+}
+
+@if (selectedSlot(); as slot) {
+<div class="backdrop" (click)="closePopup()">
+    <section class="popup" role="dialog" aria-modal="true" aria-label="Stock at the location"
+        (click)="$event.stopPropagation()">
+        <header>
+            <h3>Stock at {{ slot.name }}</h3>
+            <button type="button" class="close" aria-label="Close" (click)="closePopup()">&times;</button>
+        </header>
+
+        @if (slot.loadUnitId === null) {
+        <p>Empty location: no load unit here.</p>
+        } @else if (loadingStock()) {
+        <p>Loading...</p>
+        } @else if (stockError()) {
+        <p>Could not load the stock.</p>
+        } @else if (stock().length === 0) {
+        <p>The load unit has no stock items.</p>
+        } @else {
+        <table class="stock">
+            <thead>
+                <tr>
+                    <th>Barcode</th>
+                    <th>Description</th>
+                    <th>Quantity</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (line of stock(); track $index) {
+                <tr>
+                    <td>{{ line.barcode }}</td>
+                    <td>{{ line.description }}</td>
+                    <td>{{ line.quantity }}</td>
+                </tr>
+                }
+            </tbody>
+        </table>
+        }
+    </section>
+</div>
+}
