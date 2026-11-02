@@ -9,6 +9,6 @@
     { "field": "QUANTITY", "label": "Quantity", "editable": true },
     { "field": "LOAD_UNIT_ID", "label": "Load Unit ID", "editable": true, "lookup": { "entity": "LoadUnit", "show": "BARCODE" } },
     { "field": "PACKAGING_UNIT_TYPE_ID", "label": "Packaging Unit Type ID", "editable": true, "lookup": { "entity": "PackagingUnitType", "show": "NAME", "parent": "ARTICLE_ID" } },
-    { "field": "RESERVATION_ID", "label": "Reservation ID", "editable": true }
+    { "field": "RESERVATION_ID", "label": "Reservation ID" }
   ]
 }
