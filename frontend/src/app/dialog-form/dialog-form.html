@@ -1,0 +1,26 @@
+@if (dialog(); as config) {
+<h2>{{ config.title }} - Add</h2>
+
+@if (error()) {
+<p class="error">{{ error() }}</p>
+}
+
+<form (ngSubmit)="save()">
+    @for (field of fields(); track field.field) {
+    <div class="form-field">
+        <label [for]="field.field">
+            {{ field.label }}
+            @if (field.required) {
+            *
+            }
+        </label>
+        <input [id]="field.field" [name]="field.field" [type]="field.type" [(ngModel)]="values[field.field]" />
+    </div>
+    }
+
+    <div class="form-actions">
+        <button type="button" (click)="cancel()">Cancel</button>
+        <button type="submit">Save</button>
+    </div>
+</form>
+}

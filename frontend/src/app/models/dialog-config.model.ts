@@ -2,6 +2,7 @@
 export interface DialogColumn {
   field: string; // name of the field in the data, e.g. "email"
   label: string; // text in the column header, e.g. "Email"
+  editable?: boolean; // true = the column appears in the Add/Edit form
 }
 
 // One dialog = the content of users.json

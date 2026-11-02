@@ -5,9 +5,9 @@
   "actions": ["add", "edit", "delete"],
   "columns": [
     { "field": "ID", "label": "ID" },
-    { "field": "LOAD_UNIT_ID", "label": "Load Unit ID" },
-    { "field": "SOURCE_ID", "label": "Source ID" },
-    { "field": "TARGET_ID", "label": "Target ID" },
-    { "field": "STATUS", "label": "Status" }
+    { "field": "LOAD_UNIT_ID", "label": "Load Unit ID", "editable": true },
+    { "field": "SOURCE_ID", "label": "Source ID", "editable": true },
+    { "field": "TARGET_ID", "label": "Target ID", "editable": true },
+    { "field": "STATUS", "label": "Status", "editable": true }
   ]
 }

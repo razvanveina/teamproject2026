@@ -5,6 +5,6 @@
   "actions": ["add", "edit", "delete"],
   "columns": [
     { "field": "ID", "label": "ID" },
-    { "field": "NAME", "label": "Name" }
+    { "field": "NAME", "label": "Name", "editable": true }
   ]
 }

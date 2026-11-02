@@ -5,10 +5,10 @@
   "actions": ["add", "edit", "delete"],
   "columns": [
     { "field": "ID", "label": "ID" },
-    { "field": "ARTICLE_ID", "label": "Article ID" },
-    { "field": "QUANTITY", "label": "Quantity" },
-    { "field": "LOAD_UNIT_ID", "label": "Load Unit ID" },
-    { "field": "PACKAGING_UNIT_TYPE_ID", "label": "Packaging Unit Type ID" },
-    { "field": "RESERVATION_ID", "label": "Reservation ID" }
+    { "field": "ARTICLE_ID", "label": "Article ID", "editable": true },
+    { "field": "QUANTITY", "label": "Quantity", "editable": true },
+    { "field": "LOAD_UNIT_ID", "label": "Load Unit ID", "editable": true },
+    { "field": "PACKAGING_UNIT_TYPE_ID", "label": "Packaging Unit Type ID", "editable": true },
+    { "field": "RESERVATION_ID", "label": "Reservation ID", "editable": true }
   ]
 }

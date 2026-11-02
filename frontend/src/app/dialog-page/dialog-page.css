@@ -80,3 +80,23 @@ tr:last-child td {
     color: #8d2938;
     background: #fcebed;
 }
+
+/* Add: green button above the table, same as the Add button in the Users table */
+.add-button {
+    min-height: 42px;
+    margin-bottom: 14px;
+    padding: 0 17px;
+    color: #f2fffc;
+    font-family: "Segoe UI", "Inter", "Aptos", sans-serif;
+    font-size: 0.92rem;
+    font-weight: 650;
+    background: #176f78;
+    border: 1px solid #176f78;
+    border-radius: 9px;
+    cursor: pointer;
+}
+
+.add-button:hover {
+    background: #125c64;
+    border-color: #125c64;
+}

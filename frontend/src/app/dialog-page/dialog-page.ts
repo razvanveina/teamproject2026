@@ -1,10 +1,11 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DialogConfig } from '../models/dialog-config.model';
 import { DialogConfigService } from '../services/dialog-config.service';
 
 @Component({
   selector: 'app-dialog-page',
+  imports: [RouterLink],
   templateUrl: './dialog-page.html',
   styleUrl: './dialog-page.css',
 })

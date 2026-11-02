@@ -5,8 +5,8 @@
   "actions": ["add", "edit", "delete"],
   "columns": [
     { "field": "ID", "label": "ID" },
-    { "field": "ORDER_ID", "label": "Order ID" },
-    { "field": "STATUS", "label": "Status" },
-    { "field": "DESTINATION_ID", "label": "Destination ID" }
+    { "field": "ORDER_ID", "label": "Order ID", "editable": true },
+    { "field": "STATUS", "label": "Status", "editable": true },
+    { "field": "DESTINATION_ID", "label": "Destination ID", "editable": true }
   ]
 }

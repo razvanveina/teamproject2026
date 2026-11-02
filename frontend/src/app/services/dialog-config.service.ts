@@ -19,6 +19,16 @@ export class DialogConfigService {
     return this.http.get<DialogConfig>(DIALOGS_BASE_URL + '/' + file); //dialogul propriu-zis, e.g. users.json
   }
 
+  // The columns of an entity from the database, e.g. /api/data/Article/columns
+  getColumns(entity: string): Observable<any[]> {
+    return this.http.get<any[]>(API_BASE_URL + '/data/' + entity + '/columns');
+  }
+
+  // Adds one row, e.g. POST /api/data/Article with { BARCODE: "123", DESCRIPTION: "Milk" }
+  addRow(entity: string, data: any): Observable<any> {
+    return this.http.post<any>(API_BASE_URL + '/data/' + entity, data);
+  }
+
   // The rows of an entity, e.g. "users" -> /api/data/users
   getRows(entity: string): Observable<any[]> {
     return this.http.get<any[]>(API_BASE_URL + '/data/' + entity); //coloanele si datele din tabel, e.g. /api/users

@@ -1,6 +1,8 @@
 @if (dialog(); as config) {
 <h1>{{ config.id.toUpperCase() }} - {{ config.title }}</h1>
-
+@if (config.actions.includes('add')) {
+<button type="button" class="add-button" [routerLink]="['/dialogs', config.entity, 'add']">Add</button>
+}
 @if (error()) {
 <p class="error">{{ error() }}</p>
 }
