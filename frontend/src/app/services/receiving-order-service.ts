@@ -1,0 +1,14 @@
+import { HttpClient } from '@angular/common/http';
+import { inject, Service } from '@angular/core';
+import { Observable } from 'rxjs/internal/Observable';
+import { ReceivingOrder } from '../models/receiving-order.model';
+
+@Service()
+export class ReceivingOrderService {
+    private httpClient = inject(HttpClient)
+    private url = 'http://localhost:8080/receiving';
+
+    getReceivingOrder(orderId: string): Observable<ReceivingOrder> {
+        return this.httpClient.get<ReceivingOrder>( `${this.url}/${orderId}`)
+    }
+}

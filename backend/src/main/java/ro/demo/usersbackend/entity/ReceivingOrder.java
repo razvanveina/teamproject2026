@@ -24,12 +24,17 @@ public class ReceivingOrder {
 	@Enumerated(EnumType.STRING)
 	private ReceivingOrderStatus status;
 
-	@Column(nullable = false)
 	@OneToMany(mappedBy = "order")
 	private List<ReceivingOrderLine> lines;
 
 	public ReceivingOrder() {
 		super();
+	}
+
+	public ReceivingOrder(String orderId, ReceivingOrderStatus status) {
+		super();
+		this.orderId = orderId;
+		this.status = status;
 	}
 
 	public String getOrderId() {

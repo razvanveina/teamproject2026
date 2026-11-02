@@ -38,6 +38,16 @@ public class ReceivingOrderLine {
 		super();
 	}
 
+	public ReceivingOrderLine(Article article, int quantity, int receivedQuantity, ReceivingOrder order,
+			ReceivingOrderLineStatus status) {
+		super();
+		this.article = article;
+		this.quantity = quantity;
+		this.receivedQuantity = receivedQuantity;
+		this.order = order;
+		this.status = status;
+	}
+
 	public Article getArticle() {
 		return article;
 	}

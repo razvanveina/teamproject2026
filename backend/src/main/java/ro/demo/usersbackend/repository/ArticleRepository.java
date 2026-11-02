@@ -1,4 +1,3 @@
-
 package ro.demo.usersbackend.repository;
 
 import java.util.Optional;
