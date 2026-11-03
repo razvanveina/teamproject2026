@@ -39,6 +39,8 @@ export interface EntitySpec {
 export interface ShowColumn {
   field: string;
   label: string;
+  from?: string;
+  column?: string;
 }
 
 // One entry of dialogs.json: { "file": "users.json" }

@@ -91,6 +91,9 @@ export class DialogPage implements OnInit {
               if (spec.show.length > 1) {
                 label = column.label + ' ' + show.label;
               }
+              if (show.from) {
+                label = show.label;
+              }
               result.push({ field: column.field + '__' + show.field, label: label });
             }
           }

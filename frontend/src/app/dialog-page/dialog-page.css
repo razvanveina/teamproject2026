@@ -67,9 +67,13 @@ tr:last-child td {
 
 /* Delete: red text button, same colors as the delete button in the Users table */
 .delete-button {
-    padding: 6px 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
     color: #a64b58;
-    font: inherit;
     background: transparent;
     border: none;
     border-radius: 8px;

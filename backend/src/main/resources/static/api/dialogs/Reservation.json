@@ -6,6 +6,6 @@
   "columns": [
     { "field": "ID", "label": "ID" },
     { "field": "STOCK_ITEM_ID", "label": "Stock Item ID", "editable": true },
-    { "field": "RETRIEVAL_ORDER_LINE_ID", "label": "Retrieval Order Line ID", "editable": true }
+    { "field": "RETRIEVAL_ORDER_LINE_ID", "label": "Retrieval Order Line", "editable": true, "lookup": { "entity": "RetrievalOrderLine" } }
   ]
 }

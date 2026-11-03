@@ -70,7 +70,13 @@ public class DataController {
 					if (spec.get("name").asText().equals(linked)) {
 						for (JsonNode show : spec.get("show")) {
 							String name = show.get("field").asText(); // BARCODE
-							select = select + ", " + j + "." + name + " AS " + field + "__" + name;
+							if (show.has("from")) {
+								String j2 = j + "_" + name;
+								joins = joins + " LEFT JOIN " + tableNameOf(show.get("from").asText()) + " " + j2 + " ON " + j2 + ".ID = " + j + "." + name;
+								select = select + ", " + j2 + "." + show.get("column").asText() + " AS " + field + "__" + name;
+							} else {
+								select = select + ", " + j + "." + name + " AS " + field + "__" + name;
+							}
 						}
 					}
 				}
