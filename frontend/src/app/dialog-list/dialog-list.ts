@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DialogConfig, DialogsFile } from '../models/dialog-config.model';
 import { DialogConfigService } from '../services/dialog-config.service';
+import { LogService } from '../services/log';
 
 @Component({
   selector: 'app-dialog-list',
@@ -11,6 +12,7 @@ import { DialogConfigService } from '../services/dialog-config.service';
 })
 export class DialogList implements OnInit {
   private service = inject(DialogConfigService);
+  private log = inject(LogService);
 
   // The dialogs shown on the page. Empty at the start.
   dialogs = signal<DialogConfig[]>([]);
@@ -26,6 +28,11 @@ export class DialogList implements OnInit {
   // Click on a link: close the dropdown
   close(): void {
     this.open.set(false);
+  }
+
+  onSelect(dialog: DialogConfig): void {
+    this.close();
+    this.log.action(`DIALOG ${dialog.title}`);
   }
 
   // Runs once, when the page opens

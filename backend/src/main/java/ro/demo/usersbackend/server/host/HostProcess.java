@@ -50,13 +50,14 @@ public class HostProcess extends AbstractProcess {
 			if (sessionFactory == null) {
 				folder = Path.of(readFolder());
 				sessionFactory = buildSessionFactory();
-				log.info("watching path {}", folder.toAbsolutePath());
+				Log.info("watching path {}", folder.toAbsolutePath());
 			}
+
 			try (Stream<Path> files = Files.list(folder)) {
 				files.filter(f -> f.toString().endsWith(".xml")).forEach(f -> process(sessionFactory, f));
 			}
 		} catch (Exception e) {
-			log.error("cannot scan {}: {}", folder.toAbsolutePath(), e.toString());
+			Log.error("cannot scan {}: {}", folder.toAbsolutePath(), e.toString());
 		}
 	}
 
@@ -111,7 +112,7 @@ public class HostProcess extends AbstractProcess {
 						throw new IllegalArgumentException("article " + barcode + " doesn't exist");
 					}
 					if (found.size() > 1) {
-						log.warn("in {} with barcode {} matches {} articles", name, barcode, found.size());
+						Log.warn("in {} with barcode {} matches {} articles", name, barcode, found.size());
 					}
 					Article article;
 					if (found.isEmpty()) {
@@ -133,14 +134,15 @@ public class HostProcess extends AbstractProcess {
 				return true;
 			});
 			if (created) {
-				log.info("in {}, order {} created", name, orderId);
+				Log.info("in {}, order {} created", name, orderId);
 				Files.delete(file);
-				log.info("{} deleted", name);
-			} else
-				log.warn("in {}, order {} already exists", name, orderId);
+				Log.info("{} deleted", name);
+			} else {
+				Log.warn("in {}, order {} already exists", name, orderId);
+			}
 
 		} catch (Exception e) {
-			log.error("{} not processsed {}", name, e.toString());
+			Log.error("{} not processsed {}", name, e.toString());
 		}
 	}
 

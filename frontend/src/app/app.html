@@ -1,12 +1,12 @@
 @if (auth.isLoggedIn()) {
 <nav class="main-menu">
-  <a routerLink="/home" routerLinkActive="active">
+  <a routerLink="/home" routerLinkActive="active" (click)="onNav('HOME')">
     Home
   </a>
 
   <app-dialog-list />
 
-  <a routerLink="/transport" routerLinkActive="active">
+  <a routerLink="/transport" routerLinkActive="active" (click)="onNav('TRANSPORT')">
     Transport
   </a>
 

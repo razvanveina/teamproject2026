@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { TransportOrderApi, TransportOrderResponse } from '../services/transport-order';
+import { LogService } from '../services/log';
 
 @Component({
   imports: [],
@@ -10,13 +11,15 @@ import { TransportOrderApi, TransportOrderResponse } from '../services/transport
 })
 export class TransportApp implements OnInit, OnDestroy {
   private readonly transportOrderApi = inject(TransportOrderApi);
+  private readonly log = inject(LogService);
 
   order = signal<TransportOrderResponse | null>(null);
-  instructions = signal('No new orders');
+  instructions = signal('No new orders. Waiting for the next order...');
   hasError = signal(false);
 
   private checker: ReturnType<typeof setInterval> | undefined;
   private checkingForOrder = false;
+  private noOrderTimer: ReturnType<typeof setTimeout> | undefined;
 
   ngOnInit(): void {
     this.checkForNewOrder();
@@ -27,6 +30,7 @@ export class TransportApp implements OnInit, OnDestroy {
     if (this.checker !== undefined) {
       clearInterval(this.checker);
     }
+    clearTimeout(this.noOrderTimer);
   }
 
   canScan(): boolean {
@@ -61,33 +65,51 @@ export class TransportApp implements OnInit, OnDestroy {
         this.checkingForOrder = false;
         if (nextOrder) {
           this.updateOrder(nextOrder);
-        } else {
-          this.order.set(null);
-          this.instructions.set('No new orders');
-          this.hasError.set(false);
+        } else if (this.order() || this.hasError()) {
+          this.showNoOrders();
         }
       },
       error: () => {
         this.checkingForOrder = false;
-        this.instructions.set('Could not load transport orders. Retrying in 10 seconds.');
+        this.instructions.set('Token expired.');
         this.hasError.set(true);
       },
     });
   }
 
   private updateOrder(order: TransportOrderResponse): void {
+    clearTimeout(this.noOrderTimer);
+
+    if (order.status === 'FINISHED') {
+      this.order.set(null);
+      this.hasError.set(false);
+      this.instructions.set(`Pallet stored at ${order.destinationLocation}. Waiting for the next order...`);
+      this.noOrderTimer = setTimeout(() => {
+        if (!this.order() && !this.hasError()) {
+          this.instructions.set('No new orders. Waiting for the next order...');
+        }
+      }, 10_000);
+      this.checkForNewOrder();
+      return;
+    }
+
     this.order.set(order);
     this.hasError.set(false);
     if (order.status === 'NEW') {
       this.instructions.set(`New transport order: go to ${order.sourceLocation} and scan pallet ${order.palletBarcode}.`);
     } else if (order.status === 'ACTIVE') {
       this.instructions.set(`Move the pallet to ${order.destinationLocation} and scan the location barcode.`);
-    } else if (order.status === 'FINISHED') {
-      this.instructions.set(`Pallet stored at ${order.destinationLocation}. Waiting for the next order...`);
     }
   }
 
+  private showNoOrders(): void {
+    this.order.set(null);
+    this.instructions.set('No new orders');
+    this.hasError.set(false);
+  }
+
   onCancel(): void {
+    this.log.action('CANCEL');
     history.back();
   }
 }

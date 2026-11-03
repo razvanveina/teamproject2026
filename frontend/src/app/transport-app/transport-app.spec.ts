@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { TransportOrderApi } from '../services/transport-order';
+import { LogService } from '../services/log';
 import { TransportApp } from './transport-app';
 
 describe('TransportApp', () => {
@@ -25,6 +26,7 @@ describe('TransportApp', () => {
             }),
           },
         },
+        { provide: LogService, useValue: { action: () => {} } },
       ],
     }).compileComponents();
 
