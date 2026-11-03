@@ -30,7 +30,7 @@ import ro.demo.usersbackend.server.process.AbstractProcess;
 public class HostProcess extends AbstractProcess {
 	private static final Logger log = LogManager.getLogger(HostProcess.class);
 
-	private final Path folder = Path.of("host/demo");
+	private final Path folder = Path.of("in");
 	private SessionFactory sessionFactory;
 
 	public HostProcess() {
