@@ -9,7 +9,7 @@
 
 <table>
     <tr>
-        @for (column of config.columns; track column.field) {
+        @for (column of tableColumns(); track column.field) {
         <th>{{ column.label }}</th>
         }
         @if (config.actions.includes('delete')) {
@@ -19,7 +19,7 @@
 
     @for (row of rows(); track $index) {
     <tr>
-        @for (column of config.columns; track column.field) {
+        @for (column of tableColumns(); track column.field) {
         <td>{{ row[column.field] }}</td>
         }
         @if (config.actions.includes('delete')) {

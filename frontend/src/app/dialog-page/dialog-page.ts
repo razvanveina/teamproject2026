@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { DialogConfig } from '../models/dialog-config.model';
+import { DialogColumn, DialogConfig, DialogsFile } from '../models/dialog-config.model';
 import { DialogConfigService } from '../services/dialog-config.service';
 
 @Component({
@@ -18,6 +18,7 @@ export class DialogPage implements OnInit {
 
   // The rows of the table. Empty until they arrive.
   rows = signal<any[]>([]);
+  tableColumns = signal<DialogColumn[]>([]);
   // The error message shown above the table. Empty when everything is fine.
   error = signal('');
   // Runs once, when the page opens
@@ -31,6 +32,10 @@ export class DialogPage implements OnInit {
       // 2. Ask for the dialog file, e.g. ReceivingOrder.json
       this.service.getDialog(entity + '.json').subscribe((dialog: DialogConfig) => {
         this.dialog.set(dialog);
+
+        this.service.getDialogsFile().subscribe((dialogsFile: DialogsFile) => {
+          this.tableColumns.set(this.makeColumns(dialog, dialogsFile));
+        });
 
         // 3. Ask for the rows, e.g. /api/data/article
         this.service.getRows(dialog.entity).subscribe((rows: any[]) => {
@@ -71,5 +76,27 @@ export class DialogPage implements OnInit {
         }
       },
     });
+  }
+
+  makeColumns(dialog: DialogConfig, dialogsFile: DialogsFile): DialogColumn[] {
+    const result: DialogColumn[] = [];
+    for (const column of dialog.columns) {
+      if (!column.lookup) {
+        result.push(column);
+      } else {
+        for (const spec of dialogsFile.entitySpec) {
+          if (spec.name === column.lookup.entity) {
+            for (const show of spec.show) {
+              let label = column.label;
+              if (spec.show.length > 1) {
+                label = column.label + ' ' + show.label;
+              }
+              result.push({ field: column.field + '__' + show.field, label: label });
+            }
+          }
+        }
+      }
+    }
+    return result;
   }
 }
