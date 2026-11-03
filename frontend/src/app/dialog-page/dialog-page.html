@@ -7,6 +7,14 @@
 <p class="error">{{ error() }}</p>
 }
 
+<div class="filters">
+    @for (column of tableColumns(); track column.field) {
+    @if (column.filterable) {
+    <label>{{ column.label }}: <input type="text" (input)="setFilter(column.field, $event)" /></label>
+    }
+    }
+</div>
+
 <table>
     <tr>
         @for (column of tableColumns(); track column.field) {

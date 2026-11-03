@@ -2,6 +2,7 @@ package ro.demo.usersbackend.controller;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -46,7 +48,7 @@ public class DataController {
 	// All rows of a table, plus the columns of the linked tables from entitySpec
 	// e.g. GET /api/data/StockItem also brings ARTICLE_ID__BARCODE and ARTICLE_ID__DESCRIPTION
 	@GetMapping("/{entity}")
-	public List<Map<String, Object>> findAll(@PathVariable String entity) throws IOException {
+	public List<Map<String, Object>> findAll(@PathVariable String entity, @RequestParam Map<String, String> filters) throws IOException {
 		// no dialog file (e.g. StorageLocation, used by the home page): just all the rows
 		if (!new ClassPathResource("static/api/dialogs/" + entity + ".json").exists()) {
 			return jdbcTemplate.queryForList("SELECT * FROM " + tableNameOf(entity));
@@ -57,8 +59,11 @@ public class DataController {
 
 		String select = "SELECT t.*";
 		String joins = "";
+		Map<String, String> names = new HashMap<>();
 
 		for (JsonNode column : columns) {
+			names.put(column.get("field").asText(), "t." + column.get("field").asText());
+
 			if (column.has("lookup")) {
 				String field = column.get("field").asText(); // ARTICLE_ID
 				String linked = column.get("lookup").get("entity").asText(); // Article
@@ -74,8 +79,10 @@ public class DataController {
 								String j2 = j + "_" + name;
 								joins = joins + " LEFT JOIN " + tableNameOf(show.get("from").asText()) + " " + j2 + " ON " + j2 + ".ID = " + j + "." + name;
 								select = select + ", " + j2 + "." + show.get("column").asText() + " AS " + field + "__" + name;
+								names.put(field + "__" + name, j2 + "." + show.get("column").asText());
 							} else {
 								select = select + ", " + j + "." + name + " AS " + field + "__" + name;
+								names.put(field + "__" + name, j + "." + name);
 							}
 						}
 					}
@@ -83,7 +90,16 @@ public class DataController {
 			}
 		}
 
-		return jdbcTemplate.queryForList(select + " FROM " + tableNameOf(entity) + " t" + joins);
+		String where = " WHERE 1 = 1";
+		List<Object> params = new ArrayList<>();
+		for (String key : filters.keySet()) {
+			if (names.containsKey(key) && !filters.get(key).isEmpty()) {
+				where = where + " AND UPPER(" + names.get(key) + ") LIKE ?";
+				params.add("%" + filters.get(key).toUpperCase() + "%");
+			}
+		}
+
+		return jdbcTemplate.queryForList(select + " FROM " + tableNameOf(entity) + " t" + joins + where, params.toArray());
 	}
 
 	// The columns of a table: name, type and if it can be empty

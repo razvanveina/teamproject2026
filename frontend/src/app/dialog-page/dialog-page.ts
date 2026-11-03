@@ -19,6 +19,7 @@ export class DialogPage implements OnInit {
   // The rows of the table. Empty until they arrive.
   rows = signal<any[]>([]);
   tableColumns = signal<DialogColumn[]>([]);
+  filters: any = {};
   // The error message shown above the table. Empty when everything is fine.
   error = signal('');
   // Runs once, when the page opens
@@ -29,6 +30,8 @@ export class DialogPage implements OnInit {
       const entity = params.get('entity');
       this.rows.set([]);
       this.error.set('');
+      this.tableColumns.set([]);
+      this.filters = {};
       // 2. Ask for the dialog file, e.g. ReceivingOrder.json
       this.service.getDialog(entity + '.json').subscribe((dialog: DialogConfig) => {
         this.dialog.set(dialog);
@@ -62,9 +65,7 @@ export class DialogPage implements OnInit {
     this.service.deleteRow(config.entity, row['ID']).subscribe({
       // Deleted: ask for the rows again
       next: () => {
-        this.service.getRows(config.entity).subscribe((rows: any[]) => {
-          this.rows.set(rows);
-        });
+        this.loadRows();
       },
       // The server said no: show its message and write everything in the browser console (F12)
       error: (err) => {
@@ -76,6 +77,20 @@ export class DialogPage implements OnInit {
         }
       },
     });
+  }
+
+  setFilter(field: string, event: any): void {
+    this.filters[field] = event.target.value;
+    this.loadRows();
+  }
+
+  loadRows(): void {
+    const config = this.dialog();
+    if (config !== null) {
+      this.service.getRows(config.entity, this.filters).subscribe((rows: any[]) => {
+        this.rows.set(rows);
+      });
+    }
   }
 
   makeColumns(dialog: DialogConfig, dialogsFile: DialogsFile): DialogColumn[] {
@@ -94,7 +109,7 @@ export class DialogPage implements OnInit {
               if (show.from) {
                 label = show.label;
               }
-              result.push({ field: column.field + '__' + show.field, label: label });
+              result.push({ field: column.field + '__' + show.field, label: label, filterable: column.filterable });
             }
           }
         }

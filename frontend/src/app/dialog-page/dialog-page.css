@@ -104,3 +104,56 @@ tr:last-child td {
     background: #125c64;
     border-color: #125c64;
 }
+.filters {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    width: fit-content;
+    max-width: 100%;
+    margin-bottom: 14px;
+    padding: 8px 6px;
+    overflow-x: auto;
+    color: #354b66;
+    font-family: "Segoe UI", "Inter", "Aptos", sans-serif;
+    font-size: 0.86rem;
+    font-weight: 650;
+    background: #fff;
+    border: 1px solid #e1e8ef;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgb(23 43 77 / 6%);
+}
+
+.filters label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    white-space: nowrap;
+}
+
+.filters label + label {
+    border-left: 1px solid #e1e8ef;
+}
+
+.filters input {
+    width: 140px;
+    min-height: 32px;
+    padding: 0 10px;
+    color: #263b55;
+    font: inherit;
+    font-weight: 400;
+    background: #fbfcfe;
+    border: 1px solid #cbd6e2;
+    border-radius: 8px;
+}
+
+.filters input:focus {
+    background: #fff;
+    border-color: #2ec4b6;
+    outline: none;
+    box-shadow: 0 0 0 3px rgb(46 196 182 / 18%);
+}
+
+.filters:empty {
+    display: none;
+}

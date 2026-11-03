@@ -5,8 +5,8 @@
   "actions": [],
   "columns": [
     { "field": "ID", "label": "ID" },
-    { "field": "NAME", "label": "Name" },
-    { "field": "DTYPE", "label": "Type" },
+    { "field": "NAME", "label": "Name", "filterable": true },
+    { "field": "DTYPE", "label": "Type", "filterable": true },
     { "field": "AISLE", "label": "Aisle" },
     { "field": "X", "label": "X" },
     { "field": "Y", "label": "Y" },

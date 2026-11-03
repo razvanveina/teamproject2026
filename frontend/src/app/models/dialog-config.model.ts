@@ -5,6 +5,7 @@ export interface DialogColumn {
   editable?: boolean; // true = the column appears in the Add/Edit form
   options?: string[]; // the form shows a dropdown with these values, e.g. ["NEW", "ACTIVE"]
   lookup?: DialogLookup; // the form lets you pick a row of another entity, e.g. an article
+  filterable?: boolean;
 }
 
 // A link to another entity, e.g. { "entity": "Article" }

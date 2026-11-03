@@ -5,9 +5,9 @@
   "actions": ["add", "edit", "delete"],
   "columns": [
     { "field": "ID", "label": "ID" },
-    { "field": "BARCODE", "label": "Barcode", "editable": true },
-    { "field": "NAME", "label": "Name", "editable": true },
+    { "field": "BARCODE", "label": "Barcode", "editable": true, "filterable": true },
+    { "field": "NAME", "label": "Name", "editable": true, "filterable": true },
     { "field": "QUANTITY", "label": "Quantity", "editable": true },
-    { "field": "ARTICLE_ID", "label": "Article", "editable": true, "lookup": { "entity": "Article" } }
+    { "field": "ARTICLE_ID", "label": "Article", "editable": true, "lookup": { "entity": "Article" }, "filterable": true }
   ]
 }

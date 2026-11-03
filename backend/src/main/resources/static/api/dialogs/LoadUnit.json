@@ -5,8 +5,8 @@
   "actions": ["add", "edit", "delete"],
   "columns": [
     { "field": "ID", "label": "ID" },
-    { "field": "BARCODE", "label": "Barcode", "editable": true },
-    { "field": "TYPE", "label": "Type", "editable": true, "options": ["PALLET", "CARTON"] },
-    { "field": "LOCATION_ID", "label": "Location", "editable": true, "lookup": { "entity": "Location" } }
+    { "field": "BARCODE", "label": "Barcode", "editable": true, "filterable": true },
+    { "field": "TYPE", "label": "Type", "editable": true, "options": ["PALLET", "CARTON"], "filterable": true },
+    { "field": "LOCATION_ID", "label": "Location", "editable": true, "lookup": { "entity": "Location" }, "filterable": true }
   ]
 }

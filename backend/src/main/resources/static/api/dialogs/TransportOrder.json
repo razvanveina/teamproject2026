@@ -5,9 +5,9 @@
   "actions": ["add", "edit", "delete"],
   "columns": [
     { "field": "ID", "label": "ID" },
-    { "field": "LOAD_UNIT_ID", "label": "Load Unit", "editable": true, "lookup": { "entity": "LoadUnit" } },
-    { "field": "SOURCE_ID", "label": "Source", "editable": true, "lookup": { "entity": "Location" } },
-    { "field": "TARGET_ID", "label": "Target", "editable": true, "lookup": { "entity": "Location" } },
-    { "field": "STATUS", "label": "Status", "editable": true, "options": ["NEW", "ACTIVE", "FINISHED", "ERROR"] }
+    { "field": "LOAD_UNIT_ID", "label": "Load Unit", "editable": true, "lookup": { "entity": "LoadUnit" }, "filterable": true },
+    { "field": "SOURCE_ID", "label": "Source", "editable": true, "lookup": { "entity": "Location" }, "filterable": true },
+    { "field": "TARGET_ID", "label": "Target", "editable": true, "lookup": { "entity": "Location" }, "filterable": true },
+    { "field": "STATUS", "label": "Status", "editable": true, "options": ["NEW", "ACTIVE", "FINISHED", "ERROR"], "filterable": true }
   ]
 }
