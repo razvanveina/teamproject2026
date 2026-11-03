@@ -1,38 +1,40 @@
 package ro.demo.usersbackend.controller;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import org.hibernate.engine.spi.SessionFactoryImplementor;
-import org.hibernate.persister.entity.EntityPersister;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.metamodel.EntityType;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import java.util.ArrayList;
-
-import org.springframework.dao.DataAccessException;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 @RestController
 @RequestMapping("/api/data")
 public class DataController {
 
 	// Writes messages in the Eclipse console
 	private static final Logger log = LoggerFactory.getLogger(DataController.class);
-	
+
 	private final JdbcTemplate jdbcTemplate;
 	private final EntityManager entityManager;
 
@@ -41,116 +43,116 @@ public class DataController {
 		this.entityManager = entityManager;
 	}
 
-	
+	// All rows of a table, plus the columns of the linked tables from entitySpec
+	// e.g. GET /api/data/StockItem also brings ARTICLE_ID__BARCODE and ARTICLE_ID__DESCRIPTION
 	@GetMapping("/{entity}")
-	public List<Map<String, Object>> findAll(@PathVariable String entity) {
-		// Never send the login accounts: they hold the passwords
-		if (entity.equals("Account")) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown entity: " + entity);
+	public List<Map<String, Object>> findAll(@PathVariable String entity) throws IOException {
+		// no dialog file (e.g. StorageLocation, used by the home page): just all the rows
+		if (!new ClassPathResource("static/api/dialogs/" + entity + ".json").exists()) {
+			return jdbcTemplate.queryForList("SELECT * FROM " + tableNameOf(entity));
 		}
 
-		String tableName = tableNameOf(entity); //get db table name 
-		return jdbcTemplate.queryForList("SELECT * FROM " + tableName);
+		JsonNode columns = readJson(entity + ".json").get("columns");
+		JsonNode entitySpec = readJson("dialogs.json").get("entitySpec");
+
+		String select = "SELECT t.*";
+		String joins = "";
+
+		for (JsonNode column : columns) {
+			if (column.has("lookup")) {
+				String field = column.get("field").asText(); // ARTICLE_ID
+				String linked = column.get("lookup").get("entity").asText(); // Article
+				String j = "j_" + field; // a short name for the joined table
+
+				joins = joins + " LEFT JOIN " + tableNameOf(linked) + " " + j + " ON " + j + ".ID = t." + field;
+
+				for (JsonNode spec : entitySpec) {
+					if (spec.get("name").asText().equals(linked)) {
+						for (JsonNode show : spec.get("show")) {
+							String name = show.get("field").asText(); // BARCODE
+							select = select + ", " + j + "." + name + " AS " + field + "__" + name;
+						}
+					}
+				}
+			}
+		}
+
+		return jdbcTemplate.queryForList(select + " FROM " + tableNameOf(entity) + " t" + joins);
 	}
-	
-	// Describes the columns of an entity, e.g. GET /api/data/Article/columns
+
+	// The columns of a table: name, type and if it can be empty
 	@GetMapping("/{entity}/columns")
 	public List<Map<String, Object>> columns(@PathVariable String entity) {
-		if (entity.equals("Account")) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown entity: " + entity);
-		}
-
-		String tableName = tableNameOf(entity);
-
-		// Oracle keeps the description of every column in USER_TAB_COLUMNS
-		return jdbcTemplate.queryForList(
-				"SELECT COLUMN_NAME, DATA_TYPE, NULLABLE FROM USER_TAB_COLUMNS WHERE TABLE_NAME = ? ORDER BY COLUMN_ID",
-				tableName.toUpperCase());
+		String sql = "SELECT COLUMN_NAME, DATA_TYPE, NULLABLE FROM USER_TAB_COLUMNS WHERE TABLE_NAME = ?";
+		return jdbcTemplate.queryForList(sql, tableNameOf(entity).toUpperCase());
 	}
-	
+
 	// Adds one row, e.g. POST /api/data/Destination with { "NAME": "Sibiu" }
 	@PostMapping("/{entity}")
 	public ResponseEntity<Map<String, String>> add(@PathVariable String entity, @RequestBody Map<String, Object> values) {
-		if (entity.equals("Account")) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown entity: " + entity);
-		}
-
-		String tableName = tableNameOf(entity);
-
-		// Build "NAME, CITY" and "?, ?" only from columns that really exist in the table
-		String names = "";
-		String marks = "";
+		List<String> names = new ArrayList<>();
+		List<String> marks = new ArrayList<>();
 		List<Object> params = new ArrayList<>();
-		
+
+		// only the columns that really exist in the table
 		for (Map<String, Object> column : columns(entity)) {
 			String name = (String) column.get("COLUMN_NAME");
-
-			// The "values" map comes from Angular, e.g. { "NAME": "Sibiu" }.
-			// Check if it has a value for this column; if yes, add the column to the INSERT.
 			if (values.containsKey(name)) {
-				if (!names.isEmpty()) {
-					names = names + ", ";
-					marks = marks + ", ";
-				}
-				names = names + name;
-				marks = marks + "?";
+				names.add(name);
+				marks.add("?");
 				params.add(values.get(name));
 			}
 		}
 
-		if (params.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Nothing to save"));
-		}
-
+		String sql = "INSERT INTO " + tableNameOf(entity) + " (" + String.join(", ", names) + ") VALUES ("
+				+ String.join(", ", marks) + ")";
 		try {
-			jdbcTemplate.update("INSERT INTO " + tableName + " (" + names + ") VALUES (" + marks + ")", params.toArray());
-			return ResponseEntity.ok(Map.of("message", entity + " saved"));
+			jdbcTemplate.update(sql, params.toArray());
+			return ResponseEntity.ok(Map.of("message", "Saved"));
 		} catch (DataAccessException e) {
-			// Any database error: empty required field, duplicate value, wrong number...
-			log.error("Could not add {}: {}", entity, e.getMostSpecificCause().getMessage());
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-					.body(Map.of("message", "Cannot save " + entity + ": " + e.getMostSpecificCause().getMessage()));
+			return error("Cannot save " + entity, e);
 		}
+	}
+
+	// Deletes one row, e.g. DELETE /api/data/Article/5
+	@DeleteMapping("/{entity}/{id}")
+	public ResponseEntity<Map<String, String>> delete(@PathVariable String entity, @PathVariable Long id) {
+		try {
+			jdbcTemplate.update("DELETE FROM " + tableNameOf(entity) + " WHERE ID = ?", id);
+			return ResponseEntity.ok(Map.of("message", "Deleted"));
+		} catch (DataAccessException e) {
+			return error("Cannot delete " + entity + " " + id, e);
+		}
+	}
+
+	// A database error: write it in the Eclipse console and send it to Angular
+	private ResponseEntity<Map<String, String>> error(String text, DataAccessException e) {
+		String message = text + ": " + e.getMostSpecificCause().getMessage();
+		log.error(message);
+		return ResponseEntity.badRequest().body(Map.of("message", message));
+	}
+
+	// Reads one of our dialog JSON files, e.g. "StockItem.json"
+	private JsonNode readJson(String file) throws IOException {
+		return new ObjectMapper().readTree(new ClassPathResource("static/api/dialogs/" + file).getInputStream());
 	}
 
 	// Asks Hibernate which table belongs to an entity class, e.g. "ReceivingOrder" -> "receiving_order"
 	private String tableNameOf(String entity) {
-		// Go through all the entity classes Hibernate knows
-		for (EntityType<?> type : entityManager.getMetamodel().getEntities()) {
-			if (type.getName().equals(entity)) {
-				SessionFactoryImplementor sessionFactory = entityManager
-						.getEntityManagerFactory()
-						.unwrap(SessionFactoryImplementor.class);
-
-				EntityPersister persister = sessionFactory
-						.getMappingMetamodel()
-						.getEntityDescriptor(type.getJavaType());
-
-				return persister.getIdentifierTableName();
-			}
-		}
-
-		// No entity class with this name
-		throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown entity: " + entity);
-	}
-	
-	// Deletes one row, e.g. DELETE /api/data/Article/5
-	@DeleteMapping("/{entity}/{id}")
-	public ResponseEntity<Map<String, String>> delete(@PathVariable String entity, @PathVariable Long id) {
+		// never the login accounts: they hold the passwords
 		if (entity.equals("Account")) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown entity: " + entity);
 		}
 
-		String tableName = tableNameOf(entity);
-
-		try {
-			jdbcTemplate.update("DELETE FROM " + tableName + " WHERE ID = ?", id);
-			return ResponseEntity.ok(Map.of("message", entity + " " + id + " deleted"));
-		} catch (DataIntegrityViolationException e) {
-			// Another table still points to this row, e.g. a stock item uses this article
-			log.error("Could not delete {} {}: {}", entity, id, e.getMostSpecificCause().getMessage());
-			return ResponseEntity.status(HttpStatus.CONFLICT)
-					.body(Map.of("message", "Cannot delete " + entity + " " + id + ": other rows still use it."));
+		for (EntityType<?> type : entityManager.getMetamodel().getEntities()) {
+			if (type.getName().equals(entity)) {
+				SessionFactoryImplementor sessionFactory = entityManager.getEntityManagerFactory()
+						.unwrap(SessionFactoryImplementor.class);
+				return sessionFactory.getMappingMetamodel().getEntityDescriptor(type.getJavaType())
+						.getIdentifierTableName();
+			}
 		}
+
+		throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown entity: " + entity);
 	}
 }
