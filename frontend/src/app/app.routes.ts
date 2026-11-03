@@ -9,6 +9,7 @@ import { ReceivingApp } from './receiving-app/receiving-app';
 import { DialogForm } from './dialog-form/dialog-form';
 import { TransportApp } from './transport-app/transport-app';
 import { Processes } from './processes/processes';
+import { Stock } from './stock/stock';
 
 export const routes: Routes = [
     { path: 'login', component: Login },
@@ -25,7 +26,8 @@ export const routes: Routes = [
             { path: '', redirectTo: 'home', pathMatch: 'full' },
             { path: 'receiving', component: ReceivingApp },
             { path: 'transport', component: TransportApp },
-            { path: 'processes', component: Processes }
+            { path: 'processes', component: Processes },
+            {path: 'stock', component: Stock},
         ]
     },
     { path: '**', redirectTo: 'home' }

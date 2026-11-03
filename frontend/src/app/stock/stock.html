@@ -1,0 +1,67 @@
+@if (error()) {
+<p class="error">{{ error() }}</p>
+}
+
+<div class="stock-page">
+    <section class="pane">
+        <h2>Load units</h2>
+        <div class="scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Barcode</th>
+                        <th>Type</th>
+                        <th>Location</th>
+                        <th>Items</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (loadUnit of loadUnits(); track loadUnit.id) {
+                    <tr class="selectable" [class.selected]="loadUnit.id === selectedId()" tabindex="0"
+                        (click)="select(loadUnit)" (keydown.enter)="select(loadUnit)">
+                        <td>{{ loadUnit.barcode }}</td>
+                        <td>{{ loadUnit.type }}</td>
+                        <td>{{ loadUnit.location }}</td>
+                        <td>{{ loadUnit.items.length }}</td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="pane">
+        @if (selected(); as loadUnit) {
+        <h2>Stock in load unit {{ loadUnit.barcode }}</h2>
+        <div class="scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Article</th>
+                        <th>Description</th>
+                        <th>Packaging unit</th>
+                        <th>Quantity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (item of loadUnit.items; track $index) {
+                    <tr>
+                        <td>{{ item.articleBarcode }}</td>
+                        <td>{{ item.description }}</td>
+                        <td>{{ item.packagingUnit }}</td>
+                        <td>{{ item.quantity }}</td>
+                    </tr>
+                    } @empty {
+                    <tr>
+                        <td colspan="4">This load unit is empty.</td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        } @else {
+        <h2>Stock</h2>
+        <p class="hint">Click a load unit to see its stock items.</p>
+        }
+    </section>
+</div>
