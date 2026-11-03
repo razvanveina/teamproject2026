@@ -1,5 +1,7 @@
 package ro.demo.usersbackend.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -26,6 +28,7 @@ public class ReceivingOrderLine {
 	@Column(nullable = false)
 	private int receivedQuantity;
 
+	@JsonBackReference
 	@ManyToOne
 	@JoinColumn(name = "order_id", nullable = false)
 	private ReceivingOrder order;
@@ -46,6 +49,22 @@ public class ReceivingOrderLine {
 		this.receivedQuantity = receivedQuantity;
 		this.order = order;
 		this.status = status;
+	}
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public int getReceivedQuantity() {
+		return receivedQuantity;
+	}
+
+	public void setReceivedQuantity(int receivedQuantity) {
+		this.receivedQuantity = receivedQuantity;
 	}
 
 	public Article getArticle() {

@@ -2,6 +2,8 @@ package ro.demo.usersbackend.entity;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -10,8 +12,10 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 
 @Entity
+@Table(name = "RECEIVING_ORDER")
 public class ReceivingOrder {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,6 +28,7 @@ public class ReceivingOrder {
 	@Enumerated(EnumType.STRING)
 	private ReceivingOrderStatus status;
 
+	@JsonManagedReference
 	@OneToMany(mappedBy = "order")
 	private List<ReceivingOrderLine> lines;
 

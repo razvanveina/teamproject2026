@@ -6,7 +6,7 @@ export interface ReceivingOrder {
 
 export interface ReceivingOrderLine {
     id: number;
-    article: string;
+    barcode: string;
     quantity: number;
     receivedQuantity: number;
     status: string;

@@ -1,26 +1,39 @@
 <div class="container">
     <div class="top">
-        <div>
+        <div [hidden]="!displayTable()">
             <div class="orderDetails">
-                <p>Order ID: <b>{{orderId}}</b></p>
-                <p> Order Status: <b>{{orderStatus}}</b> </p>
+                <p>Order ID: <b>{{order().orderId}}</b></p>
+                <p>Order Status: <b>{{order().status}}</b> </p>
             </div>
             <table>
                 <thead>
                     <tr>
-                        <th>Article</th>
+                        <th>Article Description</th>
                         <th>Quantity</th>
                         <th>Received Quantity</th>
-                        <th>Actions</th>
+                        <th>Status</th>
+                        <th>Barcode</th>
                     </tr>
                 </thead>
 
+                <tbody>
+                    @for (line of order().lines; track line.id) {
+                    <tr [class.completed]="line.quantity === line.receivedQuantity">
+                        <td>{{ line.description }}</td>
+                        <td>{{ line.quantity }}</td>
+                        <td>{{ line.receivedQuantity }}</td>
+                        <td>{{ line.status }}</td>
+                        <td>{{ line.barcode }}</td>
+                    </tr>
+                    }
+                </tbody>
             </table>
         </div>
     </div>
 
-    <div class="left">
-        <p>{{instructions}}</p>
+    <div [class.left]="!error()" [class.error]="error()">
+        <div >
+        <p>{{instructions}}</p></div>
     </div>
 
     <div class="right">

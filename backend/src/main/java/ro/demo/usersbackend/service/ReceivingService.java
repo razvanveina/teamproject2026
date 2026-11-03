@@ -21,7 +21,7 @@ public class ReceivingService {
 	@Transactional(readOnly = true)
 	public ReceivingOrder findByOrderId(String orderId) {
 		return receivingRepository.findByOrderId(orderId)
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
 						"Cannot find receiving order with the id: " + orderId));
 	}// TODO add logs
 }
