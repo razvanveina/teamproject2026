@@ -28,6 +28,11 @@ public class Article {
 		super();
 	}
 
+	public Article(String barcode, String description) {
+		this.barcode = barcode;
+		this.description = description;
+	}
+
 	public String getBarcode() {
 		return barcode;
 	}
