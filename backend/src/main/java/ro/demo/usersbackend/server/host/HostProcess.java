@@ -1,6 +1,8 @@
 package ro.demo.usersbackend.server.host;
 
+import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -30,7 +32,7 @@ import ro.demo.usersbackend.server.process.AbstractProcess;
 public class HostProcess extends AbstractProcess {
 	private static final Logger log = LogManager.getLogger(HostProcess.class);
 
-	private final Path folder = Path.of("in");
+	private Path folder;
 	private SessionFactory sessionFactory;
 
 	public HostProcess() {
@@ -46,6 +48,7 @@ public class HostProcess extends AbstractProcess {
 	protected void doAction() {
 		try {
 			if (sessionFactory == null) {
+				folder = Path.of(readFolder());
 				sessionFactory = buildSessionFactory();
 				log.info("watching path {}", folder.toAbsolutePath());
 			}
@@ -55,6 +58,25 @@ public class HostProcess extends AbstractProcess {
 		} catch (Exception e) {
 			log.error("cannot scan {}: {}", folder.toAbsolutePath(), e.toString());
 		}
+	}
+
+	private static String readFolder() throws Exception {
+		String value = loadProperties("/config.ini").getProperty("host_receiving_folder");
+		if (value == null) {
+			throw new IllegalStateException("host_receiving_folder is missing in config.ini");
+		}
+		return value.trim();
+	}
+
+	private static Properties loadProperties(String resource) throws Exception {
+		Properties properties = new Properties();
+		try (InputStream in = HostProcess.class.getResourceAsStream(resource)) {
+			if(in == null) {
+				throw new FileNotFoundException(resource + " not found in project");
+			}
+			properties.load(in);
+		}
+		return properties;
 	}
 
 	private static void process(SessionFactory sessionFactory, Path file) {

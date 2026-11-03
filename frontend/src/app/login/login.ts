@@ -14,6 +14,7 @@ export class Login {
   private auth = inject(AuthService);
   private router = inject(Router);
 
+  expired = this.auth.expired;
   username = '';
   password = '';
   error = signal('');
