@@ -5,7 +5,7 @@
   "actions": ["add", "edit", "delete"],
   "columns": [
     { "field": "ID", "label": "ID" },
-    { "field": "BARCODE", "label": "Barcode", "editable": true, "filterable": true },
-    { "field": "DESCRIPTION", "label": "Description", "editable": true, "filterable": true }
+    { "field": "BARCODE", "label": "Barcode", "addable": true, "filterable": true },
+    { "field": "DESCRIPTION", "label": "Description", "addable": true, "filterable": true, "editable": true }
   ]
 }

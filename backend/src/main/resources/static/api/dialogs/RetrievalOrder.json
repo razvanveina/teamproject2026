@@ -5,8 +5,8 @@
   "actions": ["add", "edit", "delete"],
   "columns": [
     { "field": "ID", "label": "ID" },
-    { "field": "ORDER_ID", "label": "Order ID", "editable": true, "filterable": true },
-    { "field": "STATUS", "label": "Status", "editable": true, "options": ["NEW", "STARTED", "ACTIVE", "FINISHED"], "filterable": true },
-    { "field": "DESTINATION_ID", "label": "Destination", "editable": true, "lookup": { "entity": "Destination" }, "filterable": true }
+    { "field": "ORDER_ID", "label": "Order ID", "addable": true, "filterable": true },
+    { "field": "STATUS", "label": "Status", "addable": true, "options": ["NEW", "STARTED", "ACTIVE", "FINISHED"], "filterable": true, "editable": true },
+    { "field": "DESTINATION_ID", "label": "Destination", "addable": true, "lookup": { "entity": "Destination" }, "filterable": true, "editable": true }
   ]
 }

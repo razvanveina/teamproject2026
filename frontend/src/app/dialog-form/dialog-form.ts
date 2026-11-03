@@ -78,7 +78,7 @@ export class DialogForm implements OnInit {
         for (const column of dialog.columns) {
           for (const dbColumn of columns) {
             // only the editable columns, together with their database description
-            if (column.editable && dbColumn['COLUMN_NAME'] === column.field) {
+            if (column.addable && dbColumn['COLUMN_NAME'] === column.field) {
               const field: FormField = {
                 field: column.field,
                 label: column.label,

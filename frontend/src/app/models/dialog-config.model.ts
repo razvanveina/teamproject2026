@@ -2,7 +2,8 @@
 export interface DialogColumn {
   field: string; // name of the field in the data, e.g. "email"
   label: string; // text in the column header, e.g. "Email"
-  editable?: boolean; // true = the column appears in the Add/Edit form
+  addable?: boolean;
+  editable?: boolean;
   options?: string[]; // the form shows a dropdown with these values, e.g. ["NEW", "ACTIVE"]
   lookup?: DialogLookup; // the form lets you pick a row of another entity, e.g. an article
   filterable?: boolean;

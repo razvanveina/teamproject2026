@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -133,6 +134,34 @@ public class DataController {
 			return ResponseEntity.ok(Map.of("message", "Saved"));
 		} catch (DataAccessException e) {
 			return error("Cannot save " + entity, e);
+		}
+	}
+
+	@GetMapping("/{entity}/{id}")
+	public Map<String, Object> findOne(@PathVariable String entity, @PathVariable Long id) {
+		return jdbcTemplate.queryForMap("SELECT * FROM " + tableNameOf(entity) + " WHERE ID = ?", id);
+	}
+
+	@PutMapping("/{entity}/{id}")
+	public ResponseEntity<Map<String, String>> update(@PathVariable String entity, @PathVariable Long id, @RequestBody Map<String, Object> values) {
+		List<String> sets = new ArrayList<>();
+		List<Object> params = new ArrayList<>();
+
+		for (Map<String, Object> column : columns(entity)) {
+			String name = (String) column.get("COLUMN_NAME");
+			if (values.containsKey(name)) {
+				sets.add(name + " = ?");
+				params.add(values.get(name));
+			}
+		}
+		params.add(id);
+
+		String sql = "UPDATE " + tableNameOf(entity) + " SET " + String.join(", ", sets) + " WHERE ID = ?";
+		try {
+			jdbcTemplate.update(sql, params.toArray());
+			return ResponseEntity.ok(Map.of("message", "Saved"));
+		} catch (DataAccessException e) {
+			return error("Cannot save " + entity + " " + id, e);
 		}
 	}
 
