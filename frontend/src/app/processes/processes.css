@@ -1,0 +1,90 @@
+h1 {
+    margin: 0 0 14px;
+    color: #172b4d;
+    font-family: "Segoe UI", "Inter", "Aptos", sans-serif;
+    font-size: 1.55rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+}
+
+table {
+    width: 100%;
+    max-width: 800px;
+    border-collapse: separate;
+    border-spacing: 0;
+    overflow: hidden;
+    color: #354b66;
+    font-family: "Segoe UI", "Inter", "Aptos", sans-serif;
+    font-size: 0.94rem;
+    background: #fff;
+    border: 1px solid #e1e8ef;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgb(23 43 77 / 6%);
+}
+
+th,
+td {
+    padding: 13px 16px;
+    text-align: left;
+    border-bottom: 1px solid #e9eef3;
+}
+
+th {
+    color: #dce8f5;
+    font-size: 0.86rem;
+    font-weight: 700;
+    background: #203b5e;
+}
+
+tr:last-child td {
+    border-bottom: 0;
+}
+
+.status {
+    font-weight: 700;
+}
+
+.status.RUNNING {
+    color: #176f78;
+}
+
+.status.PAUSED {
+    color: #9a6a00;
+}
+
+.status.STOPPED {
+    color: #8d2938;
+}
+
+button {
+    min-height: 36px;
+    margin-right: 6px;
+    padding: 0 14px;
+    color: #40536b;
+    font: inherit;
+    font-weight: 650;
+    background: #f1f5f9;
+    border: 1px solid #dce5ed;
+    border-radius: 9px;
+    cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+    background: #e7eef5;
+}
+
+button:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.error {
+    max-width: 800px;
+    margin: 0 0 14px;
+    padding: 12px 16px;
+    color: #812f3c;
+    font-family: "Segoe UI", "Inter", "Aptos", sans-serif;
+    background: #fffafa;
+    border: 1px solid #f0d4d7;
+    border-radius: 12px;
+}

@@ -9,12 +9,12 @@ import java.util.stream.Stream;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hibernate.SessionFactory;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -28,27 +28,32 @@ import ro.demo.usersbackend.entity.ReceivingOrderStatus;
 import ro.demo.usersbackend.server.process.AbstractProcess;
 
 public class HostProcess extends AbstractProcess {
-	private static final Logger log = LoggerFactory.getLogger(HostProcess.class);
+	private static final Logger log = LogManager.getLogger(HostProcess.class);
+
+	private final Path folder = Path.of("host/demo");
+	private SessionFactory sessionFactory;
 
 	public HostProcess() {
 		super("hostProcess");
 	}
 
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) {
+		new HostProcess().start();
+	}
 
-		((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME))
-				.setLevel(ch.qos.logback.classic.Level.INFO);
-		SessionFactory sessionFactory = buildSessionFactory();
-		Path folder = Path.of("host/demo");
-		log.info("watching path {}", folder.toAbsolutePath());
-
-		while (true) {
+	// scan la folder, AbstractProcess o apeleaza o data la 10 sec
+	@Override
+	protected void doAction() {
+		try {
+			if (sessionFactory == null) {
+				sessionFactory = buildSessionFactory();
+				log.info("watching path {}", folder.toAbsolutePath());
+			}
 			try (Stream<Path> files = Files.list(folder)) {
 				files.filter(f -> f.toString().endsWith(".xml")).forEach(f -> process(sessionFactory, f));
-			} catch (Exception e) {
-				log.error("can't read {}, {}", folder.toAbsolutePath(), e.toString());
 			}
-			Thread.sleep(10000);
+		} catch (Exception e) {
+			log.error("cannot scan {}: {}", folder.toAbsolutePath(), e.toString());
 		}
 	}
 
@@ -142,10 +147,5 @@ public class HostProcess extends AbstractProcess {
 		return new MetadataSources(registry).addAnnotatedClass(Article.class).addAnnotatedClass(PackagingUnitType.class)
 				.addAnnotatedClass(ReceivingOrder.class).addAnnotatedClass(ReceivingOrderLine.class).buildMetadata()
 				.buildSessionFactory();
-	}
-
-	@Override
-	protected void doAction() {
-
 	}
 }

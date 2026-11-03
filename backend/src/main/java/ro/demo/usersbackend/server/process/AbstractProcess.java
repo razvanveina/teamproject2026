@@ -1,19 +1,18 @@
 package ro.demo.usersbackend.server.process;
 
 public abstract class AbstractProcess {
-	public boolean stop;
+	public volatile boolean stop;
+	public volatile boolean paused;
 	private String name;
 
 	public AbstractProcess(String name) {
 		this.name = name;
 	}
 
-	public void start() {
-		while (true) {
-			doAction();
-
-			if (stop) {
-				break;
+	public synchronized void start() {
+		while (!stop) {
+			if (!paused) {
+				doAction();
 			}
 
 			try {

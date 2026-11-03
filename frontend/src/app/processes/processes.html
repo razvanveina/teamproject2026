@@ -1,0 +1,27 @@
+<h1>Processes</h1>
+
+@if (error()) {
+<p class="error">{{ error() }}</p>
+}
+
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Status</th>
+        <th>Actions</th>
+    </tr>
+
+    @for (process of processes(); track process.name) {
+    <tr>
+        <td>{{ process.name }}</td>
+        <td><span [class]="'status ' + process.status">{{ process.status }}</span></td>
+        <td>
+            <button type="button" (click)="act(process.name, 'start')" [disabled]="process.status === 'RUNNING'">
+                {{ process.status === 'PAUSED' ? 'Resume' : 'Start' }}
+            </button>
+            <button type="button" (click)="act(process.name, 'pause')" [disabled]="process.status !== 'RUNNING'">Pause</button>
+            <button type="button" (click)="act(process.name, 'stop')" [disabled]="process.status === 'STOPPED'">Stop</button>
+        </td>
+    </tr>
+    }
+</table>
