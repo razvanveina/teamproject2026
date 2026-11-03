@@ -11,5 +11,10 @@
 			<article>124124</article>
 			<quantity>5</quantity>
 		</line>
+		<line>
+			<nr>3</nr>
+			<article>124125</article>
+			<quantity>5</quantity>
+		</line>		
 	</lines>
 </order>
