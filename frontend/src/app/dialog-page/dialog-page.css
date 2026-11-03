@@ -66,6 +66,7 @@ tr:last-child td {
 }
 
 /* Delete: red text button, same colors as the delete button in the Users table */
+.edit-button,
 .delete-button {
     display: inline-flex;
     align-items: center;
@@ -83,6 +84,15 @@ tr:last-child td {
 .delete-button:hover {
     color: #8d2938;
     background: #fcebed;
+}
+
+.edit-button {
+    color: #176f78;
+}
+
+.edit-button:hover {
+    color: #125c64;
+    background: #e6f4f3;
 }
 
 /* Add: green button above the table, same as the Add button in the Users table */

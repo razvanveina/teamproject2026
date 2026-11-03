@@ -34,6 +34,14 @@ export class DialogConfigService {
     return this.http.get<any[]>(API_BASE_URL + '/data/' + entity, { params: filters }); //coloanele si datele din tabel, e.g. /api/users
   }
 
+  getRow(entity: string, id: string): Observable<any> {
+    return this.http.get<any>(API_BASE_URL + '/data/' + entity + '/' + id);
+  }
+
+  updateRow(entity: string, id: string, data: any): Observable<any> {
+    return this.http.put<any>(API_BASE_URL + '/data/' + entity + '/' + id, data);
+  }
+
   // Deletes one row, e.g. DELETE /api/data/Article/5
   deleteRow(entity: string, id: number): Observable<any> {
     return this.http.delete<any>(API_BASE_URL + '/data/' + entity + '/' + id);

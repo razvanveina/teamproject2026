@@ -56,13 +56,27 @@ export class DialogForm implements OnInit {
   // From dialogs.json: what the user sees of each entity, e.g. an article = barcode + description
   entitySpec: EntitySpec[] = [];
 
+  id = '';
+  row: any = {};
+
   ngOnInit(): void {
     this.entity = this.route.snapshot.paramMap.get('entity') + '';
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id !== null) {
+      this.id = id;
+    }
 
     // 0. dialogs.json, for the entitySpec
     this.service.getDialogsFile().subscribe((dialogsFile: DialogsFile) => {
       this.entitySpec = dialogsFile.entitySpec;
-      this.loadForm();
+      if (this.id === '') {
+        this.loadForm();
+      } else {
+        this.service.getRow(this.entity, this.id).subscribe((row: any) => {
+          this.row = row;
+          this.loadForm();
+        });
+      }
     });
   }
 
@@ -77,8 +91,13 @@ export class DialogForm implements OnInit {
 
         for (const column of dialog.columns) {
           for (const dbColumn of columns) {
+            let inForm = column.addable;
+            if (this.id !== '') {
+              inForm = column.editable;
+            }
+
             // only the editable columns, together with their database description
-            if (column.addable && dbColumn['COLUMN_NAME'] === column.field) {
+            if (inForm && dbColumn['COLUMN_NAME'] === column.field) {
               const field: FormField = {
                 field: column.field,
                 label: column.label,
@@ -101,6 +120,11 @@ export class DialogForm implements OnInit {
                 for (const option of column.options) {
                   field.choices.push({ id: option, text: option, parentId: null });
                 }
+              }
+
+              if (this.id !== '') {
+                this.values[column.field] = this.row[column.field];
+                this.selected[column.field] = this.row[column.field];
               }
 
               // rows of another entity, e.g. the articles
@@ -156,7 +180,12 @@ export class DialogForm implements OnInit {
           choice.parentId = row[lookup.parent];
         }
         field.choices.push(choice);
+
+        if (choice.id === this.selected[field.field]) {
+          this.values[field.field] = choice.text;
+        }
       }
+      this.fields.set(this.fields().slice());
     });
   }
 
@@ -257,7 +286,12 @@ export class DialogForm implements OnInit {
 
     this.error.set('');
 
-    this.service.addRow(this.entity, data).subscribe({
+    let request = this.service.addRow(this.entity, data);
+    if (this.id !== '') {
+      request = this.service.updateRow(this.entity, this.id, data);
+    }
+
+    request.subscribe({
       // saved: back to the table
       next: () => {
         this.router.navigate(['/dialogs', this.entity]);

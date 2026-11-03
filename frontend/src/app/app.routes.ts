@@ -23,6 +23,7 @@ export const routes: Routes = [
             { path: 'users/edit/:id', component: UserDialog },
             { path: 'dialogs/:entity', component: DialogPage },
             { path: 'dialogs/:entity/add', component: DialogForm },
+            { path: 'dialogs/:entity/edit/:id', component: DialogForm },
             { path: '', redirectTo: 'home', pathMatch: 'full' },
             { path: 'receiving', component: ReceivingApp },
             { path: 'transport', component: TransportApp },
