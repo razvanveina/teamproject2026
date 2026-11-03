@@ -5,6 +5,17 @@
 <div class="stock-page">
     <section class="pane">
         <h2>Load units</h2>
+        <div class="filters">
+            <label class="filter">
+                Barcode:
+                <input type="text" [value]="barcodeFilter()" (input)="setBarcodeFilter($event)" />
+            </label>
+            <label class="filter">
+                Location:
+                <input type="text" [value]="locationFilter()" (input)="setLocationFilter($event)" />
+            </label>
+        </div>
+        
         <div class="scroll">
             <table>
                 <thead>
@@ -16,7 +27,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @for (loadUnit of loadUnits(); track loadUnit.id) {
+                    @for (loadUnit of filtered(); track loadUnit.id) {
                     <tr class="selectable" [class.selected]="loadUnit.id === selectedId()" tabindex="0"
                         (click)="select(loadUnit)" (keydown.enter)="select(loadUnit)">
                         <td>{{ loadUnit.barcode }}</td>
