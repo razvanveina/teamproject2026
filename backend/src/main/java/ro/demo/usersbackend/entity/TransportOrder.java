@@ -36,6 +36,14 @@ public class TransportOrder {
 		super();
 	}
 
+	public TransportOrder(Location source, Location target, TransportOrderStatus status, LoadUnit loadUnit) {
+		super();
+		this.source = source;
+		this.target = target;
+		this.status = status;
+		this.loadUnit = loadUnit;
+	}
+
 	public Location getSource() {
 		return source;
 	}

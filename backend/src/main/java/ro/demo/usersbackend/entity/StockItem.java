@@ -37,6 +37,14 @@ public class StockItem {
 		super();
 	}
 
+	public StockItem(Article article, int quantity, LoadUnit loadUnit, PackagingUnitType packagingUnitType) {
+		super();
+		this.article = article;
+		this.quantity = quantity;
+		this.loadUnit = loadUnit;
+		this.packagingUnitType = packagingUnitType;
+	}
+
 	public Article getArticle() {
 		return article;
 	}

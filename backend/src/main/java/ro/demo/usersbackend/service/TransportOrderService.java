@@ -77,4 +77,12 @@ public class TransportOrderService {
 		return new TransportOrderResponse(order.getId(), order.getStatus(), order.getLoadUnit().getBarcode(),
 				order.getSource().getName(), order.getTarget().getName(), loadUnitLocation);
 	}
+
+	public TransportOrderResponse createTransportOrder(LoadUnit loadUnit, Location target) {
+		TransportOrder order = new TransportOrder(loadUnit.getLocation(), target, TransportOrderStatus.NEW, loadUnit);
+
+		transportOrderRepository.save(order);
+
+		return toResponse(order);
+	}
 }
