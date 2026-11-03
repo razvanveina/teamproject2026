@@ -1,24 +1,24 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { DialogConfig } from '../models/dialog-config.model';
+import { DialogConfig, DialogLookup, DialogsFile, EntitySpec } from '../models/dialog-config.model';
 import { DialogConfigService } from '../services/dialog-config.service';
 
-// One input of the form
-interface FormField {//description of a field
+// One input of the form (description of a field)
+interface FormField {
   field: string; // column name, e.g. "BARCODE"
   label: string; // text above the input, e.g. "Barcode"
-  type: string; // "number", "text", "select" (fixed values) or "lookup" (rows of another entity)
+  type: string; // "number", "text", "select" or "lookup"
   required: boolean; // true when the column cannot be empty
-  choices: Choice[]; // select and lookup: what the dropdown list can show
-  parent: string; // lookup only: the field it depends on, e.g. "ARTICLE_ID". Empty when it depends on nothing.
+  choices: Choice[]; // the lines of the dropdown list (select and lookup)
+  parent: string; // the field this one depends on, e.g. "ARTICLE_ID" (empty = none)
 }
 
 // One line of a dropdown list
 interface Choice {
-  id: any; // what is saved: the ID of the row (lookup) or the value itself (select), e.g. 5 or "NEW"
-  text: string; // what the user sees, e.g. "5 - Milk" or "NEW"
-  parentId: any; // lookup with a parent: the ID it belongs to, e.g. the article of a packaging type
+  id: any; // what we save, e.g. 13 or "NEW"
+  text: string; // what the user sees, e.g. "5941234000031 - Milk"
+  parentId: any; // e.g. the article of a packaging type
 }
 
 @Component({
@@ -35,28 +35,39 @@ export class DialogForm implements OnInit {
   // The entity from the address, e.g. "Article" from /dialogs/Article/add
   entity = '';
 
-  // The dialog file (title, labels, which columns are editable)
+  // The dialog file (title, labels, editable, options, lookup)
   dialog = signal<DialogConfig | null>(null);
 
-  // The inputs of the form. Empty until the dialog file and the columns arrive.
+  // The inputs of the form
   fields = signal<FormField[]>([]);
 
   // The error message shown above the form
   error = signal('');
 
-  // Which dropdown list is open now, e.g. "ARTICLE_ID". Empty when none is open.
+  // Which dropdown list is open now, e.g. "ARTICLE_ID" (empty = none)
   openField = signal('');
 
-  // What the user types or sees in each input, e.g. { BARCODE: "123", ARTICLE_ID: "5 - Milk" }
+  // What is written in each input, e.g. { BARCODE: "123", ARTICLE_ID: "13 - Milk" }
   values: any = {};
 
-  // What the user picked from a dropdown list, e.g. { ARTICLE_ID: 5, STATUS: "NEW" }
+  // What was picked from a dropdown list, e.g. { ARTICLE_ID: 13 }
   selected: any = {};
+
+  // From dialogs.json: what the user sees of each entity, e.g. an article = barcode + description
+  entitySpec: EntitySpec[] = [];
 
   ngOnInit(): void {
     this.entity = this.route.snapshot.paramMap.get('entity') + '';
 
-    // 1. The dialog file: labels and "editable"
+    // 0. dialogs.json, for the entitySpec
+    this.service.getDialogsFile().subscribe((dialogsFile: DialogsFile) => {
+      this.entitySpec = dialogsFile.entitySpec;
+      this.loadForm();
+    });
+  }
+
+  loadForm(): void {
+    // 1. The dialog file
     this.service.getDialog(this.entity + '.json').subscribe((dialog: DialogConfig) => {
       this.dialog.set(dialog);
 
@@ -65,128 +76,137 @@ export class DialogForm implements OnInit {
         const fields: FormField[] = [];
 
         for (const column of dialog.columns) {
-          // Only the columns marked "editable": true in the JSON
-          if (column.editable) {
-            // Find the same column in the database description
-            for (const dbColumn of columns) {
-              if (dbColumn['COLUMN_NAME'] === column.field) {
-                let type = 'text';
-                let parent = '';
-                const choices: Choice[] = [];
+          for (const dbColumn of columns) {
+            // only the editable columns, together with their database description
+            if (column.editable && dbColumn['COLUMN_NAME'] === column.field) {
+              const field: FormField = {
+                field: column.field,
+                label: column.label,
+                type: 'text',
+                required: false,
+                choices: [],
+                parent: '',
+              };
 
-                if (dbColumn['DATA_TYPE'] === 'NUMBER') {
-                  type = 'number';
-                }
-                if (column.options) {
-                  // Fixed values from the JSON, e.g. the status
-                  type = 'select';
-                  for (const option of column.options) {
-                    choices.push({ id: option, text: option, parentId: null });
-                  }
-                }
-                if (column.lookup) {
-                  // Rows of another entity: they are loaded below (step 3)
-                  type = 'lookup';
-                  if (column.lookup.parent) {
-                    parent = column.lookup.parent;
-                  }
-                }
-
-                fields.push({
-                  field: column.field,
-                  label: column.label,
-                  type: type,
-                  required: dbColumn['NULLABLE'] === 'N',
-                  choices: choices,
-                  parent: parent,
-                });
+              if (dbColumn['DATA_TYPE'] === 'NUMBER') {
+                field.type = 'number';
               }
+              if (dbColumn['NULLABLE'] === 'N') {
+                field.required = true;
+              }
+
+              // fixed values, e.g. the status
+              if (column.options) {
+                field.type = 'select';
+                for (const option of column.options) {
+                  field.choices.push({ id: option, text: option, parentId: null });
+                }
+              }
+
+              // rows of another entity, e.g. the articles
+              if (column.lookup) {
+                field.type = 'lookup';
+                this.loadChoices(field, column.lookup);
+              }
+
+              fields.push(field);
             }
           }
         }
 
-        // 3. The lookups: ask for the rows of the other entities, e.g. all articles.
-        // The form is shown when all of them have arrived.
-        let waiting = 0;
-        for (const field of fields) {
-          if (field.type === 'lookup') {
-            waiting = waiting + 1;
-          }
-        }
-
-        if (waiting === 0) {
-          this.fields.set(fields);
-        }
-
-        for (const column of dialog.columns) {
-          const lookup = column.lookup;
-          if (column.editable && lookup) {
-            this.service.getRows(lookup.entity).subscribe((rows: any[]) => {
-              // Find the field of this column and fill its choices, e.g. "5 - Milk"
-              for (const field of fields) {
-                if (field.field === column.field) {
-                  for (const row of rows) {
-                    let parentId = null;
-                    if (lookup.parent) {
-                      parentId = row[lookup.parent]; // e.g. the ARTICLE_ID of a packaging type
-                    }
-                    field.choices.push({ id: row['ID'], text: row['ID'] + ' - ' + row[lookup.show], parentId: parentId });
-                  }
-                }
-              }
-
-              waiting = waiting - 1;
-              if (waiting === 0) {
-                this.fields.set(fields);
-              }
-            });
-          }
-        }
+        this.fields.set(fields);
       });
     });
   }
 
-  // The lines the dropdown list of a field shows now
+  // 3. Asks for the rows of the other entity and makes a line for each, e.g. "5941234000031 - Milk"
+  loadChoices(field: FormField, lookup: DialogLookup): void {
+    if (lookup.parent) {
+      field.parent = lookup.parent;
+    }
+
+    // which columns of that entity the user sees (from entitySpec)
+    let show: string[] = [];
+    for (const spec of this.entitySpec) {
+      if (spec.name === lookup.entity) {
+        for (const column of spec.show) {
+          show.push(column.field);
+        }
+      }
+    }
+    // no entitySpec for it: show the ID
+    if (show.length === 0) {
+      show = ['ID'];
+    }
+
+    this.service.getRows(lookup.entity).subscribe((rows: any[]) => {
+      for (const row of rows) {
+        // e.g. BARCODE and DESCRIPTION glued together: "5941234000031 - Milk"
+        let text = '';
+        for (const column of show) {
+          if (text !== '') {
+            text = text + ' - ';
+          }
+          text = text + row[column];
+        }
+
+        const choice: Choice = { id: row['ID'], text: text, parentId: null };
+        if (lookup.parent) {
+          // e.g. the ARTICLE_ID of a packaging type
+          choice.parentId = row[lookup.parent];
+        }
+        field.choices.push(choice);
+      }
+    });
+  }
+
+  // The lines the dropdown list shows now
   matches(field: FormField): Choice[] {
     const result: Choice[] = [];
 
-    // Depends on another field (e.g. packaging type on article): nothing until that one is picked
-    let parentId = null;
-    if (field.parent !== '') {
-      parentId = this.selected[field.parent];
-      if (parentId === undefined) {
-        return result;
-      }
+    // the packaging type shows nothing until the article is picked
+    const parentId = this.selected[field.parent];
+    if (field.parent !== '' && parentId === undefined) {
+      return result;
     }
 
-    // Filter by what the user typed. After a pick, show the whole list again.
+    // what the user typed (after a pick we show the whole list again)
     let typed = '';
     if (this.values[field.field] && this.selected[field.field] === undefined) {
-      typed = String(this.values[field.field]).toLowerCase();
+      typed = this.values[field.field].toLowerCase();
     }
 
     for (const choice of field.choices) {
-      const sameParent = parentId === null || choice.parentId === parentId;
-      if (sameParent && choice.text.toLowerCase().includes(typed)) {
+      let ok = true;
+      if (field.parent !== '' && choice.parentId !== parentId) {
+        ok = false;
+      }
+      if (!choice.text.toLowerCase().includes(typed)) {
+        ok = false;
+      }
+      if (ok) {
         result.push(choice);
+      }
+
+      // max 50 lines (there are 11000 locations), typing makes the list shorter
+      if (result.length === 50) {
+        break;
       }
     }
     return result;
   }
 
-  // The text shown when the dropdown list has no lines
+  // The text shown when the list is empty
   emptyText(field: FormField): string {
-    if (field.parent !== '' && this.selected[field.parent] === undefined) {
-      for (const other of this.fields()) {
-        if (other.field === field.parent) {
-          return 'Choose ' + other.label + ' first';
-        }
+    for (const other of this.fields()) {
+      if (other.field === field.parent && this.selected[field.parent] === undefined) {
+        return 'Choose ' + other.label + ' first';
       }
     }
     return 'Nothing found';
   }
 
-  // Runs when the user clicks a line of a dropdown list
+  // Click on a line of the list
   choose(field: FormField, choice: Choice): void {
     this.values[field.field] = choice.text;
     this.selected[field.field] = choice.id;
@@ -194,9 +214,9 @@ export class DialogForm implements OnInit {
     this.openField.set('');
   }
 
-  // Runs when the user types in a dropdown input: the old pick is no longer valid
+  // The user types in a dropdown input, so the old pick is not valid anymore
   typed(field: FormField): void {
-    delete this.selected[field.field];
+    this.selected[field.field] = undefined;
     this.clearChildren(field);
   }
 
@@ -205,7 +225,7 @@ export class DialogForm implements OnInit {
     for (const child of this.fields()) {
       if (child.parent === field.field) {
         this.values[child.field] = '';
-        delete this.selected[child.field];
+        this.selected[child.field] = undefined;
       }
     }
   }
@@ -223,15 +243,14 @@ export class DialogForm implements OnInit {
         return;
       }
 
-      if (!empty && (field.type === 'lookup' || field.type === 'select')) {
-        // A dropdown shows "5 - Milk", but the database needs what was picked: 5
+      if (!empty && (field.type === 'select' || field.type === 'lookup')) {
+        // a dropdown sends what was picked: 13, not "13 - Milk"
         if (this.selected[field.field] === undefined) {
           this.error.set('Choose ' + field.label + ' from the list');
           return;
         }
         data[field.field] = this.selected[field.field];
       } else if (!empty) {
-        // Send only the fields the user filled in
         data[field.field] = value;
       }
     }
@@ -239,11 +258,11 @@ export class DialogForm implements OnInit {
     this.error.set('');
 
     this.service.addRow(this.entity, data).subscribe({
-      // Saved: go back to the table
+      // saved: back to the table
       next: () => {
         this.router.navigate(['/dialogs', this.entity]);
       },
-      // The server said no: show its message and write everything in the browser console (F12)
+      // the server said no: show the message and write everything in the console (F12)
       error: (err) => {
         console.error('Error adding ' + this.entity, err);
         if (err.error && err.error.message) {

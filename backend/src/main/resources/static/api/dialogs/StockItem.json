@@ -5,10 +5,10 @@
   "actions": ["add", "edit", "delete"],
   "columns": [
     { "field": "ID", "label": "ID" },
-    { "field": "ARTICLE_ID", "label": "Article ID", "editable": true, "lookup": { "entity": "Article", "show": "DESCRIPTION" } },
+    { "field": "ARTICLE_ID", "label": "Article", "editable": true, "lookup": { "entity": "Article" } },
     { "field": "QUANTITY", "label": "Quantity", "editable": true },
-    { "field": "LOAD_UNIT_ID", "label": "Load Unit ID", "editable": true, "lookup": { "entity": "LoadUnit", "show": "BARCODE" } },
-    { "field": "PACKAGING_UNIT_TYPE_ID", "label": "Packaging Unit Type ID", "editable": true, "lookup": { "entity": "PackagingUnitType", "show": "NAME", "parent": "ARTICLE_ID" } },
+    { "field": "LOAD_UNIT_ID", "label": "Load Unit", "editable": true, "lookup": { "entity": "LoadUnit" } },
+    { "field": "PACKAGING_UNIT_TYPE_ID", "label": "Packaging Unit", "editable": true, "lookup": { "entity": "PackagingUnitType", "parent": "ARTICLE_ID" } },
     { "field": "RESERVATION_ID", "label": "Reservation ID" }
   ]
 }

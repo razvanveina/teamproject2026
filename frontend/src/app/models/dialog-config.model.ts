@@ -7,10 +7,10 @@ export interface DialogColumn {
   lookup?: DialogLookup; // the form lets you pick a row of another entity, e.g. an article
 }
 
-// A link to another entity, e.g. { "entity": "Article", "show": "DESCRIPTION" }
+// A link to another entity, e.g. { "entity": "Article" }
+// What the user sees of that entity is written once, in "entitySpec" in dialogs.json
 export interface DialogLookup {
   entity: string; // where the choices come from: /api/data/<entity>
-  show: string; // which column the user sees next to the ID, e.g. "DESCRIPTION"
   parent?: string; // only the rows that belong to what is picked in this field, e.g. "ARTICLE_ID"
 }
 
@@ -26,6 +26,19 @@ export interface DialogConfig {
 // dialogs.json = the main list
 export interface DialogsFile {
   dialogs: DialogEntry[];
+  entitySpec: EntitySpec[];
+}
+
+// What the user sees of an entity, e.g. an article = barcode + description
+export interface EntitySpec {
+  name: string; // the entity, e.g. "Article"
+  show: ShowColumn[]; // its columns that are shown instead of the ID
+}
+
+// One column of an entity that is shown, e.g. { "field": "BARCODE", "label": "Barcode" }
+export interface ShowColumn {
+  field: string;
+  label: string;
 }
 
 // One entry of dialogs.json: { "file": "users.json" }

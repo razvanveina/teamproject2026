@@ -7,6 +7,6 @@
     { "field": "ID", "label": "ID" },
     { "field": "ORDER_ID", "label": "Order ID", "editable": true },
     { "field": "STATUS", "label": "Status", "editable": true, "options": ["NEW", "STARTED", "ACTIVE", "FINISHED"] },
-    { "field": "DESTINATION_ID", "label": "Destination ID", "editable": true, "lookup": { "entity": "Destination", "show": "NAME" } }
+    { "field": "DESTINATION_ID", "label": "Destination", "editable": true, "lookup": { "entity": "Destination" } }
   ]
 }

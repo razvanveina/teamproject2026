@@ -10,5 +10,12 @@
     { "file": "StockItem.json" },
     { "file": "TransportOrder.json" },
     { "file": "Location.json" }
+  ],
+  "entitySpec": [
+    { "name": "Article", "show": [ { "field": "BARCODE", "label": "Barcode" }, { "field": "DESCRIPTION", "label": "Description" } ] },
+    { "name": "Location", "show": [ { "field": "NAME", "label": "Name" } ] },
+    { "name": "LoadUnit", "show": [ { "field": "BARCODE", "label": "Barcode" } ] },
+    { "name": "PackagingUnitType", "show": [ { "field": "NAME", "label": "Name" } ] },
+    { "name": "Destination", "show": [ { "field": "NAME", "label": "Name" } ] }
   ]
 }
