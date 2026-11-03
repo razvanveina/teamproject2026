@@ -2,7 +2,6 @@ package ro.demo.usersbackend.server.host;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -30,7 +29,7 @@ import ro.demo.usersbackend.entity.ReceivingOrderStatus;
 import ro.demo.usersbackend.server.process.AbstractProcess;
 
 public class HostProcess extends AbstractProcess {
-	private static final Logger log = LogManager.getLogger(HostProcess.class);
+	private static final Logger Log = LogManager.getLogger(HostProcess.class);
 
 	private Path folder;
 	private SessionFactory sessionFactory;
@@ -72,7 +71,7 @@ public class HostProcess extends AbstractProcess {
 	private static Properties loadProperties(String resource) throws Exception {
 		Properties properties = new Properties();
 		try (InputStream in = HostProcess.class.getResourceAsStream(resource)) {
-			if(in == null) {
+			if (in == null) {
 				throw new FileNotFoundException(resource + " not found in project");
 			}
 			properties.load(in);
