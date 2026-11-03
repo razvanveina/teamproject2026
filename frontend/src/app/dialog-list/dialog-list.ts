@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DialogConfig, DialogsFile } from '../models/dialog-config.model';
 import { DialogConfigService } from '../services/dialog-config.service';
@@ -9,10 +9,12 @@ import { LogService } from '../services/log';
   imports: [RouterLink],
   templateUrl: './dialog-list.html',
   styleUrl: './dialog-list.css',
+  host: { '(document:click)': 'clickOutside($event)' },
 })
 export class DialogList implements OnInit {
   private service = inject(DialogConfigService);
   private log = inject(LogService);
+  private element = inject(ElementRef);
 
   // The dialogs shown on the page. Empty at the start.
   dialogs = signal<DialogConfig[]>([]);
@@ -28,6 +30,12 @@ export class DialogList implements OnInit {
   // Click on a link: close the dropdown
   close(): void {
     this.open.set(false);
+  }
+
+  clickOutside(event: MouseEvent): void {
+    if (!this.element.nativeElement.contains(event.target)) {
+      this.close();
+    }
   }
 
   onSelect(dialog: DialogConfig): void {

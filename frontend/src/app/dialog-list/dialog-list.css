@@ -2,11 +2,13 @@
 .dropdown {
     position: relative;
     display: inline-block;
+    flex-shrink: 0;
 }
 
 /* The button looks like the other menu links (same as .main-menu a in app.css) */
 .dropdown-button {
     min-height: 42px;
+    white-space: nowrap;
     padding: 0 17px;
     color: #d3deec;
     font-family: "Segoe UI", "Inter", "Aptos", sans-serif;
@@ -67,4 +69,9 @@
 .dropdown-menu a:focus-visible {
     outline: 3px solid #72dfd1;
     outline-offset: 2px;
+}
+
+.dropdown-arrow {
+    margin-left: 4px;
+    font-size: 0.8em;
 }
