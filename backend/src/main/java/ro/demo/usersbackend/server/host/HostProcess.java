@@ -56,7 +56,7 @@ public class HostProcess extends AbstractProcess {
 				files.filter(f -> f.toString().endsWith(".xml")).forEach(f -> process(sessionFactory, f));
 			}
 		} catch (Exception e) {
-			Log.error("cannot scan {}: {}", folder.toAbsolutePath(), e.toString());
+			Log.error("cannot scan {}: {}", folder, e.toString());
 		}
 	}
 

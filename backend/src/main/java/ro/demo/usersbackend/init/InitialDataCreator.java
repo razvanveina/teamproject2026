@@ -35,7 +35,7 @@ public class InitialDataCreator implements CommandLineRunner {
 
 	private void createStorageLocations() {
 		for (int aisle = 1; aisle <= 5; aisle++) {
-			for (int x = 1; x <= 200; x++) {
+			for (int x = 1; x <= 100; x++) {
 				for (int y = 1; y <= 5; y++) {
 					for (int z = 1; z <= 2; z++) {
 						StorageLocation location = new StorageLocation(x, y, z, aisle);
