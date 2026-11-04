@@ -21,5 +21,5 @@ public class ArticleService {
 	public Article getArticleById(long id) {
 		return articleRepository.findById(id).orElseThrow(
 				() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cannot find article with the id: " + id));
-	}// TODO add logs
+	}
 }

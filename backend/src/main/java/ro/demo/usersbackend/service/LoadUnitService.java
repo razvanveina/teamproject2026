@@ -15,6 +15,7 @@ import ro.demo.usersbackend.entity.LoadUnitType;
 import ro.demo.usersbackend.entity.Location;
 import ro.demo.usersbackend.entity.ReceivingOrder;
 import ro.demo.usersbackend.entity.ReceivingOrderLine;
+import ro.demo.usersbackend.entity.ReceivingOrderLineStatus;
 import ro.demo.usersbackend.entity.StockItem;
 import ro.demo.usersbackend.repository.LoadUnitRepository;
 import ro.demo.usersbackend.repository.LocationRepository;
@@ -38,7 +39,6 @@ public class LoadUnitService {
 	}
 
 	public LoadUnit createLoadUnit(ReceivingOrder order) {
-		// TODO throw error if order not finished
 		Location in = locationRepository.findByName("IN")
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot find a IN location"));
 
@@ -53,6 +53,10 @@ public class LoadUnitService {
 		loadUnitRepository.save(loadUnit);
 
 		for (ReceivingOrderLine line : lines) {
+			if (line.getStatus() != ReceivingOrderLineStatus.FINISHED) {
+				continue;
+			}
+
 			Article article = line.getArticle();
 			StockItem si = new StockItem(article, line.getQuantity(), loadUnit, article.getPackagingUnitTypes().get(0));
 			stockItemRepository.save(si);

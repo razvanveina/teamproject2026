@@ -15,7 +15,6 @@ public class StorageLocationService {
 	}
 
 	public Location findClosestEmptyX() {
-		// TODO check if can't find location
 		return storageLocationRepository.findFirstByLoadUnitIsNullOrderByXAsc().get();
 	}
 }

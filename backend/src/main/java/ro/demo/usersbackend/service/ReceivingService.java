@@ -10,6 +10,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import ro.demo.usersbackend.dto.ReceivingOrderLineResponse;
 import ro.demo.usersbackend.dto.ReceivingOrderResponse;
+import ro.demo.usersbackend.entity.LoadUnit;
+import ro.demo.usersbackend.entity.Location;
 import ro.demo.usersbackend.entity.ReceivingOrder;
 import ro.demo.usersbackend.entity.ReceivingOrderLine;
 import ro.demo.usersbackend.entity.ReceivingOrderLineStatus;
@@ -20,16 +22,25 @@ import ro.demo.usersbackend.repository.ReceivingRepository;
 @Transactional
 public class ReceivingService {
 
+	private final LoadUnitService loadUnitService;
+	private final StorageLocationService storageLocationService;
+	private final TransportOrderService transportOrderService;
+
 	private final ReceivingRepository receivingRepository;
 
-	public ReceivingService(ReceivingRepository receivingRepository) {
+	public ReceivingService(LoadUnitService loadUnitService, StorageLocationService storageLocationService,
+			TransportOrderService transportOrderService, ReceivingRepository receivingRepository) {
+		super();
+		this.loadUnitService = loadUnitService;
+		this.storageLocationService = storageLocationService;
+		this.transportOrderService = transportOrderService;
 		this.receivingRepository = receivingRepository;
 	}
 
 	@Transactional(readOnly = true)
 	public ReceivingOrderResponse findByOrderId(String orderId) {
 		ReceivingOrder order = receivingRepository.findByOrderId(orderId)
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, // TODO add error to logs
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
 						"Cannot find receiving order with the id: " + orderId));
 
 		return new ReceivingOrderResponse(order.getOrderId(), order.getStatus().toString(),
@@ -51,12 +62,12 @@ public class ReceivingService {
 	@Transactional
 	public ReceivingOrderResponse updateOrder(ReceivingOrderResponse orderResponse) {
 		ReceivingOrder order = receivingRepository.findByOrderId(orderResponse.orderId())
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, // TODO add error to logs
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
 						"Cannot find receiving order with the id: " + orderResponse.orderId()));
-		// TODO check order for errors
+
 		order.setStatus(ReceivingOrderStatus.valueOf(orderResponse.status()));
 
-		for (ReceivingOrderLine line : order.getLines()) { // TODO these lines MIGHT be in the same order
+		for (ReceivingOrderLine line : order.getLines()) { // TODO these lines MIGHT be in the same order on frontend
 			for (ReceivingOrderLineResponse l : orderResponse.lines()) {
 				if (line.getArticle().getBarcode().equals(l.barcode())) {
 					line.setReceivedQuantity(l.receivedQuantity());
@@ -66,7 +77,16 @@ public class ReceivingService {
 			}
 		}
 
+		createTransportOrder(order);
+
 		return new ReceivingOrderResponse(order.getOrderId(), order.getStatus().toString(),
 				getResponseLines(order.getLines()));
+	}
+
+	private void createTransportOrder(ReceivingOrder order) {
+		LoadUnit loadUnit = loadUnitService.createLoadUnit(order);
+		Location target = storageLocationService.findClosestEmptyX();
+		transportOrderService.createTransportOrder(loadUnit, target);
+
 	}
 }

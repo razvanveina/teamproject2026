@@ -19,9 +19,7 @@ export class ReceivingApp {
   instructions = "Scan order barcode to start"
   state = ScanState.ORDER
 
-  // orderBarcode: string = ''
   articleBarcode: string = ''
-  // articleQuantity: number = 0
 
   displayTable = signal(false)
   error = signal(false);
@@ -41,7 +39,7 @@ export class ReceivingApp {
     } else if (this.state == ScanState.QUANTITY) {
       this.scanArticleQuantity(this.articleBarcode, input)
     } else if (this.state == ScanState.FINISHED) {
-      // Nothing to do here
+      // Nothing to do here yet
     }
   }
 
@@ -50,7 +48,6 @@ export class ReceivingApp {
       next: (order: ReceivingOrder) => {
         this.error.set(false)
         this.order.set(order)
-        // this.orderBarcode = order.orderId
 
         if (!this.displayTable()) {
           this.displayTable.set(true)
@@ -73,33 +70,6 @@ export class ReceivingApp {
     })
   }
 
-  // scanArticle(order: string, article: string, quantity: number) {
-  //   this.receivingService.addArticleQuantity(order, article, quantity).subscribe({
-  //     next: (order: ReceivingOrder) => {
-  //       this.error.set(false)
-  //       this.order.set(order)
-
-  //       if (!this.displayTable()) {
-  //         this.displayTable.set(true)
-  //       }
-
-  //       this.instructions = "Scan article"
-  //       this.state = ScanState.ARTICLE
-
-  //       if (order.status == "FINISHED") {
-  //         this.instructions = "Order Finished"
-  //         this.state = ScanState.FINISHED
-  //       }
-  //     },
-  //     error: (err: HttpErrorResponse) => {
-  //       this.error.set(true)
-  //       // if (this.displayTable())
-  //       //   this.displayTable.set(false)
-  //       this.instructions = err.error.detail
-  //     }
-  //   })
-  // }
-
   scanArticleBarcode(barcode: string) {
     let localOrder = this.order()
     let line = localOrder.lines.find(l => l.barcode == barcode)
@@ -117,6 +87,12 @@ export class ReceivingApp {
 
   scanArticleQuantity(article: string, quantity: number) {
     quantity = Number(quantity)
+
+    if (quantity < 0) {
+      this.error.set(true)
+      this.instructions = "Cannot add a negative value."
+      return
+    }
 
     let localOrder = this.order()
 
@@ -155,13 +131,15 @@ export class ReceivingApp {
 
   onMakeLoadUnit() { }
 
-  onConfirm() { // TODO check if order finished if not redirect user to make a loadUnit
+  onConfirm() { 
+    // TODO check if order finished if not redirect user to make a loadUnit
+    // TODO check if there is no line with the finished status set an error
     this.receivingService.finishOrder(this.order()).subscribe({
       next: (order: ReceivingOrder) => {
         this.error.set(false)
         this.instructions = "Scan order barcode to start"
         this.state = ScanState.ORDER
-        if(this.displayTable()){
+        if (this.displayTable()) {
           this.displayTable.set(false)
         }
       },
@@ -172,25 +150,13 @@ export class ReceivingApp {
         this.instructions = err.error.detail
       }
     })
-}
+  }
 
-onCancel() {
-  history.back();
+  onCancel() {
+    history.back();
+  }
 }
-}
-
-// TODO handle error on too many items added
 
 enum ScanState {
   ORDER, ARTICLE, QUANTITY, FINISHED
 }
-
-
-
-// scan article
-// enter qunaty
-// until green
-// create load uint
-// pe locatia IN
-// gaseste loc liber in depo
-// transportOrder catre deposit

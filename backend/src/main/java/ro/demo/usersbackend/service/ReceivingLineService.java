@@ -3,19 +3,11 @@ package ro.demo.usersbackend.service;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import ro.demo.usersbackend.dto.ReceivingOrderLineResponse;
-import ro.demo.usersbackend.dto.ReceivingOrderResponse;
-import ro.demo.usersbackend.entity.LoadUnit;
-import ro.demo.usersbackend.entity.Location;
-import ro.demo.usersbackend.entity.ReceivingOrder;
 import ro.demo.usersbackend.entity.ReceivingOrderLine;
-import ro.demo.usersbackend.entity.ReceivingOrderLineStatus;
-import ro.demo.usersbackend.entity.ReceivingOrderStatus;
 import ro.demo.usersbackend.repository.ReceivingLineRepository;
 
 @Service
@@ -36,44 +28,44 @@ public class ReceivingLineService {
 		this.storageLocationService = storageLocationService;
 	}
 
-	public ReceivingOrderResponse updateArticleQuantity(String orderId, String articleBarcode, int quantity) {
-		ReceivingOrderLine line = receivingLineRepository.findByOrderIdAndArticleBarcode(orderId, articleBarcode)
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
-						"Cannot find a receiving order line form the order: " + orderId + " with the article barcode: "
-								+ articleBarcode));
-
-//		if(quantity < 0) {
-//			throw new ResponseStatusException(HttpStatus)
-//		} TODO
-
-		int sumQuantity = line.getReceivedQuantity() + quantity;
-		int maxQuantity = line.getQuantity();
-		if (sumQuantity > maxQuantity) {
-			throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE,
-					"Cannot add more than " + (maxQuantity - line.getReceivedQuantity()) + " articles.");
-		}
-
-		line.setReceivedQuantity(sumQuantity);
-
-		if (line.getQuantity() == line.getReceivedQuantity()) {
-			line.setStatus(ReceivingOrderLineStatus.FINISHED);
-		}
-
-		ReceivingOrder order = line.getOrder();
-
-		if (order.getLines().stream().allMatch(x -> x.getStatus() == ReceivingOrderLineStatus.FINISHED)) {
-			order.setStatus(ReceivingOrderStatus.FINISHED);
-		}
-
-		if (order.getStatus() == ReceivingOrderStatus.FINISHED) {
-			LoadUnit loadUnit = loadUnitSerivce.createLoadUnit(order);
-			Location target = storageLocationService.findClosestEmptyX();
-			transportOrderService.createTransportOrder(loadUnit, target);
-		}
-
-		return new ReceivingOrderResponse(order.getOrderId(), order.getStatus().toString(),
-				getResponseLines(order.getLines()));
-	}// TODO add logs
+//	public ReceivingOrderResponse updateArticleQuantity(String orderId, String articleBarcode, int quantity) {
+//		ReceivingOrderLine line = receivingLineRepository.findByOrderIdAndArticleBarcode(orderId, articleBarcode)
+//				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+//						"Cannot find a receiving order line form the order: " + orderId + " with the article barcode: "
+//								+ articleBarcode));
+//
+////		if(quantity < 0) {
+////			throw new ResponseStatusException(HttpStatus)
+////		} TODO
+//
+//		int sumQuantity = line.getReceivedQuantity() + quantity;
+//		int maxQuantity = line.getQuantity();
+//		if (sumQuantity > maxQuantity) {
+//			throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE,
+//					"Cannot add more than " + (maxQuantity - line.getReceivedQuantity()) + " articles.");
+//		}
+//
+//		line.setReceivedQuantity(sumQuantity);
+//
+//		if (line.getQuantity() == line.getReceivedQuantity()) {
+//			line.setStatus(ReceivingOrderLineStatus.FINISHED);
+//		}
+//
+//		ReceivingOrder order = line.getOrder();
+//
+//		if (order.getLines().stream().allMatch(x -> x.getStatus() == ReceivingOrderLineStatus.FINISHED)) {
+//			order.setStatus(ReceivingOrderStatus.FINISHED);
+//		}
+//
+//		if (order.getStatus() == ReceivingOrderStatus.FINISHED) {
+//			LoadUnit loadUnit = loadUnitSerivce.createLoadUnit(order);
+//			Location target = storageLocationService.findClosestEmptyX();
+//			transportOrderService.createTransportOrder(loadUnit, target);
+//		}
+//
+//		return new ReceivingOrderResponse(order.getOrderId(), order.getStatus().toString(),
+//				getResponseLines(order.getLines()));
+//	}
 
 	private List<ReceivingOrderLineResponse> getResponseLines(List<ReceivingOrderLine> lines) {
 

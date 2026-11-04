@@ -12,21 +12,6 @@ export class ReceivingOrderService {
         return this.httpClient.get<ReceivingOrder>( `${this.url}/${orderId}`)
     }
 
-    addArticleQuantity(orderId: string, articleId:string, quantity:number){
-        console.log(`${this.url}/${orderId}/${articleId}/${quantity}`)
-        return this.httpClient.put<ReceivingOrder>(`${this.url}/${orderId}/${articleId}/${quantity}`, {
-            // quantity:quantity
-        })
-    }
-
-    isOrderFinished(orderId: string) {
-        return this.httpClient.get<ReceivingOrder>( `${this.url}/${orderId}/check`)
-    }
-
-    updateOrder(order: ReceivingOrder){
-        return this.httpClient.put<ReceivingOrder>( `${this.url}/update`, order)
-    }
-
     finishOrder(order: ReceivingOrder){
         return this.httpClient.put<ReceivingOrder>( `${this.url}/finish`, order)
     }
