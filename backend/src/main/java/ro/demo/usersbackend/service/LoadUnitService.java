@@ -46,17 +46,19 @@ public class LoadUnitService {
 		List<ReceivingOrderLine> lines = order.getLines();
 		List<StockItem> items = new ArrayList<>();
 
-		for (ReceivingOrderLine line : lines) {
-			Article article = line.getArticle();
-			items.add(new StockItem(article, line.getQuantity(), loadUnit, article.getPackagingUnitTypes().get(0)));
-		}
-
 		loadUnit.setBarcode(generateLoadUnitBarcode());
 		loadUnit.setType(LoadUnitType.PALLET);
 		loadUnit.setLocation(in);
-		loadUnit.setStockItems(items);
 
 		loadUnitRepository.save(loadUnit);
+
+		for (ReceivingOrderLine line : lines) {
+			Article article = line.getArticle();
+			StockItem si = new StockItem(article, line.getQuantity(), loadUnit, article.getPackagingUnitTypes().get(0));
+			stockItemRepository.save(si);
+			items.add(si);
+		}
+
 		return loadUnit;
 	}
 

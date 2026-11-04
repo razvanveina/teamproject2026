@@ -22,4 +22,12 @@ export class ReceivingOrderService {
     isOrderFinished(orderId: string) {
         return this.httpClient.get<ReceivingOrder>( `${this.url}/${orderId}/check`)
     }
+
+    updateOrder(order: ReceivingOrder){
+        return this.httpClient.put<ReceivingOrder>( `${this.url}/update`, order)
+    }
+
+    finishOrder(order: ReceivingOrder){
+        return this.httpClient.put<ReceivingOrder>( `${this.url}/finish`, order)
+    }
 }

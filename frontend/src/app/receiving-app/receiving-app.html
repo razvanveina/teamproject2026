@@ -8,22 +8,22 @@
             <table>
                 <thead>
                     <tr>
+                        <th>Barcode</th>
                         <th>Article Description</th>
                         <th>Quantity</th>
                         <th>Received Quantity</th>
                         <th>Status</th>
-                        <th>Barcode</th>
                     </tr>
                 </thead>
 
                 <tbody>
                     @for (line of order().lines; track line.id) {
-                    <tr [class.completed]="line.quantity === line.receivedQuantity">
+                    <tr [class.completed]="line.status == 'FINISHED'">
+                        <td>{{ line.barcode }}</td>
                         <td>{{ line.description }}</td>
                         <td>{{ line.quantity }}</td>
                         <td>{{ line.receivedQuantity }}</td>
                         <td>{{ line.status }}</td>
-                        <td>{{ line.barcode }}</td>
                     </tr>
                     }
                 </tbody>
@@ -37,10 +37,12 @@
     </div>
 
     <div class="right">
-        <input type="text" placeholder="Scan barcode" #barcode (keyup.enter)="onScan(barcode.value)">
+        <input type="text" placeholder="Scan barcode" #barcodeInput (keyup.enter)="onScan(barcodeInput.value)">
     </div>
 
     <div class="bottom">
-        <button (click)=onCancel() class="cancel">Cancel</button>
+        <button (click)=onCancel()>Cancel</button>
+        <button (click)=onMakeLoadUnit()>Make Load Unit</button>
+        <button (click)=onConfirm()>Confirm</button>
     </div>
 </div>

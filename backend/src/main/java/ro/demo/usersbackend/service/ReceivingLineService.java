@@ -1,10 +1,17 @@
 package ro.demo.usersbackend.service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import ro.demo.usersbackend.dto.ReceivingOrderLineResponse;
+import ro.demo.usersbackend.dto.ReceivingOrderResponse;
+import ro.demo.usersbackend.entity.LoadUnit;
+import ro.demo.usersbackend.entity.Location;
 import ro.demo.usersbackend.entity.ReceivingOrder;
 import ro.demo.usersbackend.entity.ReceivingOrderLine;
 import ro.demo.usersbackend.entity.ReceivingOrderLineStatus;
@@ -16,13 +23,20 @@ import ro.demo.usersbackend.repository.ReceivingLineRepository;
 public class ReceivingLineService {
 
 	private final ReceivingLineRepository receivingLineRepository;
+	private final LoadUnitService loadUnitSerivce;
+	private final TransportOrderService transportOrderService;
+	private final StorageLocationService storageLocationService;
 
-	public ReceivingLineService(ReceivingLineRepository receivingLineRepository) {
+	public ReceivingLineService(ReceivingLineRepository receivingLineRepository, LoadUnitService loadUnitSerivce,
+			TransportOrderService transportOrderService, StorageLocationService storageLocationService) {
 		super();
 		this.receivingLineRepository = receivingLineRepository;
+		this.loadUnitSerivce = loadUnitSerivce;
+		this.transportOrderService = transportOrderService;
+		this.storageLocationService = storageLocationService;
 	}
 
-	public ReceivingOrder updateArticleQuantity(String orderId, String articleBarcode, int quantity) {
+	public ReceivingOrderResponse updateArticleQuantity(String orderId, String articleBarcode, int quantity) {
 		ReceivingOrderLine line = receivingLineRepository.findByOrderIdAndArticleBarcode(orderId, articleBarcode)
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
 						"Cannot find a receiving order line form the order: " + orderId + " with the article barcode: "
@@ -51,6 +65,25 @@ public class ReceivingLineService {
 			order.setStatus(ReceivingOrderStatus.FINISHED);
 		}
 
-		return order;
+		if (order.getStatus() == ReceivingOrderStatus.FINISHED) {
+			LoadUnit loadUnit = loadUnitSerivce.createLoadUnit(order);
+			Location target = storageLocationService.findClosestEmptyX();
+			transportOrderService.createTransportOrder(loadUnit, target);
+		}
+
+		return new ReceivingOrderResponse(order.getOrderId(), order.getStatus().toString(),
+				getResponseLines(order.getLines()));
 	}// TODO add logs
+
+	private List<ReceivingOrderLineResponse> getResponseLines(List<ReceivingOrderLine> lines) {
+
+		List<ReceivingOrderLineResponse> responseLines = new ArrayList<>();
+		for (ReceivingOrderLine line : lines) {
+			responseLines.add(
+					new ReceivingOrderLineResponse(line.getId(), line.getArticle().getDescription(), line.getQuantity(),
+							line.getReceivedQuantity(), line.getArticle().getBarcode(), line.getStatus().toString()));
+		}
+
+		return responseLines;
+	}
 }

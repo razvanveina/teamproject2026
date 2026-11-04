@@ -38,8 +38,8 @@ td {
     border-bottom: 1px solid #ddd;
 }
 
-tbody tr:nth-child(even) {
-    background-color: #f8f9fa;
+/* tbody tr:nth-child(even) {
+    background-color: #155724;
 }
 
 tbody tr:hover {
@@ -48,15 +48,28 @@ tbody tr:hover {
 
 tbody tr:last-child td {
     border-bottom: none;
-}
+} */
 
-.completed {
+/* .completed {
+    background-color: #d4edda;
+    color: #155724;
+} */
+
+tr.completed td {
     background-color: #d4edda;
     color: #155724;
 }
 
+tbody tr:nth-child(even):not(.completed) td {
+    background-color: #f8f9fa;
+}
+
+tbody tr:hover:not(.completed) td {
+    background-color: #e9ecef;
+}
+
 .error{
-    background: rgb(201, 201, 16);
+    background: #fff3b0;
     font-family: 'Segoe UI', Inter, Aptos;
     padding: 2%;
 }
@@ -114,9 +127,6 @@ button {
     width: 10%;
     height: 80%;
     margin: 10px;
-}
-
-.cancel {
     font-size: 25px;
 }
 

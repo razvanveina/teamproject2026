@@ -14,7 +14,8 @@ public class StorageLocationService {
 		this.storageLocationRepository = storageLocationRepository;
 	}
 
-	public Location findClosestX() {
-		return storageLocationRepository.findFirstByOrderByXAsc();
+	public Location findClosestEmptyX() {
+		// TODO check if can't find location
+		return storageLocationRepository.findFirstByLoadUnitIsNullOrderByXAsc().get();
 	}
 }
