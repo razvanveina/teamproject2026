@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import ro.demo.usersbackend.entity.Article;
+import ro.demo.usersbackend.entity.Destination;
 import ro.demo.usersbackend.entity.StorageLocation;
 import ro.demo.usersbackend.entity.TransitLocation;
 
@@ -22,11 +23,12 @@ public class InitialDataCreator implements CommandLineRunner {
 		createStorageLocations();
 		createTransitLocations();
 		createPickingLocations();
+		createDestinations();
 //		createArticles();
 //		createPackagingUnitTypes();
 //		createStock();
 	}
-	
+
 	private void createDestinations() {
 		String[] destinations = { "Bucharest", "Timisoara", "Brasov", "Iasi", "Arad" };
 
