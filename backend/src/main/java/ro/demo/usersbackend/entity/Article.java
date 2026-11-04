@@ -1,13 +1,10 @@
 package ro.demo.usersbackend.entity;
 
-import java.util.List;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
 
 @Entity
 public class Article {
@@ -20,9 +17,6 @@ public class Article {
 
 	@Column(nullable = false)
 	private String description;
-
-	@OneToMany(mappedBy = "article")
-	private List<PackagingUnitType> packagingUnitTypes;
 
 	public Article() {
 		super();
@@ -47,13 +41,5 @@ public class Article {
 
 	public void setDescription(String description) {
 		this.description = description;
-	}
-
-	public List<PackagingUnitType> getPackagingUnitTypes() {
-		return packagingUnitTypes;
-	}
-
-	public void setPackagingUnitTypes(List<PackagingUnitType> packagingUnitTypes) {
-		this.packagingUnitTypes = packagingUnitTypes;
 	}
 }

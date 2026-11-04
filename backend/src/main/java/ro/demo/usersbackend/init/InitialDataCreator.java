@@ -1,7 +1,5 @@
 package ro.demo.usersbackend.init;
 
-import java.util.List;
-
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -9,10 +7,6 @@ import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import ro.demo.usersbackend.entity.Article;
-import ro.demo.usersbackend.entity.LoadUnit;
-import ro.demo.usersbackend.entity.LoadUnitType;
-import ro.demo.usersbackend.entity.PackagingUnitType;
-import ro.demo.usersbackend.entity.StockItem;
 import ro.demo.usersbackend.entity.StorageLocation;
 import ro.demo.usersbackend.entity.TransitLocation;
 
@@ -29,8 +23,8 @@ public class InitialDataCreator implements CommandLineRunner {
 		createTransitLocations();
 		createPickingLocations();
 		createArticles();
-		createPackagingUnitTypes();
-		createStock();
+//		createPackagingUnitTypes();
+//		createStock();
 	}
 
 	private void createStorageLocations() {
@@ -77,46 +71,50 @@ public class InitialDataCreator implements CommandLineRunner {
 		}
 	}
 
-	private void createPackagingUnitTypes() {
-		List<Article> articles = entityManager.createQuery("from Article a order by a.id", Article.class)
-				.getResultList();
+//	private void createPackagingUnitTypes() {
+//		List<Article> articles = entityManager.createQuery("from Article a order by a.id", Article.class)
+//				.getResultList();
+//
+//		for (int i = 0; i < articles.size(); i++) {
+//			PackagingUnitType type = new PackagingUnitType();
+//			type.setName("case " + (i + 1));
+//			type.setQuantity(5);
+//			entityManager.persist(type);
+//
+//			Number result = (Number) entityManager
+//					.createNativeQuery("SELECT PACKAGINGUNITTYPE_SEQUENCE.NEXTVAL FROM DUAL").getSingleResult();
+//			String barcode = String.format("%05d", result.longValue());
+//			entityManager.persist(new ArticlePackagingUnitType(barcode, articles.get(i), type));
+//		}
+//
+//	}
 
-		for (int i = 0; i < articles.size(); i++) {
-			PackagingUnitType type = new PackagingUnitType();
-			type.setBarcode(String.valueOf(500 + i));
-			type.setName("case " + (i + 1));
-			type.setArticle(articles.get(i));
-			type.setQuantity(5);
-			entityManager.persist(type);
-		}
-	}
-
-	private void createStock() {
-		List<PackagingUnitType> types = entityManager
-				.createQuery("from PackagingUnitType p order by p.id", PackagingUnitType.class).getResultList();
-
-		for (int i = 0; i < 20; i++) {
-			StorageLocation location = entityManager
-					.createQuery("from StorageLocation l where l.name = :name", StorageLocation.class)
-					.setParameter("name", String.format("HBW%02d%03d%02d%02d", 1, i + 1, 1, 1)).getSingleResult();
-
-			LoadUnit pallet = new LoadUnit();
-			pallet.setBarcode(String.valueOf(1000 + i));
-			pallet.setType(LoadUnitType.PALLET);
-			pallet.setLocation(location);
-			entityManager.persist(pallet);
-
-			location.setLoadUnit(pallet);
-
-			for (int j = 0; j < 2; j++) {
-				PackagingUnitType type = types.get((i + j) % types.size());
-				StockItem item = new StockItem();
-				item.setArticle(type.getArticle());
-				item.setPackagingUnitType(type);
-				item.setQuantity(j == 0 ? 10 : 5);
-				item.setLoadUnit(pallet);
-				entityManager.persist(item);
-			}
-		}
-	}
+//	private void createStock() {
+//		List<PackagingUnitType> types = entityManager
+//				.createQuery("from PackagingUnitType p order by p.id", PackagingUnitType.class).getResultList();
+//
+//		for (int i = 0; i < 20; i++) {
+//			StorageLocation location = entityManager
+//					.createQuery("from StorageLocation l where l.name = :name", StorageLocation.class)
+//					.setParameter("name", String.format("HBW%02d%03d%02d%02d", 1, i + 1, 1, 1)).getSingleResult();
+//
+//			LoadUnit pallet = new LoadUnit();
+//			pallet.setBarcode(String.valueOf(1000 + i));
+//			pallet.setType(LoadUnitType.PALLET);
+//			pallet.setLocation(location);
+//			entityManager.persist(pallet);
+//
+//			location.setLoadUnit(pallet);
+//
+//			for (int j = 0; j < 2; j++) {
+//				PackagingUnitType type = types.get((i + j) % types.size());
+//				StockItem item = new StockItem();
+//				item.setArticle(type.getArticle());
+//				item.setPackagingUnitType(type);
+//				item.setQuantity(j == 0 ? 10 : 5);
+//				item.setLoadUnit(pallet);
+//				entityManager.persist(item);
+//			}
+//		}
+//	}
 }

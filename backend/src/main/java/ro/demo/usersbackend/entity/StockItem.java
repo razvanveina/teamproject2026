@@ -45,6 +45,12 @@ public class StockItem {
 		this.packagingUnitType = packagingUnitType;
 	}
 
+	public StockItem(Article article, int quantity, LoadUnit loadUnit) {
+		this.article = article;
+		this.quantity = quantity;
+		this.loadUnit = loadUnit;
+	}
+
 	public Article getArticle() {
 		return article;
 	}

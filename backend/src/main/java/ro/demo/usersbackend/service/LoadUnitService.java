@@ -58,7 +58,7 @@ public class LoadUnitService {
 			}
 
 			Article article = line.getArticle();
-			StockItem si = new StockItem(article, line.getQuantity(), loadUnit, article.getPackagingUnitTypes().get(0));
+			StockItem si = new StockItem(article, line.getQuantity(), loadUnit);
 			stockItemRepository.save(si);
 			items.add(si);
 		}
