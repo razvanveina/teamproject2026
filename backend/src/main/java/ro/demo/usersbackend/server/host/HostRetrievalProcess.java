@@ -21,28 +21,34 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import ro.demo.usersbackend.entity.Article;
+import ro.demo.usersbackend.entity.Destination;
+import ro.demo.usersbackend.entity.LoadUnit;
+import ro.demo.usersbackend.entity.Location;
 import ro.demo.usersbackend.entity.PackagingUnitType;
-import ro.demo.usersbackend.entity.ReceivingOrder;
-import ro.demo.usersbackend.entity.ReceivingOrderLine;
-import ro.demo.usersbackend.entity.ReceivingOrderLineStatus;
-import ro.demo.usersbackend.entity.ReceivingOrderStatus;
+import ro.demo.usersbackend.entity.Reservation;
+import ro.demo.usersbackend.entity.RetrievalOrder;
+import ro.demo.usersbackend.entity.RetrievalOrderLine;
+import ro.demo.usersbackend.entity.RetrievalOrderLineStatus;
+import ro.demo.usersbackend.entity.RetrievalOrderStatus;
+import ro.demo.usersbackend.entity.StockItem;
+import ro.demo.usersbackend.entity.StorageLocation;
+import ro.demo.usersbackend.entity.TransitLocation;
 import ro.demo.usersbackend.server.process.AbstractProcess;
 
-public class HostProcess extends AbstractProcess {
-	private static final Logger Log = LogManager.getLogger(HostProcess.class);
+public class HostRetrievalProcess extends AbstractProcess {
+	private static final Logger Log = LogManager.getLogger(HostRetrievalProcess.class);
 
 	private Path folder;
 	private SessionFactory sessionFactory;
 
-	public HostProcess() {
-		super("hostProcess");
+	public HostRetrievalProcess() {
+		super("hostRetrievalProcess");
 	}
 
 	public static void main(String[] args) {
-		new HostProcess().start();
+		new HostRetrievalProcess().start();
 	}
 
-	// scan la folder, AbstractProcess o apeleaza o data la 10 sec
 	@Override
 	protected void doAction() {
 		try {
@@ -56,21 +62,22 @@ public class HostProcess extends AbstractProcess {
 				files.filter(f -> f.toString().endsWith(".xml")).forEach(f -> process(sessionFactory, f));
 			}
 		} catch (Exception e) {
-			Log.error("cannot scan {}: {}", folder, e.toString());
+			Log.error("cannot scan {}: {}", folder.toAbsolutePath(), e.toString());
 		}
+
 	}
 
 	private static String readFolder() throws Exception {
-		String value = loadProperties("/config.ini").getProperty("host_receiving_folder");
+		String value = loadProperties("/config.ini").getProperty("host_retrieval_folder");
 		if (value == null) {
-			throw new IllegalStateException("host_receiving_folder is missing in config.ini");
+			throw new IllegalStateException("host_retrieval_folder is missing in config.ini");
 		}
 		return value.trim();
 	}
 
 	private static Properties loadProperties(String resource) throws Exception {
 		Properties properties = new Properties();
-		try (InputStream in = HostProcess.class.getResourceAsStream(resource)) {
+		try (InputStream in = HostRetrievalProcess.class.getResourceAsStream(resource)) {
 			if (in == null) {
 				throw new FileNotFoundException(resource + " not found in project");
 			}
@@ -88,15 +95,24 @@ public class HostProcess extends AbstractProcess {
 
 			boolean created = sessionFactory.fromTransaction(session -> {
 				Long existing = session
-						.createQuery("select count(o) from ReceivingOrder o where o.orderId = :id", Long.class)
+						.createQuery("select count(o) from RetrievalOrder o where o.orderId = :id", Long.class)
 						.setParameter("id", orderId).getSingleResult();
 				if (existing > 0) {
 					return false;
 				}
 
-				ReceivingOrder order = new ReceivingOrder();
+				RetrievalOrder order = new RetrievalOrder();
+
+				String destinationName = value(xml.getDocumentElement(), "destination");
+
+				Destination destination = session
+						.createQuery("from Destination d where d.name = :name", Destination.class)
+						.setParameter("name", destinationName).getSingleResult();
+
 				order.setOrderId(orderId);
-				order.setStatus(ReceivingOrderStatus.NEW);
+				order.setStatus(RetrievalOrderStatus.NEW);
+				order.setDestination(destination);
+
 				session.persist(order);
 
 				for (int i = 0; i < lines.getLength(); i++) {
@@ -123,12 +139,28 @@ public class HostProcess extends AbstractProcess {
 						article = found.get(0);
 					}
 
-					ReceivingOrderLine orderLine = new ReceivingOrderLine();
+					RetrievalOrderLine orderLine = new RetrievalOrderLine();
 					orderLine.setOrder(order);
 					orderLine.setArticle(article);
 					orderLine.setQuantity(Integer.parseInt(value(line, "quantity")));
-					orderLine.setStatus(ReceivingOrderLineStatus.NEW);
+					orderLine.setStatus(RetrievalOrderLineStatus.NEW);
 					session.persist(orderLine);
+
+					List<StockItem> stockItems = session
+							.createQuery("from StockItem s where s.article = :article", StockItem.class)
+							.setParameter("article", article).getResultList();
+
+					if (stockItems.isEmpty()) {
+						throw new IllegalArgumentException("No stock found for article " + barcode);
+					}
+
+					Reservation reservation = new Reservation();
+					reservation.setStockItem(stockItems.get(0));
+					reservation.setRetrievalOrderLine(orderLine);
+
+					session.persist(reservation);
+
+					stockItems.get(0).setReservation(reservation);
 				}
 				return true;
 			});
@@ -155,7 +187,7 @@ public class HostProcess extends AbstractProcess {
 
 	private static SessionFactory buildSessionFactory() throws Exception {
 		Properties properties = new Properties();
-		try (InputStream in = HostProcess.class.getResourceAsStream("/application.properties")) {
+		try (InputStream in = HostRetrievalProcess.class.getResourceAsStream("/application.properties")) {
 			properties.load(in);
 		}
 
@@ -168,7 +200,11 @@ public class HostProcess extends AbstractProcess {
 				.build();
 
 		return new MetadataSources(registry).addAnnotatedClass(Article.class).addAnnotatedClass(PackagingUnitType.class)
-				.addAnnotatedClass(ReceivingOrder.class).addAnnotatedClass(ReceivingOrderLine.class).buildMetadata()
+				.addAnnotatedClass(Destination.class).addAnnotatedClass(Reservation.class)
+				.addAnnotatedClass(StockItem.class).addAnnotatedClass(LoadUnit.class).addAnnotatedClass(Location.class)
+				.addAnnotatedClass(StorageLocation.class).addAnnotatedClass(TransitLocation.class)
+				.addAnnotatedClass(RetrievalOrder.class).addAnnotatedClass(RetrievalOrderLine.class).buildMetadata()
 				.buildSessionFactory();
 	}
+
 }

@@ -26,6 +26,16 @@ public class InitialDataCreator implements CommandLineRunner {
 //		createPackagingUnitTypes();
 //		createStock();
 	}
+	
+	private void createDestinations() {
+		String[] destinations = { "Bucharest", "Timisoara", "Brasov", "Iasi", "Arad" };
+
+		for (String name : destinations) {
+			Destination destination = new Destination();
+			destination.setName(name);
+			entityManager.persist(destination);
+		}
+	}
 
 	private void createStorageLocations() {
 		for (int aisle = 1; aisle <= 5; aisle++) {
