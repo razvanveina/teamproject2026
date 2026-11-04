@@ -14,6 +14,7 @@ export interface DialogColumn {
 export interface DialogLookup {
   entity: string; // where the choices come from: /api/data/<entity>
   parent?: string; // only the rows that belong to what is picked in this field, e.g. "ARTICLE_ID"
+  filter?: Map<string, string>;
 }
 
 // One dialog = the content of users.json

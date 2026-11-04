@@ -163,7 +163,7 @@ export class DialogForm implements OnInit {
       show = ['ID'];
     }
 
-    this.service.getRows(lookup.entity).subscribe((rows: any[]) => {
+    this.service.getRows(lookup.entity, lookup.filter).subscribe((rows: any[]) => {
       for (const row of rows) {
         // e.g. BARCODE and DESCRIPTION glued together: "5941234000031 - Milk"
         let text = '';
