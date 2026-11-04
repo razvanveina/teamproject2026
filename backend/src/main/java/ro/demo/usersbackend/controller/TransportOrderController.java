@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import jakarta.validation.Valid;
+import ro.demo.usersbackend.dto.TransportOrderErrorRequest;
 import ro.demo.usersbackend.dto.TransportOrderRequest;
 import ro.demo.usersbackend.dto.TransportOrderResponse;
 import ro.demo.usersbackend.service.TransportOrderService;
@@ -43,6 +44,20 @@ public class TransportOrderController {
 			return response;
 		} catch (ResponseStatusException e) {
 			LOG.warn("Order {}: scan rejected - {}", id, e.getReason());
+			throw e;
+		}
+	}
+
+	@PostMapping("/{id}/error")
+	public TransportOrderResponse reportError(@PathVariable Long id,
+			@Valid @RequestBody TransportOrderErrorRequest request) {
+		LOG.info("Order {}: user reported error {}", id, request.reason());
+		try {
+			TransportOrderResponse response = transportOrderService.reportError(id, request.reason());
+			LOG.info("Order {}: status is now {}", id, response.status());
+			return response;
+		} catch (ResponseStatusException e) {
+			LOG.warn("Order {}: error report rejected - {}", id, e.getReason());
 			throw e;
 		}
 	}

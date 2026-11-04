@@ -27,11 +27,32 @@
     </div>
 
     <div class="right">
-        <input type="text" placeholder="Scan barcode" #barcode (keyup.enter)="onScan(barcode.value); barcode.value = ''"
-            [disabled]="!canScan()">
+        @if (canScan()) {
+        <input type="text" placeholder="Scan barcode" #barcode (keyup.enter)="onScan(barcode.value); barcode.value = ''">
+        }
     </div>
 
     <div class="bottom">
         <button (click)=onCancel() class="cancel">Cancel</button>
+        <button (click)="openErrorPopup()" class="error-button" [disabled]="!canScan()">Error</button>
     </div>
 </div>
+
+@if (showErrorReasons() && canScan()) {
+<div class="backdrop">
+    <section class="popup" role="dialog" aria-modal="true" aria-label="Error">
+        <header>
+            <button type="button" class="close" aria-label="Close" (click)="closeErrorPopup()">&times;</button>
+        </header>
+
+        <select class="error-select" #reasonSelect (change)="selectErrorReason(reasonSelect.value)">
+            <option value="" disabled selected hidden>Select an error</option>
+            @for (reason of errorReasons(); track reason) {
+            <option [value]="reason">{{errorReasonLabel(reason)}}</option>
+            }
+        </select>
+
+        <button type="button" class="confirm" [disabled]="!selectedErrorReason()" (click)="confirmErrorReason()">Confirm</button>
+    </section>
+</div>
+}

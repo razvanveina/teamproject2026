@@ -28,6 +28,9 @@ public class TransportOrder {
 	@Enumerated(EnumType.STRING)
 	private TransportOrderStatus status;
 
+	@Enumerated(EnumType.STRING)
+	private TransportOrderErrorReason errorReason;
+
 	@ManyToOne
 	@JoinColumn(name = "loadUnit_id", nullable = false)
 	private LoadUnit loadUnit;
@@ -66,6 +69,14 @@ public class TransportOrder {
 
 	public void setStatus(TransportOrderStatus status) {
 		this.status = status;
+	}
+
+	public TransportOrderErrorReason getErrorReason() {
+		return errorReason;
+	}
+
+	public void setErrorReason(TransportOrderErrorReason errorReason) {
+		this.errorReason = errorReason;
 	}
 
 	public LoadUnit getLoadUnit() {

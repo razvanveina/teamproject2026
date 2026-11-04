@@ -12,6 +12,7 @@ import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.Location;
 import ro.demo.usersbackend.entity.StorageLocation;
 import ro.demo.usersbackend.entity.TransportOrder;
+import ro.demo.usersbackend.entity.TransportOrderErrorReason;
 import ro.demo.usersbackend.entity.TransportOrderStatus;
 import ro.demo.usersbackend.repository.TransportOrderRepository;
 
@@ -51,6 +52,24 @@ public class TransportOrderService {
 			moveLoadUnit(order.getLoadUnit(), order.getTarget());
 			order.setStatus(TransportOrderStatus.FINISHED);
 		}
+		return toResponse(order);
+	}
+
+	public TransportOrderResponse reportError(Long id, TransportOrderErrorReason reason) {
+		TransportOrder order = transportOrderRepository.findById(id)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Transport order not found"));
+
+		boolean allowed = switch (reason) {
+		case LOCATION_EMPTY, WRONG_PALLET -> order.getStatus() == TransportOrderStatus.NEW;
+		case TARGET_LOCATION_OCCUPIED -> order.getStatus() == TransportOrderStatus.ACTIVE;
+		};
+		if (!allowed) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT,
+					"Error " + reason + " cannot be reported for an order with status " + order.getStatus());
+		}
+
+		order.setErrorReason(reason);
+		order.setStatus(TransportOrderStatus.ERROR);
 		return toResponse(order);
 	}
 

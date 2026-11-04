@@ -5,12 +5,14 @@ import { API_BASE_URL } from '../api.config';
 
 export interface TransportOrderResponse {
   id: number;
-  status: 'NEW' | 'ACTIVE' | 'FINISHED';
+  status: 'NEW' | 'ACTIVE' | 'FINISHED' | 'ERROR';
   palletBarcode: string;
   sourceLocation: string;
   destinationLocation: string;
   loadUnitLocation: string | null;
 }
+
+export type TransportOrderErrorReason = 'LOCATION_EMPTY' | 'WRONG_PALLET' | 'TARGET_LOCATION_OCCUPIED';
 
 @Injectable({ providedIn: 'root' })
 export class TransportOrderApi {
@@ -23,5 +25,9 @@ export class TransportOrderApi {
 
   scan(id: number, barcode: string): Observable<TransportOrderResponse> {
     return this.http.post<TransportOrderResponse>(`${this.url}/${id}/scan`, { barcode });
+  }
+
+  reportError(id: number, reason: TransportOrderErrorReason): Observable<TransportOrderResponse> {
+    return this.http.post<TransportOrderResponse>(`${this.url}/${id}/error`, { reason });
   }
 }
