@@ -1,0 +1,11 @@
+{
+  "id": "dg001",
+  "title": "Destination to Gate",
+  "entity": "DestinationToGate",
+  "actions": ["add", "edit", "delete"],
+  "columns": [
+    { "field": "ID", "label": "ID" },
+    { "field": "DESTINATION_ID", "label": "Destination", "addable": true, "lookup": { "entity": "Destination" }, "filterable": true, "editable": true },
+    { "field": "GATE_ID", "label": "Gate", "addable": true, "lookup": { "entity": "Location", "filter": { "NAME": "GATE" } }, "filterable": true, "editable": true }
+  ]
+}

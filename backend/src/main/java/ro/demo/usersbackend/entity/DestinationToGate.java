@@ -1,15 +1,12 @@
 package ro.demo.usersbackend.entity;
 
-import java.util.List;
-
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 
 @Entity
 public class DestinationToGate {
@@ -17,31 +14,41 @@ public class DestinationToGate {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(nullable = false)
-	private String destination;
+	@OneToOne
+	@JoinColumn(name = "destination_id", nullable = false)
+	private Destination destination;
 
-	@Column(nullable = false)
-	@ManyToMany
-	@JoinTable(name = "destination_gate", joinColumns = @JoinColumn(name = "destination_id"), inverseJoinColumns = @JoinColumn(name = "gate_id"))
-	private List<Location> gates;
+	@ManyToOne
+	@JoinColumn(name = "gate_id", nullable = false)
+	private Location gate;
 
 	public DestinationToGate() {
 		super();
 	}
 
-	public String getDestination() {
+	public DestinationToGate(Destination destination, Location gate) {
+		super();
+		this.destination = destination;
+		this.gate = gate;
+	}
+	
+	public Long getId() {
+		return id;
+	}
+
+	public Destination getDestination() {
 		return destination;
 	}
 
-	public void setDestination(String destination) {
+	public void setDestination(Destination destination) {
 		this.destination = destination;
 	}
 
-	public List<Location> getGates() {
-		return gates;
+	public Location getGate() {
+		return gate;
 	}
 
-	public void setGates(List<Location> gates) {
-		this.gates = gates;
+	public void setGate(Location gate) {
+		this.gate = gate;
 	}
 }
