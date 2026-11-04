@@ -22,7 +22,7 @@ public class InitialDataCreator implements CommandLineRunner {
 		createStorageLocations();
 		createTransitLocations();
 		createPickingLocations();
-		createArticles();
+//		createArticles();
 //		createPackagingUnitTypes();
 //		createStock();
 	}

@@ -19,7 +19,11 @@ public class PackagingUnitType {
 	private int quantity;
 
 	public PackagingUnitType() {
-		super();
+	}
+
+	public PackagingUnitType(String name, int quantity) {
+		this.name = name;
+		this.quantity = quantity;
 	}
 
 	public String getName() {

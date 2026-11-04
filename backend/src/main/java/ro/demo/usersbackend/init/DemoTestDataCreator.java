@@ -13,7 +13,11 @@ import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import ro.demo.usersbackend.entity.Article;
+import ro.demo.usersbackend.entity.ArticlePackagingUnitType;
+import ro.demo.usersbackend.entity.PackagingUnitType;
+import ro.demo.usersbackend.repository.ArticlePackagingUnitTypeRepository;
 import ro.demo.usersbackend.repository.ArticleRepository;
+import ro.demo.usersbackend.repository.PackagingUnitTypeRepository;
 
 @SpringBootApplication(scanBasePackages = { "ro.demo.usersbackend.repository" })
 @EntityScan(basePackages = "ro.demo.usersbackend.entity")
@@ -24,9 +28,15 @@ public class DemoTestDataCreator implements CommandLineRunner {
 	private EntityManager entityManager;
 
 	private final ArticleRepository articleRepository;
+	private final PackagingUnitTypeRepository packagingUnitTypeRepository;
+	private final ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository;
 
-	public DemoTestDataCreator(ArticleRepository articleRepository) {
+	public DemoTestDataCreator(ArticleRepository articleRepository,
+			PackagingUnitTypeRepository packagingUnitTypeRepository,
+			ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository) {
 		this.articleRepository = articleRepository;
+		this.packagingUnitTypeRepository = packagingUnitTypeRepository;
+		this.articlePackagingUnitTypeRepository = articlePackagingUnitTypeRepository;
 	}
 
 	@Override
@@ -34,6 +44,35 @@ public class DemoTestDataCreator implements CommandLineRunner {
 	public void run(String... args) {
 		addArticle("111", "Mere");
 		addArticle("112", "Pere");
+		addPackagingUnitType("PIECE", 1);
+		addPackagingUnitType("BAX6", 6);
+		addPackagingUnitType("BAX12", 12);
+		addAP("111", "111", "PIECE");
+		addAP("112", "112", "PIECE");
+		addAP("1116", "111", "BAX6");
+		addAP("1126", "112", "BAX6");
+	}
+
+	private void addAP(String articleBarcode, String packName, String barcode) {
+		Optional<PackagingUnitType> pack = packagingUnitTypeRepository.findByName(packName);
+		Optional<Article> article = articleRepository.findByBarcode(articleBarcode);
+
+		if (pack.isPresent() && article.isPresent()) {
+			Optional<ArticlePackagingUnitType> ap = articlePackagingUnitTypeRepository
+					.findByArticleAndPackagingUnitType(article.get(), pack.get());
+			articlePackagingUnitTypeRepository.save(new ArticlePackagingUnitType(barcode, article.get(), pack.get()));
+		} else {
+			System.out.println("error");
+		}
+	}
+
+	private void addPackagingUnitType(String packName, int amount) {
+		Optional<PackagingUnitType> pack = packagingUnitTypeRepository.findByName(packName);
+		if (!pack.isPresent()) {
+			packagingUnitTypeRepository.save(new PackagingUnitType(packName, amount));
+		} else {
+			System.out.println("Packaging unit type " + packName + " already exists");
+		}
 	}
 
 	private void addArticle(String barcode, String desc) {
