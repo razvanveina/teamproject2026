@@ -18,6 +18,9 @@ export class TransportApp implements OnInit, OnDestroy {
   hasError = signal(false);
   showErrorReasons = signal(false);
   selectedErrorReason = signal<TransportOrderErrorReason | null>(null);
+  showOrderPicker = signal(false);
+  selectedOrderId = signal<number | null>(null);
+  openOrders = signal<TransportOrderResponse[]>([]);
 
   private readonly errorReasonLabels: Record<TransportOrderErrorReason, string> = {
     LOCATION_EMPTY: 'Pallet is missing',
@@ -81,6 +84,44 @@ export class TransportApp implements OnInit, OnDestroy {
     if (reason) {
       this.onReportError(reason);
     }
+  }
+
+  canChooseOrder(): boolean {
+    return this.order()?.status !== 'ACTIVE';
+  }
+  selectOrder(order: TransportOrderResponse): void {
+    this.selectedOrderId.set(order.id);
+  }
+
+  confirmOrder(): void {
+    const chosen = this.openOrders().find((o) => o.id === this.selectedOrderId());
+    if (chosen) {
+      this.chooseOrder(chosen);
+    }
+  }
+
+  openOrderPicker(): void {
+    this.transportOrderApi.findOpenOrders().subscribe({
+      next: (orders) => {
+        this.openOrders.set(orders);
+        this.selectedOrderId.set(this.order()?.id ?? null);
+        this.showOrderPicker.set(true);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.instructions.set(err.error?.detail ?? 'Could not load transport orders.');
+        this.hasError.set(true);
+      },
+    });
+  }
+
+  closeOrderPicker(): void {
+    this.showOrderPicker.set(false);
+  }
+
+  chooseOrder(order: TransportOrderResponse): void {
+    this.log.action(`CHOOSE TO ${order.id}`);
+    this.closeOrderPicker();
+    this.updateOrder(order);
   }
 
   onReportError(reason: TransportOrderErrorReason): void {

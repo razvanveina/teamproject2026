@@ -1,5 +1,7 @@
 package ro.demo.usersbackend.service;
 
+import java.util.List;
+import java.util.stream.Stream;
 import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
@@ -33,6 +35,14 @@ public class TransportOrderService {
 				.map(this::toResponse);
 	}
 
+	@Transactional(readOnly = true)
+	public List<TransportOrderResponse> findOpenOrders() {
+	    return transportOrderRepository.findByStatusOrderByIdAsc(TransportOrderStatus.NEW)
+	            .stream()
+	            .map(this::toResponse)
+	            .toList();
+	}
+	
 	public TransportOrderResponse scan(Long id, String barcode) {
 		TransportOrder order = transportOrderRepository.findById(id)
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Transport order not found"));

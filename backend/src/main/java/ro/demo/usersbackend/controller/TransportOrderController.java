@@ -1,5 +1,9 @@
 package ro.demo.usersbackend.controller;
 
+import static ro.demo.usersbackend.logging.ActionLog.LOG;
+
+import java.util.List;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +34,11 @@ public class TransportOrderController {
 		this.transportOrderService = transportOrderService;
 	}
 
+	@GetMapping("/open")
+	public List<TransportOrderResponse> findOpenOrders() {
+	    return transportOrderService.findOpenOrders();
+	}
+	
 	@GetMapping("/next")
 	public ResponseEntity<TransportOrderResponse> findNextOrder() {
 		return transportOrderService.findNextOrder().map(ResponseEntity::ok)

@@ -2,22 +2,22 @@
     <div class="top">
         <div>
             @if (order(); as currentOrder) {
-                <table>
-                    <tbody>
-                        <tr>
-                            <th scope="row">Pallet Barcode</th>
-                            <td>{{currentOrder.palletBarcode}}</td>
-                        </tr>
-                        <tr>
-                            <th scope="row">Source Location</th>
-                            <td>{{currentOrder.sourceLocation}}</td>
-                        </tr>
-                        <tr>
-                            <th scope="row">Destination Location</th>
-                            <td>{{currentOrder.destinationLocation}}</td>
-                        </tr>
-                    </tbody>
-                </table>
+            <table>
+                <tbody>
+                    <tr>
+                        <th scope="row">Pallet Barcode</th>
+                        <td>{{currentOrder.palletBarcode}}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Source Location</th>
+                        <td>{{currentOrder.sourceLocation}}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Destination Location</th>
+                        <td>{{currentOrder.destinationLocation}}</td>
+                    </tr>
+                </tbody>
+            </table>
             }
         </div>
     </div>
@@ -28,13 +28,15 @@
 
     <div class="right">
         @if (canScan()) {
-        <input type="text" placeholder="Scan barcode" #barcode (keyup.enter)="onScan(barcode.value); barcode.value = ''">
+        <input type="text" placeholder="Scan barcode" #barcode
+            (keyup.enter)="onScan(barcode.value); barcode.value = ''">
         }
     </div>
 
     <div class="bottom">
         <button (click)=onCancel() class="cancel">Cancel</button>
         <button (click)="openErrorPopup()" class="error-button" [disabled]="!canScan()">Error</button>
+        <button (click)="openOrderPicker()" class="choose-button" [disabled]="!canChooseOrder()">Choose TO</button>
     </div>
 </div>
 
@@ -52,7 +54,50 @@
             }
         </select>
 
-        <button type="button" class="confirm" [disabled]="!selectedErrorReason()" (click)="confirmErrorReason()">Confirm</button>
+        <button type="button" class="confirm" [disabled]="!selectedErrorReason()"
+            (click)="confirmErrorReason()">Confirm</button>
+    </section>
+</div>
+}
+
+@if (showOrderPicker()) {
+<div class="backdrop">
+    <section class="popup order-popup" role="dialog" aria-modal="true" aria-label="Choose transport order">
+        <header>
+            <h3>Choose transport order</h3>
+            <button type="button" class="close" aria-label="Close" (click)="closeOrderPicker()">&times;</button>
+        </header>
+
+        @if (openOrders().length === 0) {
+        <p>No open transport orders.</p>
+        } @else {
+        <div class="order-scroll">
+            <table class="order-list">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Pallet</th>
+                        <th>From</th>
+                        <th>To</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (o of openOrders(); track o.id) {
+                    <tr class="selectable" [class.selected]="o.id === selectedOrderId()" tabindex="0"
+                        (click)="selectOrder(o)" (keydown.enter)="selectOrder(o)" (dblclick)="chooseOrder(o)">
+                        <td>{{o.id}}</td>
+                        <td>{{o.palletBarcode}}</td>
+                        <td>{{o.sourceLocation}}</td>
+                        <td>{{o.destinationLocation}}</td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <button type="button" class="confirm" [disabled]="selectedOrderId() === null"
+            (click)="confirmOrder()">Confirm</button>
+        }
     </section>
 </div>
 }

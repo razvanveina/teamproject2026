@@ -23,6 +23,10 @@ export class TransportOrderApi {
     return this.http.get<TransportOrderResponse | null>(`${this.url}/next`);
   }
 
+  findOpenOrders(): Observable<TransportOrderResponse[]> {
+  return this.http.get<TransportOrderResponse[]>(`${this.url}/open`);
+  }
+
   scan(id: number, barcode: string): Observable<TransportOrderResponse> {
     return this.http.post<TransportOrderResponse>(`${this.url}/${id}/scan`, { barcode });
   }
