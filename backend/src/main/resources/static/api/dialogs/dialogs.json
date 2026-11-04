@@ -9,7 +9,8 @@
     { "file": "Reservation.json" },
     { "file": "StockItem.json" },
     { "file": "TransportOrder.json" },
-    { "file": "Location.json" }
+    { "file": "Location.json" },
+	{"file": "ArticlePickingLocation.json"}
   ],
   "entitySpec": [
     { "name": "Article", "show": [ { "field": "BARCODE", "label": "Barcode" }, { "field": "DESCRIPTION", "label": "Description" } ] },
