@@ -1,7 +1,7 @@
 package ro.demo.usersbackend.controller;
 
-import static ro.demo.usersbackend.logging.ActionLog.LOG;
-
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,6 +22,7 @@ import ro.demo.usersbackend.service.TransportOrderService;
 @RequestMapping("/api/transport-orders")
 @CrossOrigin(origins = "http://localhost:4200")
 public class TransportOrderController {
+	public static final Logger log = LogManager.getLogger("application");
 
 	private final TransportOrderService transportOrderService;
 
@@ -37,13 +38,13 @@ public class TransportOrderController {
 
 	@PostMapping("/{id}/scan")
 	public TransportOrderResponse scan(@PathVariable Long id, @Valid @RequestBody TransportOrderRequest request) {
-		LOG.info("Order {}: user scanned '{}'", id, request.barcode());
+		log.info("Order {}: user scanned '{}'", id, request.barcode());
 		try {
 			TransportOrderResponse response = transportOrderService.scan(id, request.barcode());
-			LOG.info("Order {}: scan accepted, status is now {}", id, response.status());
+			log.info("Order {}: scan accepted, status is now {}", id, response.status());
 			return response;
 		} catch (ResponseStatusException e) {
-			LOG.warn("Order {}: scan rejected - {}", id, e.getReason());
+			log.warn("Order {}: scan rejected - {}", id, e.getReason());
 			throw e;
 		}
 	}
@@ -51,13 +52,13 @@ public class TransportOrderController {
 	@PostMapping("/{id}/error")
 	public TransportOrderResponse reportError(@PathVariable Long id,
 			@Valid @RequestBody TransportOrderErrorRequest request) {
-		LOG.info("Order {}: user reported error {}", id, request.reason());
+		log.info("Order {}: user reported error {}", id, request.reason());
 		try {
 			TransportOrderResponse response = transportOrderService.reportError(id, request.reason());
-			LOG.info("Order {}: status is now {}", id, response.status());
+			log.info("Order {}: status is now {}", id, response.status());
 			return response;
 		} catch (ResponseStatusException e) {
-			LOG.warn("Order {}: error report rejected - {}", id, e.getReason());
+			log.warn("Order {}: error report rejected - {}", id, e.getReason());
 			throw e;
 		}
 	}
