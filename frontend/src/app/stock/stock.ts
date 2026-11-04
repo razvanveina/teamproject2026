@@ -5,7 +5,6 @@ import { DialogConfigService } from '../services/dialog-config.service';
 interface StockLine {
     articleBarcode: string;
     description: string;
-    packagingUnit: string;
     quantity: number;
 }
 
@@ -54,18 +53,15 @@ export class Stock implements OnInit {
             loadUnits: this.service.getRows('LoadUnit'),
             items: this.service.getRows('StockItem'),
             articles: this.service.getRows('Article'),
-            types: this.service.getRows('PackagingUnitType'),
             locations: this.service.getRows('StorageLocation')
         }).subscribe({
             next: data => {
                 const articles = byId(data.articles);
-                const types = byId(data.types);
                 const locations = byId(data.locations);
 
                 const itemsOf = new Map<number, StockLine[]>();
                 for (const item of data.items.map(lowerKeys)) {
                     const article = articles.get(Number(item['article_id']));
-                    const type = types.get(Number(item['packaging_unit_type_id']));
                     const loadUnitId = Number(item['load_unit_id']);
 
                     itemsOf.set(loadUnitId, [
@@ -73,7 +69,6 @@ export class Stock implements OnInit {
                         {
                             articleBarcode: String(article?.['barcode'] ?? ''),
                             description: String(article?.['description'] ?? ''),
-                            packagingUnit: type ? `${type['name']} (${type['quantity']} pcs)` : '',
                             quantity: Number(item['quantity'])
                         }
                     ]);
