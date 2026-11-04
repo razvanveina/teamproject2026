@@ -7,9 +7,10 @@ import java.util.ArrayList;
 
 import ro.demo.usersbackend.dto.ProcessResponse;
 import ro.demo.usersbackend.server.host.HostProcess;
+import ro.demo.usersbackend.server.reservation.ReservationService;
 
 public class ProcessManager {
-	private static final AbstractProcess[] processes = { new HostProcess() };
+	private static final AbstractProcess[] processes = { new HostProcess(), new ReservationService() };
 	private static final Map<String, Thread> threads = new HashMap<>();
 
 	public static synchronized void startAll() {
