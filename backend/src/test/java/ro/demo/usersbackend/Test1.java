@@ -101,11 +101,11 @@ public class Test1 {
 			StockItem item = session.find(StockItem.class, id);
 			StockItem original = session.createQuery("""
 					from StockItem s
-					where s.article = :article and s.loadUnit = :loadUnit and s.packagingUnitType = :packagingUnitType
+					where s.article = :article and s.loadUnit = :loadUnit
 					order by s.id
 					""", StockItem.class).setParameter("article", item.getArticle())
 					.setParameter("loadUnit", item.getLoadUnit())
-					.setParameter("packagingUnitType", item.getPackagingUnitType()).setMaxResults(1).getSingleResult();
+					.setMaxResults(1).getSingleResult();
 
 			if (original != item) {
 				original.setQuantity(original.getQuantity() + item.getQuantity());

@@ -25,9 +25,9 @@ public class StockItem {
 	@JoinColumn(name = "loadUnit_id", nullable = false)
 	private LoadUnit loadUnit;
 
-	@ManyToOne
-	@JoinColumn(name = "packagingUnitType_id", nullable = false)
-	private PackagingUnitType packagingUnitType;
+//	@ManyToOne
+//	@JoinColumn(name = "packagingUnitType_id", nullable = false)
+//	private PackagingUnitType packagingUnitType;
 
 	@ManyToOne
 	@JoinColumn(name = "reservation_id")
@@ -35,14 +35,6 @@ public class StockItem {
 
 	public StockItem() {
 		super();
-	}
-
-	public StockItem(Article article, int quantity, LoadUnit loadUnit, PackagingUnitType packagingUnitType) {
-		super();
-		this.article = article;
-		this.quantity = quantity;
-		this.loadUnit = loadUnit;
-		this.packagingUnitType = packagingUnitType;
 	}
 
 	public StockItem(Article article, int quantity, LoadUnit loadUnit) {
@@ -75,13 +67,13 @@ public class StockItem {
 		this.loadUnit = loadUnit;
 	}
 
-	public PackagingUnitType getPackagingUnitType() {
-		return packagingUnitType;
-	}
+//	public PackagingUnitType getPackagingUnitType() {
+//		return packagingUnitType;
+//	}
 
-	public void setPackagingUnitType(PackagingUnitType packagingUnitType) {
-		this.packagingUnitType = packagingUnitType;
-	}
+//	public void setPackagingUnitType(PackagingUnitType packagingUnitType) {
+//		this.packagingUnitType = packagingUnitType;
+//	}
 
 	public Reservation getReservation() {
 		return reservation;

@@ -110,8 +110,7 @@ public class ReservationService extends AbstractProcess {
 
 			if (item.getQuantity() > remaining) {
 				item.setQuantity(item.getQuantity() - remaining);
-				StockItem split = new StockItem(item.getArticle(), remaining, item.getLoadUnit(),
-						item.getPackagingUnitType());
+				StockItem split = new StockItem(item.getArticle(), remaining, item.getLoadUnit());
 				session.persist(split);
 				reserveItem(session, split, line);
 				remaining = 0;
