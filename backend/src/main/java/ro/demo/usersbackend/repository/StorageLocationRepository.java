@@ -22,7 +22,7 @@ public interface StorageLocationRepository extends JpaRepository<StorageLocation
 			FROM StorageLocation location
 			WHERE location.loadUnit IS NULL
 			AND location NOT IN (
-				SELECT t.targe
+				SELECT t.target
 				FROM TransportOrder t
 			)
 			ORDER BY location.x
