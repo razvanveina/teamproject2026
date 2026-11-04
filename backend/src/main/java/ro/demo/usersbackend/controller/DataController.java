@@ -99,8 +99,15 @@ public class DataController {
 				params.add("%" + filters.get(key).toUpperCase() + "%");
 			}
 		}
+		
+		String paging = "";
+		if (filters.containsKey("page")) {
+			select = select + ", COUNT(*) OVER () AS TOTAL_ROWS";
+			paging = " ORDER BY t.ID OFFSET ? ROWS FETCH NEXT 20 ROWS ONLY";
+			params.add(Integer.parseInt(filters.get("page")) * 20);
+		}
 
-		return jdbcTemplate.queryForList(select + " FROM " + tableNameOf(entity) + " t" + joins + where, params.toArray());
+		return jdbcTemplate.queryForList(select + " FROM " + tableNameOf(entity) + " t" + joins + where + paging, params.toArray());
 	}
 
 	// The columns of a table: name, type and if it can be empty

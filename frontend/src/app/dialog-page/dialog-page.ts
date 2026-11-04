@@ -20,6 +20,11 @@ export class DialogPage implements OnInit {
   rows = signal<any[]>([]);
   tableColumns = signal<DialogColumn[]>([]);
   filters: any = {};
+
+  page = signal(0); //pagina current page number, starting from 0
+  pages = signal(1); //total number of pages, starting from 1
+
+
   // The error message shown above the table. Empty when everything is fine.
   error = signal('');
   // Runs once, when the page opens
@@ -32,6 +37,7 @@ export class DialogPage implements OnInit {
       this.error.set('');
       this.tableColumns.set([]);
       this.filters = {};
+      this.page.set(0);
       // 2. Ask for the dialog file, e.g. ReceivingOrder.json
       this.service.getDialog(entity + '.json').subscribe((dialog: DialogConfig) => {
         this.dialog.set(dialog);
@@ -40,10 +46,8 @@ export class DialogPage implements OnInit {
           this.tableColumns.set(this.makeColumns(dialog, dialogsFile));
         });
 
-        // 3. Ask for the rows, e.g. /api/data/article
-        this.service.getRows(dialog.entity).subscribe((rows: any[]) => {
-          this.rows.set(rows);
-        });
+        // 3. Ask for the rows, e.g. /api/data/article/+ filter=page:0 
+        this.loadRows();
       });
     });
   }
@@ -81,14 +85,35 @@ export class DialogPage implements OnInit {
 
   setFilter(field: string, event: any): void {
     this.filters[field] = event.target.value;
+    this.page.set(0);
     this.loadRows();
+  }
+
+  previousPage(): void {
+    if (this.page() > 0) {
+      this.page.set(this.page() - 1);
+      this.loadRows();
+    }
+  }
+
+  nextPage(): void {
+    if (this.page() < this.pages() - 1) {
+      this.page.set(this.page() + 1);
+      this.loadRows();
+    }
   }
 
   loadRows(): void {
     const config = this.dialog();
     if (config !== null) {
+      this.filters['page'] = this.page();
       this.service.getRows(config.entity, this.filters).subscribe((rows: any[]) => {
         this.rows.set(rows);
+        if (rows.length > 0) {
+          this.pages.set(Math.ceil(rows[0]['TOTAL_ROWS'] / 20));
+        } else {
+          this.pages.set(1);
+        }
       });
     }
   }

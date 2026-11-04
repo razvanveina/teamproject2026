@@ -114,6 +114,7 @@ tr:last-child td {
     background: #125c64;
     border-color: #125c64;
 }
+
 .filters {
     display: flex;
     flex-wrap: nowrap;
@@ -141,7 +142,7 @@ tr:last-child td {
     white-space: nowrap;
 }
 
-.filters label + label {
+.filters label+label {
     border-left: 1px solid #e1e8ef;
 }
 
@@ -166,4 +167,36 @@ tr:last-child td {
 
 .filters:empty {
     display: none;
+}
+
+.pager {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 14px;
+    color: #354b66;
+    font-family: "Segoe UI", "Inter", "Aptos", sans-serif;
+    font-size: 0.9rem;
+    font-weight: 650;
+}
+
+.pager button {
+    width: 36px;
+    height: 36px;
+    color: #176f78;
+    font-size: 1.2rem;
+    background: #fff;
+    border: 1px solid #e1e8ef;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.pager button:hover {
+    background: #eff8f7;
+}
+
+.pager button:disabled {
+    color: #b8c4d0;
+    background: #f8fafc;
+    cursor: default;
 }
