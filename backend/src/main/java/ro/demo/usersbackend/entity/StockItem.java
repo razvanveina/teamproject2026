@@ -54,6 +54,10 @@ public class StockItem {
 		this.quantity = quantity;
 	}
 
+	public int getTotalQuantity() {
+		return quantity * articlePackagingUnitType.getPackagingUnitType().getQuantity();
+	}
+
 	public LoadUnit getLoadUnit() {
 		return loadUnit;
 	}

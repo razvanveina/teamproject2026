@@ -21,6 +21,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import ro.demo.usersbackend.entity.Article;
+import ro.demo.usersbackend.entity.ArticlePackagingUnitType;
 import ro.demo.usersbackend.entity.Destination;
 import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.Location;
@@ -147,7 +148,8 @@ public class HostRetrievalProcess extends AbstractProcess {
 					session.persist(orderLine);
 
 					List<StockItem> stockItems = session
-							.createQuery("from StockItem s where s.article = :article", StockItem.class)
+							.createQuery("from StockItem s where s.articlePackagingUnitType.article = :article",
+									StockItem.class)
 							.setParameter("article", article).getResultList();
 
 					if (stockItems.isEmpty()) {
@@ -199,7 +201,8 @@ public class HostRetrievalProcess extends AbstractProcess {
 						"org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy")
 				.build();
 
-		return new MetadataSources(registry).addAnnotatedClass(Article.class).addAnnotatedClass(PackagingUnitType.class)
+		return new MetadataSources(registry).addAnnotatedClass(Article.class)
+				.addAnnotatedClass(ArticlePackagingUnitType.class).addAnnotatedClass(PackagingUnitType.class)
 				.addAnnotatedClass(Destination.class).addAnnotatedClass(Reservation.class)
 				.addAnnotatedClass(StockItem.class).addAnnotatedClass(LoadUnit.class).addAnnotatedClass(Location.class)
 				.addAnnotatedClass(StorageLocation.class).addAnnotatedClass(TransitLocation.class)

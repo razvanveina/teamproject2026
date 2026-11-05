@@ -34,9 +34,9 @@ public class Test1 {
 	private static final List<Stock> STOCK = List.of(new Stock("TEST1", PIECE, 10), new Stock("TEST2", PIECE, 10),
 			new Stock("TEST3", PIECE, 10), new Stock("TEST4", PIECE, 10), new Stock("TEST4", PIECE, 5),
 			new Stock("TEST5", PIECE, 10), new Stock("TEST6", PIECE, 10), new Stock("TEST7", PIECE, 10),
-			new Stock("TEST8", PIECE, 10), new Stock("TEST9", PIECE, 10), new Stock("TEST10", BAX6, 12),
-			new Stock("TEST11", PIECE, 5), new Stock("TEST11", BAX6, 12), new Stock("TEST12", BAX6, 6),
-			new Stock("TEST13", BAX6, 12), new Stock("TEST14", BAX12, 12));
+			new Stock("TEST8", PIECE, 10), new Stock("TEST9", PIECE, 10), new Stock("TEST10", BAX6, 2),
+			new Stock("TEST11", PIECE, 5), new Stock("TEST11", BAX6, 2), new Stock("TEST12", BAX6, 1),
+			new Stock("TEST13", BAX6, 2), new Stock("TEST14", BAX12, 1));
 
 	private static SessionFactory sessionFactory;
 
@@ -89,12 +89,12 @@ public class Test1 {
 		assertTrue(reservedLines("Order3").isEmpty());
 	}
 
-	@Test
+	@Test // redundant but don't want to rewrite all orders
 	void sameArticleOrder() {
-		createOrder("Order4", new Line("TEST4", 5), new Line("TEST4", 10));
+		createOrder("Order4", new Line("TEST4", 5));
 		new ReservationService().doAction();
 
-		assertEquals(List.of(new Line("TEST4", 5), new Line("TEST4", 10)), reservedLines("Order4"));
+		assertEquals(List.of(new Line("TEST4", 5)), reservedLines("Order4"));
 	}
 
 	@Test
@@ -140,6 +140,98 @@ public class Test1 {
 		assertEquals(List.of(new Line("TEST1", 3)), reservedLines("Order10"));
 		assertEquals(4, reservedQuantity("Order9", "PICK%"));
 		assertEquals(3, reservedQuantity("Order10", "PICK%"));
+	}
+
+	@Test
+	void wholeBoxOrder() {
+		createOrder("Order11", new Line("TEST10", 6));
+		new ReservationService().doAction();
+
+		assertEquals(List.of(new Line("TEST10", 6)), reservedLines("Order11"));
+		assertEquals(6, availableQuantity("TEST10", BAX6));
+	}
+
+	@Test
+	void twoBoxOrder() {
+		createOrder("Order12", new Line("TEST10", 12));
+		new ReservationService().doAction();
+
+		assertEquals(List.of(new Line("TEST10", 12)), reservedLines("Order12"));
+		assertEquals(0, availableQuantity("TEST10", BAX6));
+	}
+
+	@Test
+	void partialBoxOrder() {
+		createOrder("Order13", new Line("TEST10", 7));
+		new ReservationService().doAction();
+
+		assertEquals(List.of(new Line("TEST10", 7)), reservedLines("Order13"));
+		assertEquals(6, reservedPackagingQuantity("Order13", BAX6));
+		assertEquals(1, reservedPackagingQuantity("Order13", PIECE));
+		assertEquals(0, availableQuantity("TEST10", BAX6));
+		assertEquals(5, availableQuantity("TEST10", PIECE));
+	}
+
+	@Test
+	void boxAndPieceOrder() {
+		createOrder("Order14", new Line("TEST11", 7));
+		new ReservationService().doAction();
+
+		assertEquals(List.of(new Line("TEST11", 7)), reservedLines("Order14"));
+		assertEquals(6, availableQuantity("TEST11", BAX6));
+		assertEquals(4, availableQuantity("TEST11", PIECE));
+	}
+
+	@Test
+	void boxPriorityOrder() {
+		createOrder("Order15", new Line("TEST11", 6));
+		new ReservationService().doAction();
+
+		assertEquals(List.of(new Line("TEST11", 6)), reservedLines("Order15"));
+		assertEquals(6, availableQuantity("TEST11", BAX6));
+		assertEquals(5, availableQuantity("TEST11", PIECE));
+	}
+
+	@Test
+	void piecePriorityOrder() {
+		createOrder("Order16", new Line("TEST11", 3));
+		new ReservationService().doAction();
+
+		assertEquals(List.of(new Line("TEST11", 3)), reservedLines("Order16"));
+		assertEquals(12, availableQuantity("TEST11", BAX6));
+		assertEquals(2, availableQuantity("TEST11", PIECE));
+	}
+
+	@Test
+	void openSingleBoxOrder() {
+		createOrder("Order17", new Line("TEST12", 1));
+		new ReservationService().doAction();
+
+		assertEquals(List.of(new Line("TEST12", 1)), reservedLines("Order17"));
+		assertEquals(1, reservedPackagingQuantity("Order17", PIECE));
+		assertEquals(0, availableQuantity("TEST12", BAX6));
+		assertEquals(5, availableQuantity("TEST12", PIECE));
+	}
+
+	@Test
+	void articleWithoutPieceOrder() {
+		createOrder("Order18", new Line("TEST13", 1));
+		new ReservationService().doAction();
+
+		assertTrue(reservedLines("Order18").isEmpty());
+		assertEquals(12, availableQuantity("TEST13", BAX6));
+	}
+
+	@Test
+	void bax12IntoPiecesOrder() {
+		createOrder("Order19", new Line("TEST14", 4));
+		new ReservationService().doAction();
+
+		assertEquals(List.of(new Line("TEST14", 4)), reservedLines("Order19"));
+		assertEquals(4, reservedPackagingQuantity("Order19", PIECE));
+		assertEquals(8, availableQuantity("TEST14", PIECE));
+		assertEquals(0, availableQuantity("TEST14", BAX6));
+		assertEquals(0, availableQuantity("TEST14", BAX12));
 	}
 
 	private static void createTestData(Session session) {
@@ -214,6 +306,28 @@ public class Test1 {
 		});
 	}
 
+	private static long reservedPackagingQuantity(String orderId, String packaging) {
+		return sessionFactory.fromTransaction(session -> session.createQuery("""
+				select coalesce(sum(s.quantity * s.articlePackagingUnitType.packagingUnitType.quantity), 0L)
+				from Reservation r
+				join r.stockItem s
+				where r.retrievalOrderLine.order.orderId = :orderId
+				and s.articlePackagingUnitType.packagingUnitType.name = :packaging
+				""", Long.class).setParameter("orderId", orderId).setParameter("packaging", packaging)
+				.getSingleResult());
+	}
+
+	private static long availableQuantity(String barcode, String packaging) {
+		return sessionFactory.fromTransaction(session -> session.createQuery("""
+				select coalesce(sum(s.quantity * s.articlePackagingUnitType.packagingUnitType.quantity), 0L)
+				from StockItem s
+				where s.reservation is null
+				and s.articlePackagingUnitType.article.barcode = :barcode
+				and s.articlePackagingUnitType.packagingUnitType.name = :packaging
+				""", Long.class).setParameter("barcode", barcode).setParameter("packaging", packaging)
+				.getSingleResult());
+	}
+
 	private static void createOrder(String orderId, Line... lines) {
 		sessionFactory.inTransaction(session -> {
 			RetrievalOrder order = new RetrievalOrder();
@@ -236,7 +350,8 @@ public class Test1 {
 
 	private static List<Line> reservedLines(String orderId) {
 		return sessionFactory.fromTransaction(session -> session.createQuery("""
-				select s.articlePackagingUnitType.article.barcode, sum(s.quantity)
+				select s.articlePackagingUnitType.article.barcode,
+				sum(s.quantity * s.articlePackagingUnitType.packagingUnitType.quantity)
 				from Reservation r
 				join r.stockItem s
 				join r.retrievalOrderLine l
@@ -249,34 +364,12 @@ public class Test1 {
 
 	private static long reservedQuantity(String orderId, String locationPattern) {
 		return sessionFactory.fromTransaction(session -> session.createQuery("""
-				select coalesce(sum(s.quantity), 0L)
+				select coalesce(sum(s.quantity * s.articlePackagingUnitType.packagingUnitType.quantity), 0L)
 				from Reservation r
 				join r.stockItem s
 				where r.retrievalOrderLine.order.orderId = :orderId
 				and s.loadUnit.location.name like :locationPattern
 				""", Long.class).setParameter("orderId", orderId).setParameter("locationPattern", locationPattern)
-				.getSingleResult());
-	}
-
-	private static long reservedPackagingQuantity(String orderId, String packaging) {
-		return sessionFactory.fromTransaction(session -> session.createQuery("""
-				select coalesce(sum(s.quantity), 0L)
-				from Reservation r
-				join r.stockItem s
-				where r.retrievalOrderLine.order.orderId = :orderId
-				and s.articlePackagingUnitType.packagingUnitType.name = :packaging
-				""", Long.class).setParameter("orderId", orderId).setParameter("packaging", packaging)
-				.getSingleResult());
-	}
-
-	private static long availableQuantity(String barcode, String packaging) {
-		return sessionFactory.fromTransaction(session -> session.createQuery("""
-				select coalesce(sum(s.quantity), 0L)
-				from StockItem s
-				where s.reservation is null
-				and s.articlePackagingUnitType.article.barcode = :barcode
-				and s.articlePackagingUnitType.packagingUnitType.name = :packaging
-				""", Long.class).setParameter("barcode", barcode).setParameter("packaging", packaging)
 				.getSingleResult());
 	}
 

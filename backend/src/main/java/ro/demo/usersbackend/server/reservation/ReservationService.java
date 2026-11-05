@@ -50,17 +50,9 @@ public class ReservationService extends AbstractProcess {
 				Log.info("session factory built");
 			}
 
-			int detected = sessionFactory.fromTransaction(session -> session
-					.createMutationQuery("update RetrievalOrder o set o.status = :activeStatus where o.status = :newStatus")
-					.setParameter("activeStatus", RetrievalOrderStatus.ACTIVE)
-					.setParameter("newStatus", RetrievalOrderStatus.NEW).executeUpdate());
-			if (detected > 0) {
-				Log.info("{} new orders set to ACTIVE", detected);
-			}
-
 			List<String> orderIds = sessionFactory.fromTransaction(session -> session
 					.createQuery("select o.orderId from RetrievalOrder o where o.status = :status", String.class)
-					.setParameter("status", RetrievalOrderStatus.ACTIVE).getResultList());
+					.setParameter("status", RetrievalOrderStatus.NEW).getResultList());
 
 			orderIds.forEach(orderId -> process(sessionFactory, orderId));
 		} catch (Exception e) {
@@ -86,8 +78,8 @@ public class ReservationService extends AbstractProcess {
 
 	private static boolean reserve(Session session, RetrievalOrder order) {
 		for (RetrievalOrderLine line : order.getLines()) {
-			int available = findAvailableStock(session, line.getArticle()).stream().mapToInt(StockItem::getQuantity)
-					.sum();
+			int available = findAvailableStock(session, line.getArticle()).stream()
+					.mapToInt(StockItem::getTotalQuantity).sum();
 			if (available < line.getQuantity()) {
 				Log.warn("order {} skipped, article {} has {} available, needs {}", order.getOrderId(),
 						line.getArticle().getBarcode(), available, line.getQuantity());
@@ -98,7 +90,7 @@ public class ReservationService extends AbstractProcess {
 		for (RetrievalOrderLine line : order.getLines()) {
 			reserveLine(session, line);
 		}
-		order.setStatus(RetrievalOrderStatus.STARTED);
+		order.setStatus(RetrievalOrderStatus.ACTIVE);
 		return true;
 	}
 
@@ -125,22 +117,23 @@ public class ReservationService extends AbstractProcess {
 			}
 
 			StockItem opened = openPackage(session, item);
-			int pieces = Math.min(opened.getQuantity(), remaining);
+			int pieces = Math.min(opened.getTotalQuantity(), remaining);
 			reservePieces(session, opened, pieces, line);
 			remaining -= pieces;
 		}
 
 		if (remaining > 0) {
-			throw new IllegalStateException(
-					"article " + line.getArticle().getBarcode() + " is short by " + remaining);
+			throw new IllegalStateException("article " + line.getArticle().getBarcode() + " is short by " + remaining);
 		}
 		line.setStatus(RetrievalOrderLineStatus.ACTIVE);
 	}
 
 	private static void reservePieces(Session session, StockItem item, int pieces, RetrievalOrderLine line) {
-		if (item.getQuantity() > pieces) {
-			item.setQuantity(item.getQuantity() - pieces);
-			StockItem split = new StockItem(item.getArticlePackagingUnitType(), pieces, item.getLoadUnit());
+		int packages = pieces / packageSize(item);
+
+		if (item.getQuantity() > packages) {
+			item.setQuantity(item.getQuantity() - packages);
+			StockItem split = new StockItem(item.getArticlePackagingUnitType(), packages, item.getLoadUnit());
 			session.persist(split);
 			reserveItem(session, split, line);
 		} else {
@@ -152,12 +145,13 @@ public class ReservationService extends AbstractProcess {
 		ArticlePackagingUnitType piece = findPiecePackaging(session, item.getArticlePackagingUnitType().getArticle());
 		int size = packageSize(item);
 
-		if (item.getQuantity() <= size) {
+		if (item.getQuantity() <= 1) {
 			item.setArticlePackagingUnitType(piece);
+			item.setQuantity(size);
 			return item;
 		}
 
-		item.setQuantity(item.getQuantity() - size);
+		item.setQuantity(item.getQuantity() - 1);
 		StockItem opened = new StockItem(piece, size, item.getLoadUnit());
 		session.persist(opened);
 		return opened;
@@ -169,8 +163,8 @@ public class ReservationService extends AbstractProcess {
 				where p.article = :article and p.packagingUnitType.quantity = 1
 				order by p.id
 				""", ArticlePackagingUnitType.class).setParameter("article", article).setMaxResults(1)
-				.uniqueResultOptional().orElseThrow(() -> new IllegalStateException(
-						"article " + article.getBarcode() + " has no piece packaging"));
+				.uniqueResultOptional().orElseThrow(
+						() -> new IllegalStateException("article " + article.getBarcode() + " has no piece packaging"));
 	}
 
 	private static void reserveItem(Session session, StockItem item, RetrievalOrderLine line) {
@@ -199,7 +193,7 @@ public class ReservationService extends AbstractProcess {
 
 	private static int wholePackagePieces(StockItem item, int quantity) {
 		int size = packageSize(item);
-		return Math.min(item.getQuantity(), quantity) / size * size;
+		return Math.min(item.getTotalQuantity(), quantity) / size * size;
 	}
 
 	private static int packageSize(StockItem item) {

@@ -1,7 +1,5 @@
 package ro.demo.usersbackend.controller;
 
-import static ro.demo.usersbackend.logging.ActionLog.LOG;
-
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
@@ -36,9 +34,9 @@ public class TransportOrderController {
 
 	@GetMapping("/open")
 	public List<TransportOrderResponse> findOpenOrders() {
-	    return transportOrderService.findOpenOrders();
+		return transportOrderService.findOpenOrders();
 	}
-	
+
 	@GetMapping("/next")
 	public ResponseEntity<TransportOrderResponse> findNextOrder() {
 		return transportOrderService.findNextOrder().map(ResponseEntity::ok)

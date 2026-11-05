@@ -1,7 +1,7 @@
 package ro.demo.usersbackend.controller;
 
-import static ro.demo.usersbackend.logging.ActionLog.LOG;
-
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,10 +16,11 @@ import ro.demo.usersbackend.dto.LogRequest;
 @RequestMapping("/api/log")
 @CrossOrigin(origins = "http://localhost:4200")
 public class LogController {
+	public static final Logger log = LogManager.getLogger("application");
 
 	@PostMapping
 	public ResponseEntity<Void> log(@Valid @RequestBody LogRequest request) {
-		LOG.info("User pressed {}", request.action());
+		log.info("User pressed {}", request.action());
 		return ResponseEntity.noContent().build();
 	}
 }
