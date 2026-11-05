@@ -44,16 +44,22 @@ public class DemoTestDataCreator implements CommandLineRunner {
 	public void run(String... args) {
 		addArticle("111", "Mere");
 		addArticle("112", "Pere");
+
 		addPackagingUnitType("PIECE", 1);
+		addPackagingUnitType("BAX3", 3);
 		addPackagingUnitType("BAX6", 6);
 		addPackagingUnitType("BAX12", 12);
+
 		addAP("111", "111", "PIECE");
-		addAP("112", "112", "PIECE");
-		addAP("1116", "111", "BAX6");
-		addAP("1126", "112", "BAX6");
+		addAP("111", "111003", "BAX3");
+		addAP("111", "111006", "BAX6");
+
+		addAP("112", "112", "PIECE"); //la piece are acelasi barcode cu pack
+		addAP("112", "112003", "BAX3");
+		addAP("112", "112012", "BAX12");
 	}
 
-	private void addAP(String articleBarcode, String packName, String barcode) {
+	private void addAP(String articleBarcode, String barcode, String packName) {
 		Optional<PackagingUnitType> pack = packagingUnitTypeRepository.findByName(packName);
 		Optional<Article> article = articleRepository.findByBarcode(articleBarcode);
 

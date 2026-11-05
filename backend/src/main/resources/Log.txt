@@ -1,0 +1,68 @@
+2026-11-03 11:37:15.067 INFO  - User pressed TRANSPORT
+2026-11-03 11:37:15.751 INFO  - User pressed HOME
+2026-11-03 11:37:18.328 INFO  - User pressed HOME
+2026-11-03 11:50:23.770 INFO  - User pressed TRANSPORT
+2026-11-03 11:55:47.077 INFO  - User pressed HOME
+2026-11-03 12:01:53.057 INFO  - User pressed TRANSPORT
+2026-11-03 12:01:54.301 INFO  - User pressed HOME
+2026-11-03 12:02:59.031 INFO  - User pressed TRANSPORT
+2026-11-03 12:03:03.780 INFO  - User pressed CANCEL
+2026-11-03 12:03:05.103 INFO  - User pressed TRANSPORT
+2026-11-03 12:03:20.800 INFO  - User pressed TRANSPORT
+2026-11-03 12:03:22.437 INFO  - User pressed HOME
+2026-11-03 12:03:24.869 INFO  - User pressed HOME
+2026-11-03 12:03:26.303 INFO  - User pressed DIALOG Destinations
+2026-11-03 12:04:57.570 INFO  - User pressed TRANSPORT
+2026-11-03 12:08:42.435 INFO  - User pressed TRANSPORT
+2026-11-03 12:09:03.773 INFO  - User pressed HOME
+2026-11-03 12:17:13.005 INFO  - User pressed TRANSPORT
+2026-11-03 12:17:15.179 INFO  - User pressed DIALOG Packaging Unit Types
+2026-11-03 12:17:20.086 INFO  - User pressed DIALOG Receiving Orders
+2026-11-03 12:17:21.514 INFO  - User pressed DIALOG Load Units
+2026-11-03 12:17:23.562 INFO  - User pressed DIALOG Transport Orders
+2026-11-03 12:17:25.050 INFO  - User pressed DIALOG Stock Items
+2026-11-03 12:17:25.923 INFO  - User pressed TRANSPORT
+2026-11-03 12:58:44.980 INFO  - User pressed DIALOG Receiving Orders
+2026-11-03 12:58:48.930 INFO  - User pressed HOME
+2026-11-03 13:03:01.541 INFO  - User pressed TRANSPORT
+2026-11-03 13:05:00.053 INFO  - User pressed TRANSPORT
+2026-11-03 13:06:41.462 INFO  - User pressed TRANSPORT
+2026-11-03 13:06:43.474 INFO  - User pressed DIALOG Articles
+2026-11-03 13:07:01.923 INFO  - User pressed TRANSPORT
+2026-11-03 13:07:31.761 INFO  - User pressed TRANSPORT
+2026-11-03 13:12:45.749 INFO  - User pressed HOME
+2026-11-03 13:19:33.368 INFO  - User pressed HOME
+2026-11-03 13:28:37.994 INFO  - User pressed HOME
+2026-11-03 13:59:01.632 INFO  - User pressed DIALOG Load Units
+2026-11-03 14:03:35.805 INFO  - User pressed HOME
+2026-11-03 14:11:38.270 INFO  - User pressed DIALOG Transport Orders
+2026-11-03 14:11:47.367 INFO  - User pressed DIALOG Retrieval Orders
+2026-11-03 14:11:48.610 INFO  - User pressed DIALOG Load Units
+2026-11-03 14:13:51.535 INFO  - User pressed DIALOG Destinations
+2026-11-03 14:13:52.956 INFO  - User pressed DIALOG Stock Items
+2026-11-03 14:15:46.848 INFO  - User pressed DIALOG Retrieval Orders
+2026-11-03 14:16:10.303 INFO  - User pressed DIALOG Stock Items
+2026-11-03 14:21:21.519 INFO  - User pressed DIALOG Destinations
+2026-11-03 14:21:23.816 INFO  - User pressed DIALOG Transport Orders
+2026-11-03 14:21:25.217 INFO  - User pressed DIALOG Reservations
+2026-11-03 14:21:26.604 INFO  - User pressed DIALOG Retrieval Orders
+2026-11-03 14:21:27.992 INFO  - User pressed DIALOG Destinations
+2026-11-03 14:21:28.856 INFO  - User pressed DIALOG Load Units
+2026-11-03 14:24:54.797 INFO  - User pressed DIALOG Load Units
+2026-11-03 14:41:08.880 INFO  - User pressed HOME
+2026-11-04 08:49:36.057 INFO  - User pressed HOME
+2026-11-04 08:54:39.847 INFO  - User pressed TRANSPORT
+2026-11-04 08:54:54.333 INFO  - User pressed HOME
+2026-11-04 09:00:04.924 INFO  - User pressed TRANSPORT
+2026-11-04 09:00:06.580 INFO  - User pressed TRANSPORT
+2026-11-04 09:00:08.443 INFO  - User pressed HOME
+2026-11-04 09:00:15.094 INFO  - User pressed TRANSPORT
+2026-11-04 09:00:17.971 INFO  - User pressed TRANSPORT
+2026-11-04 09:01:36.278 INFO  - User pressed HOME
+2026-11-04 09:01:46.461 INFO  - User pressed HOME
+2026-11-04 09:03:38.752 INFO  - User pressed DIALOG Reservations
+2026-11-04 09:03:40.068 INFO  - User pressed DIALOG Load Units
+2026-11-04 09:03:55.776 INFO  - User pressed HOME
+2026-11-04 09:05:30.515 INFO  - User pressed DIALOG Reservations
+2026-11-04 09:05:32.224 INFO  - User pressed DIALOG Packaging Unit Types
+2026-11-04 09:06:58.551 INFO  - User pressed HOME

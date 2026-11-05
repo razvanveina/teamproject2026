@@ -12,3 +12,9 @@ export interface ReceivingOrderLine {
     status: string;
     description: string;
 }
+
+export interface PackageInfo {
+    articleBarcode: string;
+    packagingUnit: string;
+    quantity: number;
+}

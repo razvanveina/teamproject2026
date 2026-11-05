@@ -8,10 +8,9 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Barcode</th>
                         <th>Article Description</th>
-                        <th>Quantity</th>
-                        <th>Received Quantity</th>
+                        <th>Quantity (pcs)</th>
+                        <th>Received Quantity (pcs)</th>
                         <th>Status</th>
                     </tr>
                 </thead>
@@ -19,7 +18,6 @@
                 <tbody>
                     @for (line of order().lines; track line.id) {
                     <tr [class.completed]="line.status == 'FINISHED'">
-                        <td>{{ line.barcode }}</td>
                         <td>{{ line.description }}</td>
                         <td>{{ line.quantity }}</td>
                         <td>{{ line.receivedQuantity }}</td>
@@ -32,8 +30,9 @@
     </div>
 
     <div [class.left]="!error()" [class.error]="error()">
-        <div >
-        <p>{{instructions}}</p></div>
+        <div>
+            <p>{{instructions()}}</p>
+        </div>
     </div>
 
     <div class="right">

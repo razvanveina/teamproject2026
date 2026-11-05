@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Service } from '@angular/core';
 import { Observable } from 'rxjs/internal/Observable';
-import { ReceivingOrder } from '../models/receiving-order.model';
+import { ReceivingOrder, PackageInfo } from '../models/receiving-order.model';
 
 @Service()
 export class ReceivingOrderService {
@@ -14,5 +14,9 @@ export class ReceivingOrderService {
 
     finishOrder(order: ReceivingOrder){
         return this.httpClient.put<ReceivingOrder>( `${this.url}/finish`, order)
+    }
+
+    getPackage(barcode: string): Observable<PackageInfo> {
+        return this.httpClient.get<PackageInfo>( `${this.url}/package/${barcode}`)
     }
 }

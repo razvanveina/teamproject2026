@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import ro.demo.usersbackend.dto.PackageResponse;
 import ro.demo.usersbackend.dto.ReceivingOrderResponse;
 import ro.demo.usersbackend.service.ReceivingLineService;
 import ro.demo.usersbackend.service.ReceivingService;
@@ -33,7 +34,7 @@ public class ReceivingController {
 		try {
 			return receivingService.findByOrderId(orderId);
 		} catch (ResponseStatusException e) {
-			log.warn("Scan error: ", e.getMessage());
+			log.warn("Scan error: {}", e.getMessage());
 			throw e;
 		}
 	}
@@ -45,7 +46,18 @@ public class ReceivingController {
 		try {
 			return receivingService.updateOrder(order);
 		} catch (ResponseStatusException e) {
-			log.error("Error occured while finishing order: ", e.getMessage());
+			log.error("Error occured while finishing order: {}", e.getMessage());
+			throw e;
+		}
+	}
+	
+	@GetMapping("/package/{barcode}")
+	public PackageResponse findPackage(@PathVariable String barcode) {
+		log.info("User scanned package with barcode: {}", barcode);
+		try {
+			return receivingService.findPackage(barcode);
+		} catch (ResponseStatusException e) {
+			log.warn("Error at scanning package barcode: {}", e.getMessage());
 			throw e;
 		}
 	}

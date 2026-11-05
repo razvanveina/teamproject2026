@@ -10,4 +10,6 @@ import ro.demo.usersbackend.entity.PackagingUnitType;
 
 public interface ArticlePackagingUnitTypeRepository extends JpaRepository<ArticlePackagingUnitType, Long> {
 	Optional<ArticlePackagingUnitType> findByArticleAndPackagingUnitType(Article article, PackagingUnitType pack);
+
+	Optional<ArticlePackagingUnitType> findByBarcode(String barcode);
 }

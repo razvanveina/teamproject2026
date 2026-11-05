@@ -8,14 +8,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import ro.demo.usersbackend.dto.PackageResponse;
 import ro.demo.usersbackend.dto.ReceivingOrderLineResponse;
 import ro.demo.usersbackend.dto.ReceivingOrderResponse;
+import ro.demo.usersbackend.entity.ArticlePackagingUnitType;
 import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.Location;
 import ro.demo.usersbackend.entity.ReceivingOrder;
 import ro.demo.usersbackend.entity.ReceivingOrderLine;
 import ro.demo.usersbackend.entity.ReceivingOrderLineStatus;
 import ro.demo.usersbackend.entity.ReceivingOrderStatus;
+import ro.demo.usersbackend.repository.ArticlePackagingUnitTypeRepository;
 import ro.demo.usersbackend.repository.ReceivingRepository;
 
 @Service
@@ -25,16 +28,18 @@ public class ReceivingService {
 	private final LoadUnitService loadUnitService;
 	private final StorageLocationService storageLocationService;
 	private final TransportOrderService transportOrderService;
-
+	private final ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository;
 	private final ReceivingRepository receivingRepository;
 
 	public ReceivingService(LoadUnitService loadUnitService, StorageLocationService storageLocationService,
-			TransportOrderService transportOrderService, ReceivingRepository receivingRepository) {
+			TransportOrderService transportOrderService, ReceivingRepository receivingRepository,
+			ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository) {
 		super();
 		this.loadUnitService = loadUnitService;
 		this.storageLocationService = storageLocationService;
 		this.transportOrderService = transportOrderService;
 		this.receivingRepository = receivingRepository;
+		this.articlePackagingUnitTypeRepository = articlePackagingUnitTypeRepository;
 	}
 
 	@Transactional(readOnly = true)
@@ -45,6 +50,16 @@ public class ReceivingService {
 
 		return new ReceivingOrderResponse(order.getOrderId(), order.getStatus().toString(),
 				getResponseLines(order.getLines()));
+	}
+
+	@Transactional(readOnly = true)
+	public PackageResponse findPackage(String barcode) {
+		ArticlePackagingUnitType pack = articlePackagingUnitTypeRepository.findByBarcode(barcode)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+						"Cannot find package with barcode " + barcode));
+
+		return new PackageResponse(pack.getArticle().getBarcode(), pack.getPackagingUnitType().getName(),
+				pack.getPackagingUnitType().getQuantity());
 	}
 
 	private List<ReceivingOrderLineResponse> getResponseLines(List<ReceivingOrderLine> lines) {

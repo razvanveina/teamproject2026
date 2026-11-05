@@ -1,8 +1,7 @@
 import { Component, ElementRef, inject, signal, ViewChild } from '@angular/core';
-import { ReceivingOrder } from '../models/receiving-order.model';
+import { PackageInfo, ReceivingOrder } from '../models/receiving-order.model';
 import { ReceivingOrderService } from '../services/receiving-order-service';
-import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
-// import { httpErrorMessage } from '../services/http-error-message';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   imports: [],
@@ -16,10 +15,11 @@ export class ReceivingApp {
   @ViewChild('barcodeInput')
   barcodeInput!: ElementRef<HTMLInputElement>;
 
-  instructions = "Scan order barcode to start"
+  instructions = signal("Scan order barcode to start")
   state = ScanState.ORDER
 
-  articleBarcode: string = ''
+  // the package scanned last, used while the user enters the quantity
+  currentPackage: PackageInfo | null = null
 
   displayTable = signal(false)
   error = signal(false);
@@ -35,9 +35,9 @@ export class ReceivingApp {
     if (this.state == ScanState.ORDER) {
       this.scanOrder(input)
     } else if (this.state == ScanState.ARTICLE) {
-      this.scanArticleBarcode(input)
+      this.scanPackage(input)
     } else if (this.state == ScanState.QUANTITY) {
-      this.scanArticleQuantity(this.articleBarcode, input)
+      this.scanPackageQuantity(input)
     } else if (this.state == ScanState.FINISHED) {
       // Nothing to do here yet
     }
@@ -54,10 +54,10 @@ export class ReceivingApp {
         }
 
         if (this.order().status === "FINISHED") {
-          this.instructions = "Order Finished"
+          this.instructions.set("Order Finished")
           this.state = ScanState.FINISHED;
         } else {
-          this.instructions = "Scan article"
+          this.instructions.set("Scan package")
           this.state = ScanState.ARTICLE
         }
       },
@@ -65,52 +65,69 @@ export class ReceivingApp {
         this.error.set(true)
         if (this.displayTable())
           this.displayTable.set(false)
-        this.instructions = err.error.detail
+        this.instructions.set(err.error.detail)
       }
     })
   }
 
-  scanArticleBarcode(barcode: string) {
-    let localOrder = this.order()
-    let line = localOrder.lines.find(l => l.barcode == barcode)
+  scanPackage(barcode: string) {
+    this.receivingService.getPackage(barcode).subscribe({
+      next: (pack: PackageInfo) => {
+        let line = this.order().lines.find(l => l.barcode == pack.articleBarcode)
 
-    if (line) {
-      this.error.set(false)
-      this.articleBarcode = barcode
-      this.state = ScanState.QUANTITY
-      this.instructions = "Enter article quantity"
-    } else {
-      this.error.set(true)
-      this.instructions = "Could not find article with the barcode: " + barcode
-    }
+        if (!line) {
+          this.error.set(true)
+          this.instructions.set("The article of this package is not in the order")
+          return
+        }
+
+        this.error.set(false)
+        this.currentPackage = pack
+        this.state = ScanState.QUANTITY
+        this.instructions.set(pack.packagingUnit + " (" + pack.quantity + " pcs). Enter the number of packages")
+      },
+      error: (err: HttpErrorResponse) => {
+        this.error.set(true)
+        this.instructions.set(err.error?.detail ?? "Could not find the package with barcode: " + barcode)
+      }
+    })
   }
 
-  scanArticleQuantity(article: string, quantity: number) {
-    quantity = Number(quantity)
+  scanPackageQuantity(input: any) {
+    let pack = this.currentPackage
+    if (!pack) {
+      return
+    }
 
-    if (quantity < 0) {
+    let packages = Number(input)
+
+    if (!Number.isInteger(packages) || packages <= 0) {
       this.error.set(true)
-      this.instructions = "Cannot add a negative value."
+      this.instructions.set("Enter a whole number greater than 0")
       return
     }
 
     let localOrder = this.order()
+    let line = localOrder.lines.find(l => l.barcode == pack.articleBarcode)
 
-    let line = localOrder.lines.find(l => l.barcode == article)
-
-    if (line) {
-      if (line.quantity < line.receivedQuantity + quantity) {
-        this.error.set(false)
-        this.instructions = "Cannot add more than " + (line.quantity - line.receivedQuantity) + " items"
-        return
-      } else {
-        line.receivedQuantity += quantity
-      }
-    } else {
+    if (!line) {
       this.error.set(true)
-      this.instructions = "Could not find article with the barcode: " + article
+      this.instructions.set("The article of this package is not in the order")
       return
     }
+
+    // the order and the received quantity are in pieces
+    let pieces = packages * pack.quantity
+    let remaining = line.quantity - line.receivedQuantity
+
+    if (pieces > remaining) {
+      this.error.set(true)
+      this.instructions.set("Cannot add more than " + Math.floor(remaining / pack.quantity) + " x " + pack.packagingUnit
+        + " (" + remaining + " pcs left)")
+      return
+    }
+
+    line.receivedQuantity += pieces
 
     if (line.receivedQuantity == line.quantity) {
       line.status = "FINISHED"
@@ -118,13 +135,14 @@ export class ReceivingApp {
 
     if (localOrder.lines.every(line => line.status === "FINISHED")) {
       localOrder.status = "FINISHED"
-      this.instructions = "Order finished press confirm to confirm"
+      this.instructions.set("Order finished press confirm to confirm")
       this.state = ScanState.FINISHED
     } else {
-      this.instructions = "Scan Article"
+      this.instructions.set("Scan package")
       this.state = ScanState.ARTICLE
     }
 
+    this.currentPackage = null
     this.error.set(false)
     this.order.set(localOrder)
   }
@@ -137,7 +155,7 @@ export class ReceivingApp {
     this.receivingService.finishOrder(this.order()).subscribe({
       next: (order: ReceivingOrder) => {
         this.error.set(false)
-        this.instructions = "Scan order barcode to start"
+        this.instructions.set("Scan order barcode to start")
         this.state = ScanState.ORDER
         if (this.displayTable()) {
           this.displayTable.set(false)
@@ -147,7 +165,7 @@ export class ReceivingApp {
         this.error.set(true)
         if (!this.displayTable())
           this.displayTable.set(true)
-        this.instructions = err.error.detail
+        this.instructions.set(err.error.detail)
       }
     })
   }
