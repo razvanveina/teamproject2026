@@ -1,6 +1,8 @@
 .orderDetails {
     display: grid;
     grid-template-columns: 1fr 1fr;
+    font-family: "Segoe UI", "Inter", "Aptos", sans-serif;
+    font-weight: bold;
 }
 
 .orderDetails p:first-child {
@@ -55,13 +57,6 @@ td {
 
 .left.error {
     background: #fff3b0;
-}
-
-.right {
-    display: flex;
-    justify-content: center;
-    align-items: flex-end;
-    padding-bottom: 20px;
 }
 
 .bottom {

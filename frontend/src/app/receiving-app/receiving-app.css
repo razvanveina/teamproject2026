@@ -68,7 +68,7 @@ tbody tr:hover:not(.completed) td {
     grid-template-rows: auto 25% 100px;
     gap: 10px;
     height: 80vh;
-
+    width: 90vw;
 }
 
 .cancel {
@@ -127,8 +127,6 @@ input {
     height: 20%;
     font-size: 25px;
 }
-
-
 
 button {
     width: 10%;
