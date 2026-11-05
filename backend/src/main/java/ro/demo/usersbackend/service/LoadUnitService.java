@@ -1,7 +1,9 @@
 package ro.demo.usersbackend.service;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -9,6 +11,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import ro.demo.usersbackend.dto.ScannedPackage;
 import ro.demo.usersbackend.entity.Article;
 import ro.demo.usersbackend.entity.ArticlePackagingUnitType;
 import ro.demo.usersbackend.entity.LoadUnit;
@@ -44,36 +47,35 @@ public class LoadUnitService {
 		this.articlePackagingUnitTypeRepository = articlePackagingUnitTypeRepository;
 	}
 
-	public LoadUnit createLoadUnit(ReceivingOrder order) {
+	public LoadUnit createLoadUnit(List<ScannedPackage> scannedPackages) {
 		Location in = locationRepository.findByName("IN")
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot find a IN location"));
 
-		LoadUnit loadUnit = new LoadUnit();
-		List<ReceivingOrderLine> lines = order.getLines();
-		List<StockItem> items = new ArrayList<>();
+		Map<Article, Integer> piecesPerArticle = new LinkedHashMap<>();
+		for (ScannedPackage scanned : scannedPackages) {
+			ArticlePackagingUnitType pack = articlePackagingUnitTypeRepository.findByBarcode(scanned.packageBarcode())
+					.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+							"Could not find package with barcode " + scanned.packageBarcode()));
 
+			int pieces = scanned.packages() * pack.getPackagingUnitType().getQuantity();
+			int total = piecesPerArticle.getOrDefault(pack.getArticle(), 0);
+			piecesPerArticle.put(pack.getArticle(), total + pieces);
+
+		}
+		LoadUnit loadUnit = new LoadUnit();
 		loadUnit.setBarcode(generateLoadUnitBarcode());
 		loadUnit.setType(LoadUnitType.PALLET);
 		loadUnit.setLocation(in);
-
 		loadUnitRepository.save(loadUnit);
 
-		for (ReceivingOrderLine line : lines) {
-			if (line.getStatus() != ReceivingOrderLineStatus.FINISHED) {
-				continue;
-			}
-
-			Article article = line.getArticle();
-			ArticlePackagingUnitType packagingType = articlePackagingUnitTypeRepository
-					.findByArticleAndPackagingUnitType(article, null)
+		for (Map.Entry<Article, Integer> entry : piecesPerArticle.entrySet()) {
+			ArticlePackagingUnitType piece = articlePackagingUnitTypeRepository
+					.findByBarcode(entry.getKey().getBarcode())
 					.orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-							"this is a quick fix to make the code compilable"));// TODO better implementation
+							"Cannot find the PIECE package of article " + entry.getKey().getBarcode()));
 
-			StockItem si = new StockItem(packagingType, line.getQuantity(), loadUnit);
-			stockItemRepository.save(si);
-			items.add(si);
+			stockItemRepository.save(new StockItem(piece, entry.getValue(), loadUnit));
 		}
-
 		return loadUnit;
 	}
 

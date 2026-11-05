@@ -18,3 +18,8 @@ export interface PackageInfo {
     packagingUnit: string;
     quantity: number;
 }
+
+export interface ScannedPackage{
+    packageBarcode: string;
+    packages: number;
+}

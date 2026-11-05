@@ -2,6 +2,7 @@ import { Component, ElementRef, inject, signal, ViewChild } from '@angular/core'
 import { PackageInfo, ReceivingOrder } from '../models/receiving-order.model';
 import { ReceivingOrderService } from '../services/receiving-order-service';
 import { HttpErrorResponse } from '@angular/common/http';
+import { ScannedPackage } from '../models/receiving-order.model';
 
 @Component({
   imports: [],
@@ -20,6 +21,8 @@ export class ReceivingApp {
 
   // the package scanned last, used while the user enters the quantity
   currentPackage: PackageInfo | null = null
+  currentBarcode = ''
+  scanned: ScannedPackage[] = []
 
   displayTable = signal(false)
   error = signal(false);
@@ -48,6 +51,7 @@ export class ReceivingApp {
       next: (order: ReceivingOrder) => {
         this.error.set(false)
         this.order.set(order)
+        this.scanned = []
 
         if (!this.displayTable()) {
           this.displayTable.set(true)
@@ -83,6 +87,7 @@ export class ReceivingApp {
 
         this.error.set(false)
         this.currentPackage = pack
+        this.currentBarcode = barcode
         this.state = ScanState.QUANTITY
         this.instructions.set(pack.packagingUnit + " (" + pack.quantity + " pcs). Enter the number of packages")
       },
@@ -128,6 +133,7 @@ export class ReceivingApp {
     }
 
     line.receivedQuantity += pieces
+    this.scanned.push({ packageBarcode: this.currentBarcode, packages })
 
     if (line.receivedQuantity == line.quantity) {
       line.status = "FINISHED"
@@ -149,11 +155,12 @@ export class ReceivingApp {
 
   onMakeLoadUnit() { }
 
-  onConfirm() { 
+  onConfirm() {
     // TODO check if order finished if not redirect user to make a loadUnit
     // TODO check if there is no line with the finished status set an error
-    this.receivingService.finishOrder(this.order()).subscribe({
+    this.receivingService.finishOrder(this.order().orderId, this.scanned).subscribe({
       next: (order: ReceivingOrder) => {
+        this.scanned = []
         this.error.set(false)
         this.instructions.set("Scan order barcode to start")
         this.state = ScanState.ORDER

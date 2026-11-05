@@ -8,9 +8,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import ro.demo.usersbackend.dto.FinishReceivingRequest;
 import ro.demo.usersbackend.dto.PackageResponse;
 import ro.demo.usersbackend.dto.ReceivingOrderLineResponse;
 import ro.demo.usersbackend.dto.ReceivingOrderResponse;
+import ro.demo.usersbackend.dto.ScannedPackage;
 import ro.demo.usersbackend.entity.ArticlePackagingUnitType;
 import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.Location;
@@ -54,12 +56,15 @@ public class ReceivingService {
 
 	@Transactional(readOnly = true)
 	public PackageResponse findPackage(String barcode) {
-		ArticlePackagingUnitType pack = articlePackagingUnitTypeRepository.findByBarcode(barcode)
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
-						"Cannot find package with barcode " + barcode));
+		ArticlePackagingUnitType pack = findPackageEntity(barcode);
 
 		return new PackageResponse(pack.getArticle().getBarcode(), pack.getPackagingUnitType().getName(),
 				pack.getPackagingUnitType().getQuantity());
+	}
+
+	private ArticlePackagingUnitType findPackageEntity(String barcode) {
+		return articlePackagingUnitTypeRepository.findByBarcode(barcode).orElseThrow(
+				() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot find package with barcode " + barcode));
 	}
 
 	private List<ReceivingOrderLineResponse> getResponseLines(List<ReceivingOrderLine> lines) {
@@ -75,33 +80,54 @@ public class ReceivingService {
 	}
 
 	@Transactional
-	public ReceivingOrderResponse updateOrder(ReceivingOrderResponse orderResponse) {
-		ReceivingOrder order = receivingRepository.findByOrderId(orderResponse.orderId())
+	public ReceivingOrderResponse updateOrder(FinishReceivingRequest request) {
+		if (request.packages() == null || request.packages().isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No packages were scanned");
+		}
+
+		ReceivingOrder order = receivingRepository.findByOrderId(request.orderId())
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
-						"Cannot find receiving order with the id: " + orderResponse.orderId()));
+						"Cannot find receiving order with the id: " + request.orderId()));
 
-		order.setStatus(ReceivingOrderStatus.valueOf(orderResponse.status()));
+		for (ScannedPackage scanned : request.packages()) {
+			if (scanned.packages() <= 0) {
+				throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The number of packages must be greater than 0");
+			}
 
-		for (ReceivingOrderLine line : order.getLines()) { // TODO these lines MIGHT be in the same order on frontend
-			for (ReceivingOrderLineResponse l : orderResponse.lines()) {
-				if (line.getArticle().getBarcode().equals(l.barcode())) {
-					line.setReceivedQuantity(l.receivedQuantity());
-					line.setStatus(ReceivingOrderLineStatus.valueOf(l.status()));
-					break;
-				}
+			ArticlePackagingUnitType pack = findPackageEntity(scanned.packageBarcode());
+
+			ReceivingOrderLine line = order.getLines().stream()
+					.filter(l -> l.getArticle().getBarcode().equals(pack.getArticle().getBarcode())).findFirst()
+					.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+							"The article of package " + scanned.packageBarcode() + " is not in the order"));
+
+			int received = line.getReceivedQuantity() + scanned.packages() * pack.getPackagingUnitType().getQuantity();
+			if (received > line.getQuantity()) {
+				throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+						"Too many pieces received for article " + line.getArticle().getBarcode());
+			}
+
+			line.setReceivedQuantity(received);
+			if (received == line.getQuantity()) {
+				line.setStatus(ReceivingOrderLineStatus.FINISHED);
 			}
 		}
 
-		createTransportOrder(order);
+		boolean allFinished = order.getLines().stream()
+				.allMatch(l -> l.getStatus() == ReceivingOrderLineStatus.FINISHED);
+		if (allFinished) {
+			order.setStatus(ReceivingOrderStatus.FINISHED);
+		}
+
+		createTransportOrder(request.packages());
 
 		return new ReceivingOrderResponse(order.getOrderId(), order.getStatus().toString(),
 				getResponseLines(order.getLines()));
 	}
 
-	private void createTransportOrder(ReceivingOrder order) {
-		LoadUnit loadUnit = loadUnitService.createLoadUnit(order);
+	private void createTransportOrder(List<ScannedPackage> scannedPackages) {
+		LoadUnit loadUnit = loadUnitService.createLoadUnit(scannedPackages);
 		Location target = storageLocationService.findClosestEmptyX();
 		transportOrderService.createTransportOrder(loadUnit, target);
-
 	}
 }

@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import ro.demo.usersbackend.dto.FinishReceivingRequest;
 import ro.demo.usersbackend.dto.PackageResponse;
 import ro.demo.usersbackend.dto.ReceivingOrderResponse;
 import ro.demo.usersbackend.service.ReceivingLineService;
@@ -40,11 +41,11 @@ public class ReceivingController {
 	}
 
 	@PutMapping("/finish")
-	public ReceivingOrderResponse finishOrder(@RequestBody ReceivingOrderResponse order) {
-		log.info("User finished order: {}", order);
+	public ReceivingOrderResponse finishOrder(@RequestBody FinishReceivingRequest request) {
+		log.info("User finished order: {}", request);
 
 		try {
-			return receivingService.updateOrder(order);
+			return receivingService.updateOrder(request);
 		} catch (ResponseStatusException e) {
 			log.error("Error occured while finishing order: {}", e.getMessage());
 			throw e;
