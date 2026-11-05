@@ -16,7 +16,7 @@ public class StockItem {
 
 	@ManyToOne
 	@JoinColumn(name = "article_id", nullable = false)
-	private Article article;
+	private ArticlePackagingUnitType articlePackagingUnitType;
 
 	@Column(nullable = false)
 	private int quantity;
@@ -37,18 +37,10 @@ public class StockItem {
 		super();
 	}
 
-	public StockItem(Article article, int quantity, LoadUnit loadUnit) {
-		this.article = article;
+	public StockItem(ArticlePackagingUnitType articlePackagingUnitType, int quantity, LoadUnit loadUnit) {
+		this.setArticlePackagingUnitType(articlePackagingUnitType);
 		this.quantity = quantity;
 		this.loadUnit = loadUnit;
-	}
-
-	public Article getArticle() {
-		return article;
-	}
-
-	public void setArticle(Article article) {
-		this.article = article;
 	}
 
 	public int getQuantity() {
@@ -81,5 +73,13 @@ public class StockItem {
 
 	public void setReservation(Reservation reservation) {
 		this.reservation = reservation;
+	}
+
+	public ArticlePackagingUnitType getArticlePackagingUnitType() {
+		return articlePackagingUnitType;
+	}
+
+	public void setArticlePackagingUnitType(ArticlePackagingUnitType articlePackagingUnitType) {
+		this.articlePackagingUnitType = articlePackagingUnitType;
 	}
 }

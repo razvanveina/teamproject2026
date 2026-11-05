@@ -10,6 +10,7 @@ import org.springframework.web.server.ResponseStatusException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import ro.demo.usersbackend.entity.Article;
+import ro.demo.usersbackend.entity.ArticlePackagingUnitType;
 import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.LoadUnitType;
 import ro.demo.usersbackend.entity.Location;
@@ -17,6 +18,7 @@ import ro.demo.usersbackend.entity.ReceivingOrder;
 import ro.demo.usersbackend.entity.ReceivingOrderLine;
 import ro.demo.usersbackend.entity.ReceivingOrderLineStatus;
 import ro.demo.usersbackend.entity.StockItem;
+import ro.demo.usersbackend.repository.ArticlePackagingUnitTypeRepository;
 import ro.demo.usersbackend.repository.LoadUnitRepository;
 import ro.demo.usersbackend.repository.LocationRepository;
 import ro.demo.usersbackend.repository.StockItemRepository;
@@ -29,13 +31,17 @@ public class LoadUnitService {
 	private final StockItemRepository stockItemRepository;
 	private final LoadUnitRepository loadUnitRepository;
 	private final LocationRepository locationRepository;
+	private final ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository;
 
-	public LoadUnitService(StockItemRepository stockItemRepository, LoadUnitRepository loadUnitRepository,
-			LocationRepository locationRepository) {
+	public LoadUnitService(EntityManager entityManager, StockItemRepository stockItemRepository,
+			LoadUnitRepository loadUnitRepository, LocationRepository locationRepository,
+			ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository) {
 		super();
+		this.entityManager = entityManager;
 		this.stockItemRepository = stockItemRepository;
 		this.loadUnitRepository = loadUnitRepository;
 		this.locationRepository = locationRepository;
+		this.articlePackagingUnitTypeRepository = articlePackagingUnitTypeRepository;
 	}
 
 	public LoadUnit createLoadUnit(ReceivingOrder order) {
@@ -58,7 +64,12 @@ public class LoadUnitService {
 			}
 
 			Article article = line.getArticle();
-			StockItem si = new StockItem(article, line.getQuantity(), loadUnit);
+			ArticlePackagingUnitType packagingType = articlePackagingUnitTypeRepository
+					.findByArticleAndPackagingUnitType(article, null)
+					.orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+							"this is a quick fix to make the code compilable"));// TODO better implementation
+
+			StockItem si = new StockItem(packagingType, line.getQuantity(), loadUnit);
 			stockItemRepository.save(si);
 			items.add(si);
 		}
