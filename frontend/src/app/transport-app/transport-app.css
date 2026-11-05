@@ -258,7 +258,7 @@ input {
 }
 
 .error-button {
-
+    background: linear-gradient(110deg, #172b4d, #203b5e);
 }
 
 .choose-button{
