@@ -1,5 +1,5 @@
 package ro.demo.usersbackend.entity;
 
 public enum LoadUnitType {
-	PALLET, CARTON
+	PALLET, CARTON, TOTE
 }

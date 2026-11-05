@@ -12,6 +12,7 @@ import { Processes } from './processes/processes';
 import { Stock } from './stock/stock';
 import { Shipping } from './shipping/shipping';
 import { PickingApp } from './picking-app/picking-app';
+import { DecantingApp } from './decanting-app/decanting-app';
 
 export const routes: Routes = [
     { path: 'login', component: Login },
@@ -30,6 +31,7 @@ export const routes: Routes = [
             { path: 'receiving', component: ReceivingApp },
             { path: 'shipping', component: Shipping },
             { path: 'transport', component: TransportApp },
+            { path: 'decanting', component: DecantingApp },
             { path: 'processes', component: Processes },
             {path: 'stock', component: Stock},
             { path: 'picking', component: PickingApp },

@@ -1,0 +1,39 @@
+<div class="container">
+    <div class="top">
+        <div>
+            @if (session(); as s) {
+            <table>
+                <tbody>
+                    <tr>
+                        <th scope="row">Load Unit</th>
+                        <td>{{s.loadUnitBarcode}}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Tote</th>
+                        <td>{{s.toteBarcode}}</td>
+                    </tr>
+                    @if (currentItem(); as item) {
+                    <tr>
+                        <th scope="row">Item</th>
+                        <td>{{item.description}} ({{item.packaging}}) — {{item.quantity}} available</td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+            }
+        </div>
+    </div>
+
+    <div class="left" [class.error]="hasError()">
+        <p>{{instructions()}}</p>
+    </div>
+
+    <div class="right">
+        <input [type]="step() === 'QUANTITY' ? 'number' : 'text'" [placeholder]="placeholder()" #input
+            (keyup.enter)="onScan(input.value); input.value = ''">
+    </div>
+
+    <div class="bottom">
+        <button (click)="onCancel()" class="cancel">Cancel</button>
+    </div>
+</div>
