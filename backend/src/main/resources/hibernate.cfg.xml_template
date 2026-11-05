@@ -47,5 +47,6 @@
 <mapping class="ro.demo.usersbackend.entity.TransitLocation"/>
 <mapping class="ro.demo.usersbackend.entity.TransportOrder"/>
 <mapping class="ro.demo.usersbackend.entity.User"/>
+<mapping class="ro.demo.usersbackend.entity.ArticlePackagingUnitType"/>
     </session-factory>
 </hibernate-configuration>

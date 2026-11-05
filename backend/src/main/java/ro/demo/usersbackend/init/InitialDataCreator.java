@@ -54,6 +54,7 @@ public class InitialDataCreator implements CommandLineRunner {
 
 	private void createTransitLocations() {
 		createTransitLocation("IN");
+		createTransitLocation("OUT");
 
 		for (int gate = 1; gate <= 10; gate++) {
 			createTransitLocation(String.format("GATE%02d", gate));

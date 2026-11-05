@@ -1,5 +1,7 @@
 package ro.demo.usersbackend.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -15,12 +17,13 @@ public class StockItem {
 	private Long id;
 
 	@ManyToOne
-	@JoinColumn(name = "article_id", nullable = false)
+	@JoinColumn(name = "articlePackagingUnitType_id", nullable = false)
 	private ArticlePackagingUnitType articlePackagingUnitType;
 
 	@Column(nullable = false)
 	private int quantity;
 
+	@JsonBackReference
 	@ManyToOne
 	@JoinColumn(name = "loadUnit_id", nullable = false)
 	private LoadUnit loadUnit;
