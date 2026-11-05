@@ -5,9 +5,9 @@
   "actions": ["add", "edit", "delete"],
   "columns": [
     { "field": "ID", "label": "ID" },
-    { "field": "ARTICLE_ID", "label": "Article", "addable": true, "lookup": { "entity": "Article" }, "filterable": true },
-    { "field": "QUANTITY", "label": "Quantity", "addable": true, "editable": true },
+    { "field": "ARTICLE_PACKAGING_UNIT_TYPE_ID", "label": "Package", "addable": true, "lookup": { "entity": "ArticlePackagingUnitType" }, "filterable": true },
+    { "field": "QUANTITY", "label": "Quantity (pcs)", "addable": true, "editable": true },
     { "field": "LOAD_UNIT_ID", "label": "Load Unit", "addable": true, "lookup": { "entity": "LoadUnit" }, "filterable": true, "editable": true },
-	{ "field": "RESERVATION_ID", "label": "Reservation ID" }
+    { "field": "RESERVATION_ID", "label": "Reservation ID" }
   ]
 }
