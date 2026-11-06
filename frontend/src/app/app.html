@@ -6,42 +6,12 @@
 
   <app-dialog-list />
 
-  <a routerLink="/transport" routerLinkActive="active" (click)="onNav('TRANSPORT')">
-    Transport
-  </a>
-
-  <a routerLink="/decanting" routerLinkActive="active">
-    Decanting
-  </a>
+  <app-worker-dialog-list />
 
   <a routerLink="/processes" routerLinkActive="active">
     Processes
   </a>
-
-  <a routerLink="/receiving" routerLinkActive="active">
-    Receiving
-  </a>
-
-  <a routerLink="/shipping" routerLinkActive="active">
-    Shipping
-  </a>
-
-  <a routerLink="/toteTransport" routerLinkActive="active">
-    Tote Transport
-  </a>
-
-  <a routerLink="/scan" routerLinkActive="active">
-    Scan
-  </a>
   
-  <a routerLink="/picking" routerLinkActive="active" (click)="onPicking()">
-    Picking
-  </a>
-
-  <a routerLink="/stock" routerLinkActive="active">
-    Stock
-  </a>
-
   <span class="menu-spacer"></span>
 
   <button type="button" class="logout-button" (click)="logout()">Logout</button>

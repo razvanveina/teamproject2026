@@ -3,11 +3,12 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/rou
 import { AuthService } from './services/auth';
 import { DialogList } from './dialog-list/dialog-list';
 import { LogService } from './services/log';
+import { WorkerDialogList } from './worker-dialog-list/worker-dialog-list';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, DialogList],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, DialogList, WorkerDialogList],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
