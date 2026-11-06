@@ -14,6 +14,7 @@
                     <th>Article barcode</th>
                     <th>Description</th>
                     <th>Qty</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -22,6 +23,12 @@
                     <td>{{ line.article }}</td>
                     <td>{{ line.description }}</td>
                     <td>{{ line.quantity }} {{ line.quantityUnit }}</td>
+                    <td>
+                        <button type="button" class="remove-line" (click)="removeLine($index)"
+                            [attr.aria-label]="'Remove ' + line.article">
+                            Remove
+                        </button>
+                    </td>
                 </tr>
                 }
             </tbody>
@@ -34,42 +41,13 @@
 
 </div>
     <div class="left">
-        @if (comparisonComplete) {
+        @if (comparisonComplete && mismatchAccepted) {
         <section class="comparison-results" aria-live="polite">
-            <h2>Unit count differences</h2>
-            @if (quantityDifferences.length === 0) {
-            <p>All counted unit quantities match the saved load unit.</p>
-            } @else {
-            <div class="comparison-table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Article</th>
-                            <th>Description</th>
-                            <th>Packaging unit</th>
-                            <th>Expected quantity</th>
-                            <th>Counted units</th>
-                            <th>Difference (units)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (difference of quantityDifferences; track $index) {
-                        <tr>
-                            <td>{{ difference.article }}</td>
-                            <td>{{ difference.description }}</td>
-                            <td>{{ difference.packagingUnit }}</td>
-                            <td>{{ difference.sqlQuantity }}</td>
-                            <td>{{ difference.scannedQuantity }}</td>
-                            <td [class.difference-positive]="difference.difference > 0"
-                                [class.difference-negative]="difference.difference < 0">
-                                {{ difference.difference > 0 ? '+' : '' }}{{ difference.difference }}
-                            </td>
-                        </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-            }
+            <h2>Inventory check complete</h2>
+        </section>
+        } @else if (comparisonComplete) {
+        <section class="comparison-results" aria-live="polite">
+            <h2>Inventory check complete</h2>
         </section>
         } @else {
         <div class="instruction-container">
@@ -81,10 +59,41 @@
         }
     </div>
 
+    @if (showMismatchDialog) {
+    <div class="dialog-backdrop">
+        <section class="mismatch-dialog" role="alertdialog" aria-modal="true"
+            aria-labelledby="mismatch-title" aria-describedby="mismatch-description">
+            <h2 id="mismatch-title">Quantities do not match</h2>
+            <p id="mismatch-description">
+                The counted quantities do not correspond to the saved quantities for this load unit.
+                Are you sure you want to finish anyway?
+            </p>
+            <div class="dialog-actions">
+                <button type="button" class="dialog-confirm" (click)="confirmMismatch()">Yes</button>
+                <button type="button" class="dialog-cancel" (click)="cancelMismatch()">Cancel and rescan</button>
+            </div>
+        </section>
+    </div>
+    }
+
+    @if (showCompletionDialog) {
+    <div class="dialog-backdrop">
+        <section class="mismatch-dialog completion-dialog" role="dialog" aria-modal="true"
+            aria-labelledby="completion-title" aria-describedby="completion-description">
+            <h2 id="completion-title">Scan completed</h2>
+            <p id="completion-description">Would you like to go back or scan another load unit?</p>
+            <div class="dialog-actions">
+                <button type="button" class="dialog-cancel" (click)="onCancel()">Go back</button>
+                <button type="button" class="dialog-confirm" (click)="startAnotherScan()">Scan another</button>
+            </div>
+        </section>
+    </div>
+    }
+
     <div class="right">               
         <input
         class="scan-input"
-        [disabled]="isComparing || comparisonComplete"
+        [disabled]="isComparing || comparisonComplete || showMismatchDialog || showCompletionDialog"
         [ngClass]="{
             'load-unit-step': step === 1,
             'article-step': step === 2,
@@ -107,7 +116,7 @@
         <button
             class="finish"
             (click)="onFinish()"
-            [disabled]="lines.length === 0 || !loadUnit || isComparing || comparisonComplete">
+            [disabled]="lines.length === 0 || !loadUnit || isComparing || comparisonComplete || showMismatchDialog || showCompletionDialog">
             {{ isComparing ? 'Comparing...' : 'Finish' }}
         </button>
 

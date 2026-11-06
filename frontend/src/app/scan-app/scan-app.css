@@ -110,17 +110,31 @@ tbody tr td {
 
 .load-unit-table th:nth-child(1),
 .load-unit-table td:nth-child(1) {
-    width: 30%;
+    width: 26%;
 }
 
 .load-unit-table th:nth-child(2),
 .load-unit-table td:nth-child(2) {
-    width: 50%;
+    width: 44%;
 }
 
 .load-unit-table th:nth-child(3),
 .load-unit-table td:nth-child(3) {
-    width: 20%;
+    width: 18%;
+}
+
+.load-unit-table th:nth-child(4),
+.load-unit-table td:nth-child(4) {
+    width: 12%;
+}
+
+.remove-line {
+    width: auto;
+    height: auto;
+    margin: 0;
+    padding: 8px 12px;
+    background: #c62828;
+    font-size: 14px;
 }
 
 .data-container td {
@@ -143,26 +157,6 @@ tbody tr td {
 .comparison-results p,
 .comparison-error {
     font-size: 16px;
-}
-
-.comparison-table-container {
-    overflow-x: auto;
-}
-
-.comparison-results th,
-.comparison-results td {
-    padding: 8px;
-    font-size: 14px;
-}
-
-.comparison-results td.difference-positive {
-    color: #16803c;
-    font-weight: 700;
-}
-
-.comparison-results td.difference-negative {
-    color: #c62828;
-    font-weight: 700;
 }
 
 .comparison-error {
@@ -224,4 +218,63 @@ input {
     background: #b8c4d0;
     border-color: #b8c4d0;
     color: #ffffff;
+}
+
+.dialog-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    background: rgb(20 30 45 / 55%);
+}
+
+.mismatch-dialog {
+    width: min(760px, 90vw);
+    min-height: 280px;
+    padding: 40px;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 16px 48px rgb(0 0 0 / 30%);
+    font-family: "Segoe UI", "Inter", "Aptos", sans-serif;
+}
+
+.mismatch-dialog h2 {
+    margin: 0 0 20px;
+    color: #b42318;
+    font-size: 32px;
+}
+
+.mismatch-dialog p {
+    font-size: 22px;
+    line-height: 1.6;
+}
+
+.dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 36px;
+}
+
+.dialog-actions button {
+    width: auto;
+    height: auto;
+    margin: 0;
+    padding: 14px 24px;
+    font-size: 20px;
+}
+
+.dialog-confirm {
+    background: #16803c;
+}
+
+.completion-dialog h2 {
+    color: #16803c;
+}
+
+.dialog-cancel {
+    background: #596579;
 }

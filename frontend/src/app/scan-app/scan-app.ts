@@ -92,6 +92,9 @@ export class ScanApp {
     lines: ScanLine[] = [];
     quantityDifferences: QuantityDifference[] = [];
     comparisonComplete = false;
+    showMismatchDialog = false;
+    showCompletionDialog = false;
+    mismatchAccepted = false;
     comparisonError = '';
     isComparing = false;
 
@@ -208,6 +211,20 @@ export class ScanApp {
         history.back();
     }
 
+    removeLine(index: number): void {
+        if (index < 0 || index >= this.lines.length) {
+            return;
+        }
+
+        this.lines = this.lines.filter((_, lineIndex) => lineIndex !== index);
+        this.quantityDifferences = [];
+        this.comparisonComplete = false;
+        this.showMismatchDialog = false;
+        this.showCompletionDialog = false;
+        this.mismatchAccepted = false;
+        this.comparisonError = '';
+    }
+
     private loadArticleBarcode(barcode: string): void {
         this.http
             .get<ArticleRow[]>(`${this.dataUrl}/Article`, { params: { BARCODE: barcode } })
@@ -321,6 +338,8 @@ export class ScanApp {
 
         this.isComparing = true;
         this.comparisonComplete = false;
+        this.showMismatchDialog = false;
+        this.mismatchAccepted = false;
         this.comparisonError = '';
 
         this.getSavedStockItems(this.loadUnit)
@@ -445,7 +464,47 @@ export class ScanApp {
                 difference: comparison.scannedQuantity - comparison.sqlQuantity
             }))
             .filter(comparison => comparison.difference !== 0);
+        if (this.quantityDifferences.length > 0) {
+            this.showMismatchDialog = true;
+            return;
+        }
+
         this.comparisonComplete = true;
+        this.showCompletionDialog = true;
+    }
+
+    confirmMismatch(): void {
+        this.showMismatchDialog = false;
+        this.mismatchAccepted = true;
+        this.comparisonComplete = true;
+        this.showCompletionDialog = true;
+    }
+
+    cancelMismatch(): void {
+        this.showMismatchDialog = false;
+        this.comparisonComplete = false;
+        this.quantityDifferences = [];
+    }
+
+    startAnotherScan(): void {
+        this.loadUnit = '';
+        this.loadUnitType = '';
+        this.loadUnitId = null;
+        this.article = '';
+        this.quantity = 0;
+        this.currentArticleDescription = '';
+        this.currentQuantityUnit = '';
+        this.currentQuantityPerUnit = 1;
+        this.lines = [];
+        this.quantityDifferences = [];
+        this.comparisonComplete = false;
+        this.showMismatchDialog = false;
+        this.showCompletionDialog = false;
+        this.mismatchAccepted = false;
+        this.comparisonError = '';
+        this.isComparing = false;
+        this.step = 1;
+        localStorage.removeItem('scanData');
     }
 
     get currentPlaceholder(): string {
