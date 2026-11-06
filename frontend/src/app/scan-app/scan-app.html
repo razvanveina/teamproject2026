@@ -1,43 +1,90 @@
 <div class="container">
 
-    <div class="top" [class.hidden-content]="!loadUnit || !lines?.length">
+    <div class="top" [class.hidden-content]="!loadUnit">
 
     <div class="load-unit">
-        <strong>Load Unit:</strong> {{ loadUnit }}
+        <span><strong>Load Unit Nr.</strong> {{ loadUnit }}</span>
+        <span><strong>Type:</strong> {{ loadUnitType }}</span>
     </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Article</th>
-                <th>Qty</th>
-            </tr>
-        </thead>
-    </table>
-
     <div class="data-container">
-        <table>
+        <table class="load-unit-table">
+            <thead>
+                <tr>
+                    <th>Article barcode</th>
+                    <th>Description</th>
+                    <th>Qty</th>
+                </tr>
+            </thead>
             <tbody>
                 @for (line of lines; track $index) {
                 <tr>
                     <td>{{ line.article }}</td>
-                    <td>{{ line.quantity }}</td>
+                    <td>{{ line.description }}</td>
+                    <td>{{ line.quantity }} {{ line.quantityUnit }}</td>
                 </tr>
                 }
             </tbody>
         </table>
     </div>
 
+    @if (comparisonError) {
+    <p class="comparison-error" role="alert">{{ comparisonError }}</p>
+    }
+
 </div>
     <div class="left">
+        @if (comparisonComplete) {
+        <section class="comparison-results" aria-live="polite">
+            <h2>Unit count differences</h2>
+            @if (quantityDifferences.length === 0) {
+            <p>All counted unit quantities match the saved load unit.</p>
+            } @else {
+            <div class="comparison-table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Article</th>
+                            <th>Description</th>
+                            <th>Packaging unit</th>
+                            <th>Expected quantity</th>
+                            <th>Counted units</th>
+                            <th>Difference (units)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (difference of quantityDifferences; track $index) {
+                        <tr>
+                            <td>{{ difference.article }}</td>
+                            <td>{{ difference.description }}</td>
+                            <td>{{ difference.packagingUnit }}</td>
+                            <td>{{ difference.sqlQuantity }}</td>
+                            <td>{{ difference.scannedQuantity }}</td>
+                            <td [class.difference-positive]="difference.difference > 0"
+                                [class.difference-negative]="difference.difference < 0">
+                                {{ difference.difference > 0 ? '+' : '' }}{{ difference.difference }}
+                            </td>
+                        </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            }
+        </section>
+        } @else {
         <div class="instruction-container">
-            <p>{{ currentInstruction }}</p>
+            <p>{{ isComparing ? 'Comparing quantities...' : currentInstruction }}</p>
+            @if (comparisonError) {
+            <p class="comparison-error" role="alert">{{ comparisonError }}</p>
+            }
         </div>
+        }
     </div>
 
     <div class="right">               
         <input
         class="scan-input"
+        [disabled]="isComparing || comparisonComplete"
         [ngClass]="{
             'load-unit-step': step === 1,
             'article-step': step === 2,
@@ -60,8 +107,8 @@
         <button
             class="finish"
             (click)="onFinish()"
-            [disabled]="lines.length === 0 || !loadUnit">
-            Finish
+            [disabled]="lines.length === 0 || !loadUnit || isComparing || comparisonComplete">
+            {{ isComparing ? 'Comparing...' : 'Finish' }}
         </button>
 
     </div>

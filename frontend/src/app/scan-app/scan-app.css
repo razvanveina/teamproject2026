@@ -100,9 +100,27 @@ tbody tr td {
 }
 
 .data-container {
-    height: 300px; 
+    height: 300px;
     overflow-y: auto;
+}
 
+.load-unit-table {
+    table-layout: fixed;
+}
+
+.load-unit-table th:nth-child(1),
+.load-unit-table td:nth-child(1) {
+    width: 30%;
+}
+
+.load-unit-table th:nth-child(2),
+.load-unit-table td:nth-child(2) {
+    width: 50%;
+}
+
+.load-unit-table th:nth-child(3),
+.load-unit-table td:nth-child(3) {
+    width: 20%;
 }
 
 .data-container td {
@@ -110,7 +128,52 @@ tbody tr td {
     border-bottom: 1px solid #748699;
 }
 
+.comparison-results {
+    width: 100%;
+    max-height: 100%;
+    overflow: auto;
+}
+
+.comparison-results h2 {
+    color: #354b66;
+    margin-top: 0;
+    font-size: 24px;
+}
+
+.comparison-results p,
+.comparison-error {
+    font-size: 16px;
+}
+
+.comparison-table-container {
+    overflow-x: auto;
+}
+
+.comparison-results th,
+.comparison-results td {
+    padding: 8px;
+    font-size: 14px;
+}
+
+.comparison-results td.difference-positive {
+    color: #16803c;
+    font-weight: 700;
+}
+
+.comparison-results td.difference-negative {
+    color: #c62828;
+    font-weight: 700;
+}
+
+.comparison-error {
+    color: #b00020;
+    padding: 0 16px;
+}
+
 .load-unit {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     padding: 13px 16px;
     color: #354b66;
     border-bottom: 1px solid #e9eef3;
@@ -129,7 +192,6 @@ table {
 
 th,
 td {
-    width: 50%;
     text-align: left;
     padding: 20px 20px 20px 25px;
     box-sizing: border-box;
