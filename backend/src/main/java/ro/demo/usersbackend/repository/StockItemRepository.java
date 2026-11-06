@@ -8,6 +8,6 @@ import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.StockItem;
 
 public interface StockItemRepository extends JpaRepository<StockItem, Long> {
-	List<StockItem> findByLoadUnitAndReservationIsNullOrderByIdAsc(LoadUnit loadUnit);
+	List<StockItem> findByLoadUnitOrderByIdAsc(LoadUnit loadUnit);
 }
 

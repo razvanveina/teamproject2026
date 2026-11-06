@@ -85,7 +85,7 @@ public class DecantingService {
 	}
 
 	private List<StockItem> availableItems(LoadUnit loadUnit) {
-		return stockItemRepository.findByLoadUnitAndReservationIsNullOrderByIdAsc(loadUnit);
+		return stockItemRepository.findByLoadUnitOrderByIdAsc(loadUnit);
 	}
 
 	private LoadUnit createTote() {
