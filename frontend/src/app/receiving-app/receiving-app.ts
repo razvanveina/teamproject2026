@@ -153,7 +153,7 @@ export class ReceivingApp {
     this.order.set(localOrder)
   }
 
-  onMakeLoadUnit() { }
+  //onMakeLoadUnit() { }
 
   onConfirm() {
     // TODO check if order finished if not redirect user to make a loadUnit
