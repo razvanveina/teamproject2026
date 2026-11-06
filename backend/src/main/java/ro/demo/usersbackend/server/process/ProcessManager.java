@@ -8,11 +8,12 @@ import java.util.ArrayList;
 import ro.demo.usersbackend.dto.ProcessResponse;
 import ro.demo.usersbackend.server.host.HostReceivingProcess;
 import ro.demo.usersbackend.server.host.HostRetrievalProcess;
+import ro.demo.usersbackend.server.replenishment.ReplenishmentProcess;
 import ro.demo.usersbackend.server.reservation.ReservationService;
 import ro.demo.usersbackend.server.transport.ToteTransportService;
 
 public class ProcessManager {
-	private static final AbstractProcess[] processes = { new HostReceivingProcess(), new HostRetrievalProcess(), new ReservationService(), new ToteTransportService() };
+	private static final AbstractProcess[] processes = { new HostReceivingProcess(), new HostRetrievalProcess(), new ReservationService(), new ToteTransportService(), new ReplenishmentProcess() };
 	private static final Map<String, Thread> threads = new HashMap<>();
 
 	public static synchronized void startAll() {
@@ -49,10 +50,10 @@ public class ProcessManager {
 		if(process == null) {
 			return null;
 		}
-		
+
 		process.paused = false;
 		process.stop = false;
-		
+
 		Thread thread = threads.get(process.getName());
 		if(thread == null || !thread.isAlive()) {
 			thread = new Thread(process::start, name);
@@ -71,23 +72,23 @@ public class ProcessManager {
 		}
 		return null;
 	}
-	
+
 	public static synchronized ProcessResponse stop(String name) {
 		AbstractProcess process = find(name);
 		if(process == null) {
 			return null;
 		}
-		
+
 		process.stop();
 		return toResponse(process);
 	}
-	
+
 	public static synchronized ProcessResponse pause(String name) {
 		AbstractProcess process = find(name);
 		if(process == null) {
 			return null;
 		}
-		
+
 		process.paused = true;
 		return toResponse(process);
 	}
