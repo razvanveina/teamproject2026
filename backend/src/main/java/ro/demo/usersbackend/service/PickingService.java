@@ -62,6 +62,11 @@ public class PickingService {
 		return null;
 	}
 
+	@Transactional(readOnly = true)
+	public PickingOrderResponse findOrderDetails(String orderId) {
+		return toResponse(findOrder(orderId));
+	}
+
 	// muncitorul a scanat cutia: o cream ca load unit CARTON in locatia PICK unde e marfa comenzii
 	public String createBox(String orderId, String barcode) {
 		if (loadUnitRepository.findByBarcode(barcode).isPresent()) {

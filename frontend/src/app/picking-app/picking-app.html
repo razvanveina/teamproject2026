@@ -35,6 +35,7 @@
 
     <div class="bottom">
         <button (click)="onCancel()" class="cancel">Cancel</button>
+        <button (click)="onOrders()" class="order">Retrieval Orders</button>
         @if (waitingConfirm()) {
         <button (click)="onConfirm(); scan.focus()" class="confirm">Confirm</button>
         }

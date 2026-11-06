@@ -5,7 +5,7 @@
   "actions": ["add", "edit", "delete"],
   "columns": [
     { "field": "ID", "label": "ID" },
-	{ "field": "BARCODE", "label": "Barcode", "addable": true, "filterable": true, "editable": true },
+	  { "field": "BARCODE", "label": "Barcode", "addable": true, "filterable": true, "editable": true },
     { "field": "ARTICLE_ID", "label": "Article", "addable": true, "lookup": { "entity": "Article" }, "filterable": true, "editable": true },
     { "field": "PACKAGING_UNIT_TYPE_ID", "label": "Packaging Unit Type", "addable": true, "lookup": { "entity": "PackagingUnitType"}, "filterable": true, "editable": true }
   ]

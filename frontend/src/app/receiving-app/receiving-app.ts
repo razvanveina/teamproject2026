@@ -2,6 +2,7 @@ import { Component, ElementRef, inject, signal, ViewChild } from '@angular/core'
 import { PackageInfo, ReceivingOrder } from '../models/receiving-order.model';
 import { ReceivingOrderService } from '../services/receiving-order-service';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { ScannedPackage } from '../models/receiving-order.model';
 
 @Component({
@@ -12,6 +13,7 @@ import { ScannedPackage } from '../models/receiving-order.model';
 })
 export class ReceivingApp {
   receivingService = inject(ReceivingOrderService)
+  private router = inject(Router)
 
   @ViewChild('barcodeInput')
   barcodeInput!: ElementRef<HTMLInputElement>;
@@ -175,6 +177,10 @@ export class ReceivingApp {
         this.instructions.set(err.error.detail)
       }
     })
+  }
+
+  onOrders() {
+    this.router.navigate(['/receiving/orders'])
   }
 
   onCancel() {

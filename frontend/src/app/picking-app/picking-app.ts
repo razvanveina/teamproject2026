@@ -1,4 +1,5 @@
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { PickingApi } from '../services/picking';
 import { LogService } from '../services/log';
 
@@ -10,6 +11,7 @@ import { LogService } from '../services/log';
 export class PickingApp implements OnInit, OnDestroy {
   private api = inject(PickingApi);
   private log = inject(LogService);
+  private router = inject(Router);
 
   order = signal<any>(null);
   instructions = signal('No order ready for picking. Please wait, the screen checks again every 10 seconds');
@@ -158,6 +160,10 @@ export class PickingApp implements OnInit, OnDestroy {
         }
       },
     });
+  }
+
+  onOrders(): void {
+    this.router.navigate(['/picking/orders']);
   }
 
   onCancel(): void {

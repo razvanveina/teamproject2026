@@ -11,6 +11,10 @@ export class PickingApi {
     return this.http.get<any>(API_BASE_URL + '/picking/next-order');
   }
 
+  getOrder(orderId: string): Observable<any> {
+    return this.http.get<any>(API_BASE_URL + '/picking/order/' + orderId);
+  }
+
   createBox(orderId: string, box: string): Observable<any> {
     return this.http.post<any>(API_BASE_URL + '/picking/create-box', { orderId: orderId, box: box });
   }

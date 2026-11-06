@@ -6,6 +6,7 @@ import { Login } from './login/login';
 import { authGuard } from './guards/auth-guard';
 import { DialogPage } from './dialog-page/dialog-page';
 import { ReceivingApp } from './receiving-app/receiving-app';
+import { ReceivingOrders } from './receiving-orders/receiving-orders';
 import { DialogForm } from './dialog-form/dialog-form';
 import { TransportApp } from './transport-app/transport-app';
 import { Processes } from './processes/processes';
@@ -14,6 +15,7 @@ import { Shipping } from './shipping/shipping';
 import { PickingApp } from './picking-app/picking-app';
 import { DecantingApp } from './decanting-app/decanting-app';
 import { ScanApp } from './scan-app/scan-app';
+import { RetrievalOrders } from './retrieval-orders/retrieval-orders';
 
 export const routes: Routes = [
     { path: 'login', component: Login, title: 'Login' },
@@ -30,12 +32,14 @@ export const routes: Routes = [
             { path: 'dialogs/:entity/edit/:id', component: DialogForm },
             { path: '', redirectTo: 'home', pathMatch: 'full' },
             { path: 'receiving', component: ReceivingApp, title: 'Receiving' },
+			{ path: 'receiving/orders', component: ReceivingOrders },
             { path: 'shipping', component: Shipping, title: 'Shipping' },
             { path: 'transport', component: TransportApp, title: 'Transport' },
             { path: 'decanting', component: DecantingApp, title: 'Decanting' },
             { path: 'processes', component: Processes, title: 'Processes' },
             { path: 'stock', component: Stock, title: 'Stock' },
             { path: 'picking', component: PickingApp, title: 'Picking' },
+			{ path: 'picking/orders', component: RetrievalOrders },
             { path: 'scan', component: ScanApp, title: 'Scan'}
         ]
     },

@@ -1,0 +1,53 @@
+.orders-page {
+    display: grid;
+    grid-template-rows: 3fr 2fr;
+    gap: 16px;
+    height: calc(100vh - 150px);
+}
+
+.pane {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.pane .filters {
+    flex-shrink: 0;
+}
+
+h2 {
+    margin: 0 0 10px;
+    color: #172b4d;
+    font-family: "Segoe UI", "Inter", "Aptos", sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.scroll {
+    min-height: 0;
+    overflow: auto;
+    border-radius: 12px;
+}
+
+.scroll table {
+    overflow: visible;
+}
+
+.scroll th {
+    position: sticky;
+    top: 0;
+}
+
+.selectable {
+    cursor: pointer;
+}
+
+tr.selectable.selected td {
+    background: #dff1f3;
+}
+
+.hint {
+    margin: 0;
+    color: #6b7f95;
+    font-family: "Segoe UI", "Inter", "Aptos", sans-serif;
+}

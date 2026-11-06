@@ -131,6 +131,7 @@ button {
     background-color: red;
 }
 
-.confirm {
+.confirm,
+.order {
     background: linear-gradient(110deg, #172b4d, #203b5e);
 }
