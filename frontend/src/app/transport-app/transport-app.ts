@@ -172,9 +172,9 @@ export class TransportApp implements OnInit, OnDestroy {
           this.showNoOrders();
         }
       },
-      error: () => {
+      error: (err) => {
         this.checkingForOrder = false;
-        this.instructions.set('Token expired.');
+        this.instructions.set(err.error?.detail ?? 'Somethinig went wrong ¯\\_(ツ)_/¯');
         this.hasError.set(true);
       },
     });
