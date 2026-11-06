@@ -76,4 +76,9 @@ public class TransportOrderController {
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
 		}
 	}
+
+	@GetMapping("/nextTote")
+	public TransportOrderResponse findNextToteTransport() {
+		return transportOrderService.findNextToteOrder();
+	}
 }

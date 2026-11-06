@@ -16,6 +16,7 @@ import { PickingApp } from './picking-app/picking-app';
 import { DecantingApp } from './decanting-app/decanting-app';
 import { ScanApp } from './scan-app/scan-app';
 import { RetrievalOrders } from './retrieval-orders/retrieval-orders';
+import { ToteTransport } from './tote-transport/tote-transport';
 
 export const routes: Routes = [
     { path: 'login', component: Login, title: 'Login' },
@@ -40,7 +41,8 @@ export const routes: Routes = [
             { path: 'stock', component: Stock, title: 'Stock' },
             { path: 'picking', component: PickingApp, title: 'Picking' },
 			{ path: 'picking/orders', component: RetrievalOrders },
-            { path: 'scan', component: ScanApp, title: 'Scan'}
+            { path: 'scan', component: ScanApp, title: 'Scan'},            
+            { path: 'toteTransport', component: ToteTransport, title: 'Tote Transport' }
         ]
     },
     { path: '**', redirectTo: 'home' }

@@ -1,7 +1,6 @@
 package ro.demo.usersbackend.service;
 
 import java.util.List;
-import java.util.stream.Stream;
 import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
@@ -16,6 +15,7 @@ import ro.demo.usersbackend.entity.StorageLocation;
 import ro.demo.usersbackend.entity.TransportOrder;
 import ro.demo.usersbackend.entity.TransportOrderErrorReason;
 import ro.demo.usersbackend.entity.TransportOrderStatus;
+import ro.demo.usersbackend.repository.LocationRepository;
 import ro.demo.usersbackend.repository.TransportOrderRepository;
 
 @Service
@@ -23,9 +23,13 @@ import ro.demo.usersbackend.repository.TransportOrderRepository;
 public class TransportOrderService {
 
 	private final TransportOrderRepository transportOrderRepository;
+	private final LocationRepository locationRepository;
 
-	public TransportOrderService(TransportOrderRepository transportOrderRepository) {
+	public TransportOrderService(TransportOrderRepository transportOrderRepository,
+			LocationRepository locationRepository) {
+		super();
 		this.transportOrderRepository = transportOrderRepository;
+		this.locationRepository = locationRepository;
 	}
 
 	@Transactional(readOnly = true)
@@ -36,13 +40,28 @@ public class TransportOrderService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<TransportOrderResponse> findOpenOrders() {
-	    return transportOrderRepository.findByStatusOrderByIdAsc(TransportOrderStatus.NEW)
-	            .stream()
-	            .map(this::toResponse)
-	            .toList();
+	public TransportOrderResponse findNextToteOrder() {
+		Location decanting = locationRepository.findByName("DECANTING")
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+						"Cannot find location with the name DECANTING"));
+
+		TransportOrder order = transportOrderRepository
+				.findFirstByStatusAndSourceOrderByIdAsc(TransportOrderStatus.ACTIVE, decanting)
+				.or(() -> transportOrderRepository.findFirstByStatusAndSourceOrderByIdAsc(TransportOrderStatus.NEW,
+						decanting))
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+						"Cannot find location with the name DECANTING"));
+
+		return new TransportOrderResponse(order.getId(), order.getStatus(), order.getLoadUnit().getBarcode(),
+				order.getSource().getName(), order.getTarget().getName(), order.getLoadUnit().getLocation().getName());
 	}
-	
+
+	@Transactional(readOnly = true)
+	public List<TransportOrderResponse> findOpenOrders() {
+		return transportOrderRepository.findByStatusOrderByIdAsc(TransportOrderStatus.NEW).stream()
+				.map(this::toResponse).toList();
+	}
+
 	public TransportOrderResponse scan(Long id, String barcode) {
 		TransportOrder order = transportOrderRepository.findById(id)
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Transport order not found"));

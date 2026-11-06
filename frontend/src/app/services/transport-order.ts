@@ -34,4 +34,8 @@ export class TransportOrderApi {
   reportError(id: number, reason: TransportOrderErrorReason): Observable<TransportOrderResponse> {
     return this.http.post<TransportOrderResponse>(`${this.url}/${id}/error`, { reason });
   }
+
+  findNextToteTransport(){
+    return this.http.get<TransportOrderResponse>(`${this.url}/nextTote`);
+  }
 }
