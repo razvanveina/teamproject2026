@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DialogColumn, DialogConfig, DialogsFile } from '../models/dialog-config.model';
 import { DialogConfigService } from '../services/dialog-config.service';
+import { Title } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-dialog-page',
@@ -12,6 +13,7 @@ import { DialogConfigService } from '../services/dialog-config.service';
 export class DialogPage implements OnInit {
   private route = inject(ActivatedRoute);
   private service = inject(DialogConfigService);
+  private titleService = inject(Title);
 
   // The dialog description (title, entity, columns). Empty until it arrives.
   dialog = signal<DialogConfig | null>(null);
@@ -41,6 +43,8 @@ export class DialogPage implements OnInit {
       // 2. Ask for the dialog file, e.g. ReceivingOrder.json
       this.service.getDialog(entity + '.json').subscribe((dialog: DialogConfig) => {
         this.dialog.set(dialog);
+        this.dialog.set(dialog);
+        this.titleService.setTitle(dialog.title);
 
         this.service.getDialogsFile().subscribe((dialogsFile: DialogsFile) => {
           this.tableColumns.set(this.makeColumns(dialog, dialogsFile));

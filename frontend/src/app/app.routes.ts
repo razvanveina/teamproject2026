@@ -16,27 +16,27 @@ import { DecantingApp } from './decanting-app/decanting-app';
 import { ScanApp } from './scan-app/scan-app';
 
 export const routes: Routes = [
-    { path: 'login', component: Login },
+    { path: 'login', component: Login, title: 'Login' },
     {
         path: '',
         canActivate: [authGuard],
         children: [
-            { path: 'home', component: Home },
-            { path: 'users', component: UserTable },
-            { path: 'users/add', component: UserDialog },
-            { path: 'users/edit/:id', component: UserDialog },
+            { path: 'home', component: Home, title: 'Home' },
+            { path: 'users', component: UserTable, title: 'Users' },
+            { path: 'users/add', component: UserDialog, title: 'Users - Add' },
+            { path: 'users/edit/:id', component: UserDialog, title: 'Users - Edit' },
             { path: 'dialogs/:entity', component: DialogPage },
             { path: 'dialogs/:entity/add', component: DialogForm },
             { path: 'dialogs/:entity/edit/:id', component: DialogForm },
             { path: '', redirectTo: 'home', pathMatch: 'full' },
-            { path: 'receiving', component: ReceivingApp },
-            { path: 'shipping', component: Shipping },
-            { path: 'transport', component: TransportApp },
-            { path: 'decanting', component: DecantingApp },
-            { path: 'processes', component: Processes },
-            {path: 'stock', component: Stock},
-            { path: 'picking', component: PickingApp },
-            { path: 'scan', component: ScanApp }
+            { path: 'receiving', component: ReceivingApp, title: 'Receiving' },
+            { path: 'shipping', component: Shipping, title: 'Shipping' },
+            { path: 'transport', component: TransportApp, title: 'Transport' },
+            { path: 'decanting', component: DecantingApp, title: 'Decanting' },
+            { path: 'processes', component: Processes, title: 'Processes' },
+            { path: 'stock', component: Stock, title: 'Stock' },
+            { path: 'picking', component: PickingApp, title: 'Picking' },
+            { path: 'scan', component: ScanApp, title: 'Scan'}
         ]
     },
     { path: '**', redirectTo: 'home' }

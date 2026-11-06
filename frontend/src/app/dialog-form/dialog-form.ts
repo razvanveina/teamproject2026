@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DialogConfig, DialogLookup, DialogsFile, EntitySpec } from '../models/dialog-config.model';
 import { DialogConfigService } from '../services/dialog-config.service';
+import { Title } from '@angular/platform-browser';
 
 // One input of the form (description of a field)
 interface FormField {
@@ -31,6 +32,7 @@ export class DialogForm implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private service = inject(DialogConfigService);
+  private titleService = inject(Title);
 
   // The entity from the address, e.g. "Article" from /dialogs/Article/add
   entity = '';
@@ -84,6 +86,7 @@ export class DialogForm implements OnInit {
     // 1. The dialog file
     this.service.getDialog(this.entity + '.json').subscribe((dialog: DialogConfig) => {
       this.dialog.set(dialog);
+      this.titleService.setTitle(dialog.title + (this.id === '' ? ' - Add' : ' - Edit'))
 
       // 2. The columns from the database: type and required
       this.service.getColumns(this.entity).subscribe((columns: any[]) => {
