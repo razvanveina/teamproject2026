@@ -11,7 +11,6 @@ h1 {
 /* Table: same look as the Users table (white card, dark blue header) */
 table {
     width: 100%;
-    max-width: 800px;
     border-collapse: separate;
     /* needed for the rounded corners */
     border-spacing: 0;
@@ -55,7 +54,6 @@ tr:last-child td {
 
 /* The error from the server, shown above the table */
 .error {
-    max-width: 800px;
     margin: 0 0 14px;
     padding: 12px 16px;
     color: #812f3c;
