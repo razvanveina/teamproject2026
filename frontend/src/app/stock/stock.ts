@@ -52,16 +52,20 @@ export class Stock implements OnInit {
         forkJoin({
             loadUnits: this.service.getRows('LoadUnit'),
             items: this.service.getRows('StockItem'),
+            packages: this.service.getRows('ArticlePackagingUnitType'),
             articles: this.service.getRows('Article'),
             locations: this.service.getRows('StorageLocation')
         }).subscribe({
             next: data => {
                 const articles = byId(data.articles);
                 const locations = byId(data.locations);
+                const packages = byId(data.packages);
 
                 const itemsOf = new Map<number, StockLine[]>();
                 for (const item of data.items.map(lowerKeys)) {
-                    const article = articles.get(Number(item['article_id']));
+                    // stock item -> package -> article
+                    const pack = packages.get(Number(item['article_packaging_unit_type_id']));
+                    const article = articles.get(Number(pack?.['article_id']));
                     const loadUnitId = Number(item['load_unit_id']);
 
                     itemsOf.set(loadUnitId, [

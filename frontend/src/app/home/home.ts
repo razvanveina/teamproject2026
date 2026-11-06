@@ -113,9 +113,10 @@ export class Home implements OnInit {
     this.loadingStock.set(true);
     forkJoin({
       items: this.service.getRows('StockItem'),
-      articles: this.service.getRows('Article')
+      articles: this.service.getRows('Article'),
+      packages: this.service.getRows('ArticlePackagingUnitType')
     }).subscribe({
-      next: ({ items, articles }) => {
+      next: ({ items, articles, packages }) => {
         if (this.selectedSlot() !== slot) {
           return;
         }
@@ -125,12 +126,19 @@ export class Home implements OnInit {
           articleById.set(Number(article['id']), article);
         }
 
+        const packageById = new Map<number, Record<string, any>>();
+        for (const pack of packages.map(lowerKeys)) {
+          packageById.set(Number(pack['id']), pack);
+        }
+
         this.stock.set(
           items
             .map(lowerKeys)
             .filter(item => Number(item['load_unit_id']) === slot.loadUnitId)
             .map(item => {
-              const article = articleById.get(Number(item['article_id']));
+              // acelasi fix ca la stock sa facem mapare la articol prin package
+              const pack = packageById.get(Number(item['article_packaging_unit_type_id']));
+              const article = articleById.get(Number(pack?.['article_id']));
               return {
                 barcode: String(article?.['barcode'] ?? ''),
                 description: String(article?.['description'] ?? ''),
