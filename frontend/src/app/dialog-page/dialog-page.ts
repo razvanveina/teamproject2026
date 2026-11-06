@@ -43,7 +43,6 @@ export class DialogPage implements OnInit {
       // 2. Ask for the dialog file, e.g. ReceivingOrder.json
       this.service.getDialog(entity + '.json').subscribe((dialog: DialogConfig) => {
         this.dialog.set(dialog);
-        this.dialog.set(dialog);
         this.titleService.setTitle(dialog.title);
 
         this.service.getDialogsFile().subscribe((dialogsFile: DialogsFile) => {
