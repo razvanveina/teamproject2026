@@ -9,7 +9,7 @@ export class AuthService {
   private router = inject(Router);
   private url = 'http://localhost:8080/auth';
 
-  private tokenSignal = signal<string | null>(sessionStorage.getItem('token'));
+  private tokenSignal = signal<string | null>(localStorage.getItem('token'));
   private timer?: ReturnType<typeof setTimeout>;
 
   readonly isLoggedIn = computed(() => this.tokenSignal() !== null);
@@ -26,7 +26,7 @@ export class AuthService {
   login(username: string, password: string) {
     return this.http.post<{ token: string }>(`${this.url}/login`, { username, password }).pipe(
       tap(res => {
-        sessionStorage.setItem('token', res.token);
+        localStorage.setItem('token', res.token);
         this.tokenSignal.set(res.token);
         this.expired.set(false);
         this.scheduleExpiry();
@@ -36,7 +36,7 @@ export class AuthService {
 
   logout(): void {
     clearTimeout(this.timer);
-    sessionStorage.removeItem('token');
+    localStorage.removeItem('token');
     this.tokenSignal.set(null);
     this.expired.set(false);
   }

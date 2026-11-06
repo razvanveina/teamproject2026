@@ -22,7 +22,7 @@ public class JwtService {
 	public String createToken(String username) {
 		Instant now = Instant.now();
 		JwtClaimsSet claims = JwtClaimsSet.builder().subject(username).issuedAt(now)
-				.expiresAt(now.plus(30, ChronoUnit.MINUTES)).build();
+				.expiresAt(now.plus(8, ChronoUnit.HOURS)).build();
 		return encoder.encode(JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(), claims))
 				.getTokenValue();
 	}
