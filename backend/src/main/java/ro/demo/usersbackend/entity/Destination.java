@@ -19,6 +19,11 @@ public class Destination {
 		super();
 	}
 
+	public Destination(String name) {
+		super();
+		this.name = name;
+	}
+
 	public String getName() {
 		return name;
 	}

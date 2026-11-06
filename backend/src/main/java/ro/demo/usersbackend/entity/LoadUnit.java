@@ -2,6 +2,8 @@ package ro.demo.usersbackend.entity;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -30,6 +32,7 @@ public class LoadUnit {
 	@JoinColumn(name = "location_id", nullable = false)
 	private Location location;
 
+	@JsonManagedReference
 	@Column(nullable = false)
 	@OneToMany(mappedBy = "loadUnit")
 	private List<StockItem> stockItems;

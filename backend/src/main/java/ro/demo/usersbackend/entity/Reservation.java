@@ -25,6 +25,12 @@ public class Reservation {
 		super();
 	}
 
+	public Reservation(StockItem stockItem, RetrievalOrderLine retrievalOrderLine) {
+		super();
+		this.stockItem = stockItem;
+		this.retrievalOrderLine = retrievalOrderLine;
+	}
+
 	public StockItem getStockItem() {
 		return stockItem;
 	}

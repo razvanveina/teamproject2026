@@ -1,10 +1,8 @@
 package ro.demo.usersbackend.repository;
 
-import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Limit;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -20,9 +18,7 @@ public interface StorageLocationRepository extends JpaRepository<StorageLocation
 //			WHERE location.loadUnit IS NULL
 //			ORDER BY location.x
 //			""")
-	@Query("select l from StorageLocation l "
-		     + "where l.loadUnit is null and l.aisle > 0 "
-		     + "and l.id not in (select t.target.id from TransportOrder t) "
-		     + "order by l.x asc")
-		Optional<StorageLocation> findFirstFreeByX(Limit limit);
+	@Query("select l from StorageLocation l " + "where l.loadUnit is null and l.aisle > 0 "
+			+ "and l.id not in (select t.target.id from TransportOrder t) " + "order by l.x asc")
+	Optional<StorageLocation> findFirstFreeByX(Limit limit);
 }

@@ -1,0 +1,49 @@
+<div class="container">
+    <div class="top">
+        <div [hidden]="!displayTable()">
+            <p>Load Unit ID: <b>{{loadUnit().barcode}}</b></p>
+            <br>
+            <p>Load Unit Type: <b>{{loadUnit().loadUnitType}}</b></p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Barcode</th>
+                        <th>Quantity</th>
+                        <th>Article Barcode</th>
+                        <th>Article Description</th>
+                        <th>Packaging Unit Quantity</th>
+                        <th>Packaging Unit Name</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @for (item of loadUnit().items; track item.id) {
+                    <tr>
+                        <td>{{ item.barcode }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>{{ item.articleBarcode }}</td>
+                        <td>{{ item.articleDescription }}</td>
+                        <td>{{ item.packagingUnitTypeName }}</td>
+                        <td>{{ item.packagingUnitTypeQuantity }}</td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div [class.left]="!error()" [class.error]="error()">
+        <div>
+            <p>{{instructions}}</p>
+        </div>
+    </div>
+
+    <div class="right">
+        <input type="text" placeholder="Scan barcode" #barcodeInput (keyup.enter)="onScan(barcodeInput.value)">
+    </div>
+
+    <div class="bottom">
+        <button (click)=onCancel()>Cancel</button>
+        <button (click)=onConfirm()>Confirm</button>
+    </div>
+</div>

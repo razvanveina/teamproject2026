@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -53,6 +54,9 @@ public class TransportOrderController {
 		} catch (ResponseStatusException e) {
 			log.warn("Order {}: scan rejected - {}", id, e.getReason());
 			throw e;
+		} catch (Exception e) {
+			log.error("Exception: " + e.getMessage());
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
 		}
 	}
 
@@ -67,6 +71,9 @@ public class TransportOrderController {
 		} catch (ResponseStatusException e) {
 			log.warn("Order {}: error report rejected - {}", id, e.getReason());
 			throw e;
+		} catch (Exception e) {
+			log.error("Exception: " + e.getMessage());
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
 		}
 	}
 }

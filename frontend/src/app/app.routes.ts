@@ -10,6 +10,7 @@ import { DialogForm } from './dialog-form/dialog-form';
 import { TransportApp } from './transport-app/transport-app';
 import { Processes } from './processes/processes';
 import { Stock } from './stock/stock';
+import { Shipping } from './shipping/shipping';
 
 export const routes: Routes = [
     { path: 'login', component: Login },
@@ -26,6 +27,7 @@ export const routes: Routes = [
             { path: 'dialogs/:entity/edit/:id', component: DialogForm },
             { path: '', redirectTo: 'home', pathMatch: 'full' },
             { path: 'receiving', component: ReceivingApp },
+            { path: 'shipping', component: Shipping },
             { path: 'transport', component: TransportApp },
             { path: 'processes', component: Processes },
             {path: 'stock', component: Stock},

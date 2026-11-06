@@ -4,6 +4,18 @@ import org.hibernate.Session;
 
 import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
 import ro.demo.usersbackend.entity.Article;
+import ro.demo.usersbackend.entity.ArticlePackagingUnitType;
+import ro.demo.usersbackend.entity.Destination;
+import ro.demo.usersbackend.entity.DestinationToGate;
+import ro.demo.usersbackend.entity.LoadUnit;
+import ro.demo.usersbackend.entity.LoadUnitType;
+import ro.demo.usersbackend.entity.PackagingUnitType;
+import ro.demo.usersbackend.entity.Reservation;
+import ro.demo.usersbackend.entity.RetrievalOrder;
+import ro.demo.usersbackend.entity.RetrievalOrderLine;
+import ro.demo.usersbackend.entity.RetrievalOrderLineStatus;
+import ro.demo.usersbackend.entity.RetrievalOrderStatus;
+import ro.demo.usersbackend.entity.StockItem;
 import ro.demo.usersbackend.entity.StorageLocation;
 import ro.demo.usersbackend.entity.TransitLocation;
 
@@ -20,6 +32,48 @@ public class SimpleInitialDataCreator {
 		createTransitLocations();
 		createPickingLocations();
 		createArticles();
+		createLoadUnit();
+	}
+
+	private void createLoadUnit() {
+		LoadUnit loadUnit = new LoadUnit();
+		loadUnit.setBarcode("123");
+		loadUnit.setType(LoadUnitType.CARTON);
+
+		TransitLocation location = new TransitLocation("test");
+		loadUnit.setLocation(location);
+
+		Article article = new Article("000", "art");
+		PackagingUnitType pkt = new PackagingUnitType("piece", 1);
+		ArticlePackagingUnitType type = new ArticlePackagingUnitType("999", article, pkt);
+		StockItem stockItem = new StockItem(type, 10, loadUnit);
+		RetrievalOrder order = new RetrievalOrder();
+		RetrievalOrderLine line = new RetrievalOrderLine();
+		Reservation reservation = new Reservation(stockItem, line);
+		Destination dest = new Destination("Gate1");
+		TransitLocation gate = new TransitLocation("Gate1");
+		DestinationToGate dtg = new DestinationToGate(dest, gate);
+		stockItem.setReservation(reservation);
+		order.setDestination(dest);
+		order.setOrderId("00099");
+		order.setStatus(RetrievalOrderStatus.FINISHED);
+		line.setArticle(article);
+		line.setQuantity(1);
+		line.setOrder(order);
+		line.setStatus(RetrievalOrderLineStatus.FINISHED);
+
+		session.persist(location);
+		session.persist(loadUnit);
+		session.persist(article);
+		session.persist(pkt);
+		session.persist(type);
+		session.persist(stockItem);
+		session.persist(dest);
+		session.persist(gate);
+		session.persist(dtg);
+		session.persist(order);
+		session.persist(line);
+		session.persist(reservation);
 	}
 
 	private void createStorageLocations() {
