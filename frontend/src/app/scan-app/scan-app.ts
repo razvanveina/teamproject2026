@@ -96,6 +96,7 @@ export class ScanApp {
     showCompletionDialog = false;
     mismatchAccepted = false;
     comparisonError = '';
+    validationMessage = '';
     isComparing = false;
 
     step = 1;
@@ -121,6 +122,7 @@ export class ScanApp {
         if (!barcode) {
             return;
         }
+        this.validationMessage = '';
 
         switch (this.step) {
 
@@ -131,7 +133,8 @@ export class ScanApp {
                         next: result => {
                             const loadUnit = result.find(row => row.BARCODE === barcode);
                             if (!loadUnit) {
-                                alert('Load unit not found');
+                                this.validationMessage = 'Load unit not found. Please scan the load unit barcode again.';
+                                this.cdr.markForCheck();
                                 return;
                             }
 
@@ -232,7 +235,8 @@ export class ScanApp {
                 next: rows => {
                     const article = rows.find(row => row.BARCODE === barcode);
                     if (!article) {
-                        alert('Article or article packaging unit not found');
+                        this.validationMessage = 'Article not found. Please scan the article barcode again.';
+                        this.cdr.markForCheck();
                         return;
                     }
                     this.loadArticlePackagingUnit(article.ID, null);

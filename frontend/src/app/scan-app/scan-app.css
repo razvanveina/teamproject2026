@@ -23,6 +23,15 @@
     background: #fff3b0;
 }
 
+.left.warning {
+    background: #fff3b0;
+}
+
+.warning-message {
+    color: #7a4b00;
+    font-weight: 600;
+}
+
 .bottom {
     display: flex;
     justify-content: left;

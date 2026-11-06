@@ -40,7 +40,12 @@
     }
 
 </div>
-    <div class="left">
+    <div class="left" [class.warning]="validationMessage">
+        @if (validationMessage) {
+        <div class="instruction-container warning-message" role="alert">
+            <p>{{ validationMessage }}</p>
+        </div>
+        } @else {
         @if (comparisonComplete && mismatchAccepted) {
         <section class="comparison-results" aria-live="polite">
             <h2>Inventory check complete</h2>
@@ -56,6 +61,7 @@
             <p class="comparison-error" role="alert">{{ comparisonError }}</p>
             }
         </div>
+        }
         }
     </div>
 
