@@ -71,7 +71,7 @@ export class ReceivingApp {
         this.error.set(true)
         if (this.displayTable())
           this.displayTable.set(false)
-        this.instructions.set(err.error.detail)
+        this.instructions.set(err.error.detail ?? "Order " + barcode + " not found")
       }
     })
   }
