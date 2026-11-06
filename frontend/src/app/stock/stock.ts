@@ -5,6 +5,7 @@ import { DialogConfigService } from '../services/dialog-config.service';
 interface StockLine {
     articleBarcode: string;
     description: string;
+    packagingBarcode: string;
     packaging: string;
     quantity: number;
 }
@@ -77,6 +78,7 @@ export class Stock implements OnInit {
                         {
                             articleBarcode: String(article?.['barcode'] ?? ''),
                             description: String(article?.['description'] ?? ''),
+                            packagingBarcode: String(packaging?.['barcode'] ?? ''),
                             packaging: String(packagingType?.['name'] ?? ''),
                             quantity: Number(item['quantity'])
                         }
