@@ -55,7 +55,7 @@ public class Test1 {
 
 	@AfterAll
 	static void end() {
-		// sessionFactory.inTransaction(Test1::cleanup);
+//		sessionFactory.inTransaction(Test1::cleanup);
 		sessionFactory.close();
 	}
 
@@ -250,10 +250,10 @@ public class Test1 {
 			Article article = new Article(barcode, barcode);
 			session.persist(article);
 			if (!barcode.equals("TEST13")) {
-				session.persist(new ArticlePackagingUnitType(barcode + PIECE, article, piece));
+				session.persist(new ArticlePackagingUnitType(barcode, article, piece));
 			}
-			session.persist(new ArticlePackagingUnitType(barcode + BAX6, article, bax6));
-			session.persist(new ArticlePackagingUnitType(barcode + BAX12, article, bax12));
+			session.persist(new ArticlePackagingUnitType(barcode + "BAX6", article, bax6));
+			session.persist(new ArticlePackagingUnitType(barcode + "BAX12", article, bax12));
 		});
 
 		List<StorageLocation> locations = session
@@ -409,15 +409,56 @@ public class Test1 {
 			}
 		}
 
+		session.flush();
+
+		List<Long> loadUnitIds = session.createQuery("""
+				select u.id from LoadUnit u
+				where u.barcode like 'TEST%'
+				or (exists (select 1 from StockItem s
+						where s.loadUnit = u and s.articlePackagingUnitType.barcode like 'TEST%')
+					and not exists (select 1 from StockItem s
+						where s.loadUnit = u and s.articlePackagingUnitType.barcode not like 'TEST%'))
+				""", Long.class).getResultList();
+		List<Long> receivingOrderIds = session.createNativeQuery("""
+				select distinct l.order_id from receiving_order_line l
+				join article a on a.id = l.article_id
+				where a.barcode like 'TEST%'
+				and not exists (select 1 from receiving_order_line o
+					join article b on b.id = o.article_id
+					where o.order_id = l.order_id and b.barcode not like 'TEST%')
+				""", Long.class).getResultList();
+
 		session.createMutationQuery("""
 				delete from StockItem s
-				where s.loadUnit.id in (select u.id from LoadUnit u where u.barcode like 'TEST%')
+				where s.articlePackagingUnitType.id in
+					(select p.id from ArticlePackagingUnitType p where p.barcode like 'TEST%')
 				""").executeUpdate();
-		session.createMutationQuery("""
-				update StorageLocation l set l.loadUnit = null
-				where l.loadUnit.id in (select u.id from LoadUnit u where u.barcode like 'TEST%')
+		if (!loadUnitIds.isEmpty()) {
+			session.createMutationQuery("delete from StockItem s where s.loadUnit.id in :ids")
+					.setParameter("ids", loadUnitIds).executeUpdate();
+			session.createMutationQuery("update StorageLocation l set l.loadUnit = null where l.loadUnit.id in :ids")
+					.setParameter("ids", loadUnitIds).executeUpdate();
+			session.createNativeMutationQuery("delete from transport_order where load_unit_id in :ids")
+					.setParameter("ids", loadUnitIds).executeUpdate();
+			session.createMutationQuery("delete from LoadUnit u where u.id in :ids").setParameter("ids", loadUnitIds)
+					.executeUpdate();
+		}
+		session.createNativeMutationQuery("""
+				delete from receiving_order_line
+				where article_id in (select id from article where barcode like 'TEST%')
 				""").executeUpdate();
-		session.createMutationQuery("delete from LoadUnit u where u.barcode like 'TEST%'").executeUpdate();
+		if (!receivingOrderIds.isEmpty()) {
+			session.createNativeMutationQuery("delete from receiving_order where id in :ids")
+					.setParameter("ids", receivingOrderIds).executeUpdate();
+		}
+		session.createNativeMutationQuery("""
+				delete from article_picking_location
+				where article_id in (select id from article where barcode like 'TEST%')
+				""").executeUpdate();
+		session.createNativeMutationQuery("""
+				delete from destination_to_gate
+				where destination_id in (select id from destination where name = 'TEST')
+				""").executeUpdate();
 		session.createMutationQuery("delete from ArticlePackagingUnitType p where p.barcode like 'TEST%'")
 				.executeUpdate();
 		session.createMutationQuery("delete from PackagingUnitType p where p.name like 'TEST%'").executeUpdate();

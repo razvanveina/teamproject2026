@@ -146,23 +146,6 @@ public class HostRetrievalProcess extends AbstractProcess {
 					orderLine.setQuantity(Integer.parseInt(value(line, "quantity")));
 					orderLine.setStatus(RetrievalOrderLineStatus.NEW);
 					session.persist(orderLine);
-
-					List<StockItem> stockItems = session
-							.createQuery("from StockItem s where s.articlePackagingUnitType.article = :article",
-									StockItem.class)
-							.setParameter("article", article).getResultList();
-
-					if (stockItems.isEmpty()) {
-						throw new IllegalArgumentException("No stock found for article " + barcode);
-					}
-
-					Reservation reservation = new Reservation();
-					reservation.setStockItem(stockItems.get(0));
-					reservation.setRetrievalOrderLine(orderLine);
-
-					session.persist(reservation);
-
-					stockItems.get(0).setReservation(reservation);
 				}
 				return true;
 			});
