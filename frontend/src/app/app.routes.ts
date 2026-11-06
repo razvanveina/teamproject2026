@@ -11,6 +11,7 @@ import { TransportApp } from './transport-app/transport-app';
 import { Processes } from './processes/processes';
 import { Stock } from './stock/stock';
 import { Shipping } from './shipping/shipping';
+import { PickingApp } from './picking-app/picking-app';
 
 export const routes: Routes = [
     { path: 'login', component: Login },
@@ -31,6 +32,7 @@ export const routes: Routes = [
             { path: 'transport', component: TransportApp },
             { path: 'processes', component: Processes },
             {path: 'stock', component: Stock},
+            { path: 'picking', component: PickingApp },
         ]
     },
     { path: '**', redirectTo: 'home' }

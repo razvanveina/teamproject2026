@@ -20,6 +20,12 @@ export class App {
     this.log.action(action);
   }
 
+  onPicking(): void {
+    if (this.router.url === '/picking') {
+      location.reload();
+    }
+  }
+
   logout(): void {
     this.auth.logout();
     this.router.navigate(['/login']);

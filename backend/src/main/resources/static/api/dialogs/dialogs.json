@@ -19,6 +19,7 @@
     { "name": "Location", "show": [ { "field": "NAME", "label": "Name" } ] },
     { "name": "LoadUnit", "show": [ { "field": "BARCODE", "label": "Barcode" } ] },
     { "name": "PackagingUnitType", "show": [ { "field": "NAME", "label": "Name" } ] },
+    { "name": "ArticlePackagingUnitType", "show": [ { "field": "BARCODE", "label": "Barcode" }, { "field": "ARTICLE_ID", "label": "Article", "from": "Article", "column": "DESCRIPTION" } ] },
     { "name": "Destination", "show": [ { "field": "NAME", "label": "Name" } ] },
     { "name": "RetrievalOrderLine", "show": [ { "field": "ID", "label": "ID" }, { "field": "ORDER_ID", "label": "Retrieval Order ID", "from": "RetrievalOrder", "column": "ORDER_ID" } ] }
   ]

@@ -1,0 +1,70 @@
+package ro.demo.usersbackend.controller;
+
+import java.util.Map;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+
+import ro.demo.usersbackend.dto.PickingOrderResponse;
+import ro.demo.usersbackend.dto.PickingRequest;
+import ro.demo.usersbackend.service.PickingService;
+
+// adresele statiei de picking, logica e in PickingService
+@RestController
+@RequestMapping("/api/picking")
+public class PickingController {
+	public static final Logger log = LogManager.getLogger("application");
+
+	private final PickingService pickingService;
+
+	public PickingController(PickingService pickingService) {
+		this.pickingService = pickingService;
+	}
+
+	@GetMapping("/next-order")
+	public PickingOrderResponse findNextOrder() {
+		return pickingService.findNextOrder();
+	}
+
+	@PostMapping("/create-box")
+	public ResponseEntity<Map<String, String>> createBox(@RequestBody PickingRequest request) {
+		try {
+			return ResponseEntity.ok(Map.of("message", pickingService.createBox(request.orderId(), request.box())));
+		} catch (ResponseStatusException e) {
+			return error(e);
+		}
+	}
+
+	@PostMapping("/move-to-box")
+	public void moveLineToBox(@RequestBody PickingRequest request) {
+		pickingService.moveLineToBox(request.orderId(), request.barcode(), request.box());
+	}
+
+	@PostMapping("/close-box")
+	public ResponseEntity<Map<String, String>> closeBox(@RequestBody PickingRequest request) {
+		try {
+			return ResponseEntity.ok(Map.of("message", pickingService.closeBox(request.orderId(), request.box())));
+		} catch (ResponseStatusException e) {
+			return error(e);
+		}
+	}
+
+	// greselile pe care le vede doar frontendul (articol gresit, cutie gresita) ajung aici ca sa intre in log ca ERROR
+	@PostMapping("/log-error")
+	public void logError(@RequestBody Map<String, String> body) {
+		log.error("Picking: {}", body.get("message"));
+	}
+
+	// mesajul erorii ajunge la frontend in "message" si intra in log ca ERROR
+	private ResponseEntity<Map<String, String>> error(ResponseStatusException e) {
+		log.error("Picking: {}", e.getReason());
+		return ResponseEntity.badRequest().body(Map.of("message", e.getReason()));
+	}
+}

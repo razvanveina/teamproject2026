@@ -1,0 +1,42 @@
+<div class="container">
+    <div class="top">
+        @if (order(); as current) {
+        <table>
+            <thead>
+                <tr>
+                    <th>Article</th>
+                    <th>Barcode</th>
+                    <th>Quantity</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (line of current.lines; track line.barcode) {
+                <tr [class.completed]="line.status === 'FINISHED'">
+                    <td>{{ line.description }}</td>
+                    <td>{{ line.barcode }}</td>
+                    <td>{{ line.quantity }}</td>
+                    <td>{{ line.status }}</td>
+                </tr>
+                }
+            </tbody>
+        </table>
+        }
+    </div>
+
+    <div class="left" [class.ok]="level() === 'ok'" [class.warning]="level() === 'warning'"
+        [class.error]="level() === 'error'">
+        <p>{{ instructions() }}</p>
+    </div>
+
+    <div class="right">
+        <input #scan type="text" autofocus placeholder="Scan barcode" (keyup.enter)="onScan(scan.value); scan.value = ''" />
+    </div>
+
+    <div class="bottom">
+        <button (click)="onCancel()" class="cancel">Cancel</button>
+        @if (waitingConfirm()) {
+        <button (click)="onConfirm(); scan.focus()" class="confirm">Confirm</button>
+        }
+    </div>
+</div>
