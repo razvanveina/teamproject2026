@@ -1,6 +1,7 @@
 package ro.demo.usersbackend.server.reservation;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Properties;
@@ -30,7 +31,7 @@ import ro.demo.usersbackend.entity.TransitLocation;
 import ro.demo.usersbackend.server.process.AbstractProcess;
 
 public class ReservationService extends AbstractProcess {
-	private static final Logger Log = LogManager.getLogger(ReservationService.class);
+	private static final Logger Log = LogManager.getLogger("application");
 
 	private SessionFactory sessionFactory;
 
@@ -62,21 +63,23 @@ public class ReservationService extends AbstractProcess {
 
 	private static void process(SessionFactory sessionFactory, String orderId) {
 		try {
+			List<String> items = new ArrayList<>();
 			boolean reserved = sessionFactory.fromTransaction(session -> {
 				RetrievalOrder order = session
 						.createQuery("from RetrievalOrder o where o.orderId = :id", RetrievalOrder.class)
 						.setParameter("id", orderId).getSingleResult();
-				return reserve(session, order);
+				return reserve(session, order, items);
 			});
 			if (reserved) {
 				Log.info("order {} reserved", orderId);
+				items.forEach(item -> Log.info(item));
 			}
 		} catch (Exception e) {
 			Log.error("order {} not processed {}", orderId, e.toString());
 		}
 	}
 
-	private static boolean reserve(Session session, RetrievalOrder order) {
+	private static boolean reserve(Session session, RetrievalOrder order, List<String> items) {
 		for (RetrievalOrderLine line : order.getLines()) {
 			int available = findAvailableStock(session, line.getArticle()).stream()
 					.mapToInt(StockItem::getTotalQuantity).sum();
@@ -88,13 +91,13 @@ public class ReservationService extends AbstractProcess {
 		}
 
 		for (RetrievalOrderLine line : order.getLines()) {
-			reserveLine(session, line);
+			reserveLine(session, line, items);
 		}
 		order.setStatus(RetrievalOrderStatus.ACTIVE);
 		return true;
 	}
 
-	private static void reserveLine(Session session, RetrievalOrderLine line) {
+	private static void reserveLine(Session session, RetrievalOrderLine line, List<String> items) {
 		int remaining = line.getQuantity();
 
 		for (StockItem item : findReservableStock(session, line)) {
@@ -107,7 +110,7 @@ public class ReservationService extends AbstractProcess {
 				continue;
 			}
 
-			reservePieces(session, item, pieces, line);
+			reservePieces(session, item, pieces, line, items);
 			remaining -= pieces;
 		}
 
@@ -118,7 +121,7 @@ public class ReservationService extends AbstractProcess {
 
 			StockItem opened = openPackage(session, item);
 			int pieces = Math.min(opened.getTotalQuantity(), remaining);
-			reservePieces(session, opened, pieces, line);
+			reservePieces(session, opened, pieces, line, items);
 			remaining -= pieces;
 		}
 
@@ -128,8 +131,12 @@ public class ReservationService extends AbstractProcess {
 		line.setStatus(RetrievalOrderLineStatus.ACTIVE);
 	}
 
-	private static void reservePieces(Session session, StockItem item, int pieces, RetrievalOrderLine line) {
+	private static void reservePieces(Session session, StockItem item, int pieces, RetrievalOrderLine line,
+			List<String> items) {
 		int packages = pieces / packageSize(item);
+		Article article = line.getArticle();
+		items.add("reserved " + article.getDescription() + " with id " + article.getBarcode() + " with package type "
+				+ item.getArticlePackagingUnitType().getPackagingUnitType().getName() + " and quantity " + pieces);
 
 		if (item.getQuantity() > packages) {
 			item.setQuantity(item.getQuantity() - packages);

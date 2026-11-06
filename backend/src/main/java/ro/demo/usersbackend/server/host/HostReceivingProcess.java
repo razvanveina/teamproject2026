@@ -4,6 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.stream.Stream;
@@ -29,7 +30,7 @@ import ro.demo.usersbackend.entity.ReceivingOrderStatus;
 import ro.demo.usersbackend.server.process.AbstractProcess;
 
 public class HostReceivingProcess extends AbstractProcess {
-	private static final Logger Log = LogManager.getLogger(HostReceivingProcess.class);
+	private static final Logger Log = LogManager.getLogger("application");
 
 	private Path folder;
 	private SessionFactory sessionFactory;
@@ -85,6 +86,7 @@ public class HostReceivingProcess extends AbstractProcess {
 			Document xml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file.toFile());
 			String orderId = value(xml.getDocumentElement(), "id");
 			NodeList lines = xml.getElementsByTagName("line");
+			List<String> items = new ArrayList<>();
 
 			boolean created = sessionFactory.fromTransaction(session -> {
 				Long existing = session
@@ -129,11 +131,14 @@ public class HostReceivingProcess extends AbstractProcess {
 					orderLine.setQuantity(Integer.parseInt(value(line, "quantity")));
 					orderLine.setStatus(ReceivingOrderLineStatus.NEW);
 					session.persist(orderLine);
+					items.add("received " + article.getDescription() + " with id " + article.getBarcode() + " and quantity "
+							+ orderLine.getQuantity());
 				}
 				return true;
 			});
 			if (created) {
 				Log.info("in {}, order {} created", name, orderId);
+				items.forEach(item -> Log.info(item));
 				Files.delete(file);
 				Log.info("{} deleted", name);
 			} else {
