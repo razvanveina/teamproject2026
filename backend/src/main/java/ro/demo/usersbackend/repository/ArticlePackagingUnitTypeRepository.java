@@ -1,5 +1,6 @@
 package ro.demo.usersbackend.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,4 +13,6 @@ public interface ArticlePackagingUnitTypeRepository extends JpaRepository<Articl
 	Optional<ArticlePackagingUnitType> findByArticleAndPackagingUnitType(Article article, PackagingUnitType pack);
 
 	Optional<ArticlePackagingUnitType> findByBarcode(String barcode);
+	
+	List<ArticlePackagingUnitType> findByArticleBarcodeIn(List<String> barcodes);
 }

@@ -32,6 +32,15 @@
     <div [class.left]="!error()" [class.error]="error()">
         <div>
             <p>{{instructions()}}</p>
+            @if (isScanningPackage()) {
+            <ul>
+                @for (o of options(); track o.barcode) {
+                @if (isOpen(o)) {
+                <li><b>{{ o.barcode }}</b> - {{ o.description }} ({{ o.packagingUnit }}, {{ o.quantity }} pcs)</li>
+                }
+                }
+            </ul>
+            }
         </div>
     </div>
 

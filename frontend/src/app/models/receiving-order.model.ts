@@ -23,3 +23,11 @@ export interface ScannedPackage{
     packageBarcode: string;
     packages: number;
 }
+
+export interface PackageOption{
+    barcode: string;
+    articleBarcode: string;
+    description: string;
+    packagingUnit: string;
+    quantity: number;
+}

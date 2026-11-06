@@ -4,6 +4,7 @@ import { ReceivingOrderService } from '../services/receiving-order-service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { ScannedPackage } from '../models/receiving-order.model';
+import { PackageOption } from '../models/receiving-order.model';
 
 @Component({
   imports: [],
@@ -25,6 +26,7 @@ export class ReceivingApp {
   currentPackage: PackageInfo | null = null
   currentBarcode = ''
   scanned: ScannedPackage[] = []
+  options = signal<PackageOption[]>([])
 
   displayTable = signal(false)
   error = signal(false);
@@ -48,12 +50,21 @@ export class ReceivingApp {
     }
   }
 
+  isOpen(option: PackageOption): boolean {
+    return this.order().lines.some(line => line.barcode == option.articleBarcode && line.status != "FINISHED")
+  }
+
+  isScanningPackage(): boolean {
+    return this.state == ScanState.ARTICLE
+  }
+
   scanOrder(barcode: string) {
     this.receivingService.getReceivingOrder(barcode).subscribe({
       next: (order: ReceivingOrder) => {
         this.error.set(false)
         this.order.set(order)
         this.scanned = []
+        this.receivingService.getPackageOptions(order.orderId).subscribe(o => this.options.set(o))
 
         if (!this.displayTable()) {
           this.displayTable.set(true)

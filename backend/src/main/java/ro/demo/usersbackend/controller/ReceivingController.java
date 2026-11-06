@@ -1,5 +1,7 @@
 package ro.demo.usersbackend.controller;
 
+import java.util.List;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import ro.demo.usersbackend.dto.FinishReceivingRequest;
+import ro.demo.usersbackend.dto.PackageOption;
 import ro.demo.usersbackend.dto.PackageResponse;
 import ro.demo.usersbackend.dto.ReceivingOrderResponse;
 import ro.demo.usersbackend.service.ReceivingLineService;
@@ -71,5 +74,10 @@ public class ReceivingController {
 			log.error("Exception: " + e.getMessage());
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
 		}
+	}
+	
+	@GetMapping("/{orderId}/packages")
+	public List<PackageOption> findPackageOptions(@PathVariable String orderId){
+		return receivingService.findPackageOptions(orderId);
 	}
 }

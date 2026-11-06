@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import ro.demo.usersbackend.dto.FinishReceivingRequest;
+import ro.demo.usersbackend.dto.PackageOption;
 import ro.demo.usersbackend.dto.PackageResponse;
 import ro.demo.usersbackend.dto.ReceivingOrderLineResponse;
 import ro.demo.usersbackend.dto.ReceivingOrderResponse;
@@ -44,6 +45,23 @@ public class ReceivingService {
 		this.articlePackagingUnitTypeRepository = articlePackagingUnitTypeRepository;
 	}
 
+	@Transactional
+	public List<PackageOption> findPackageOptions(String orderId) {
+		ReceivingOrder order = receivingRepository.findByOrderId(orderId)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+						"Cannot find receiving order with the id: " + orderId));
+
+		List<String> articleBarcodes = order.getLines().stream()
+				.filter(l -> l.getStatus() != ReceivingOrderLineStatus.FINISHED).map(l -> l.getArticle().getBarcode())
+				.toList();
+
+		return articlePackagingUnitTypeRepository.findByArticleBarcodeIn(articleBarcodes).stream()
+				.map(p -> new PackageOption(p.getBarcode(), p.getArticle().getBarcode(),
+						p.getArticle().getDescription(), p.getPackagingUnitType().getName(),
+						p.getPackagingUnitType().getQuantity()))
+				.toList();
+	}
+
 	@Transactional(readOnly = true)
 	public ReceivingOrderResponse findByOrderId(String orderId) {
 		ReceivingOrder order = receivingRepository.findByOrderId(orderId)
@@ -63,8 +81,9 @@ public class ReceivingService {
 	}
 
 	private ArticlePackagingUnitType findPackageEntity(String barcode) {
-		return articlePackagingUnitTypeRepository.findByBarcode(barcode).orElseThrow(
-				() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot find package with barcode " + barcode));
+		return articlePackagingUnitTypeRepository.findByBarcode(barcode)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+						"Cannot find package with barcode " + barcode));
 	}
 
 	private List<ReceivingOrderLineResponse> getResponseLines(List<ReceivingOrderLine> lines) {
@@ -91,7 +110,8 @@ public class ReceivingService {
 
 		for (ScannedPackage scanned : request.packages()) {
 			if (scanned.packages() <= 0) {
-				throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The number of packages must be greater than 0");
+				throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+						"The number of packages must be greater than 0");
 			}
 
 			ArticlePackagingUnitType pack = findPackageEntity(scanned.packageBarcode());
