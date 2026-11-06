@@ -17,7 +17,7 @@
                     @if (currentItem(); as item) {
                     <tr>
                         <th scope="row">Item</th>
-                        <td>{{item.description}} ({{item.packaging}}) — {{item.quantity}} available</td>
+                        <td>{{item.description}} ({{item.packaging}}) — {{item.quantity}} available{{item.reservedQuantity > 0 ? ', of which ' + item.reservedQuantity + ' reserved' : ''}}</td>
                     </tr>
                     }
                 </tbody>

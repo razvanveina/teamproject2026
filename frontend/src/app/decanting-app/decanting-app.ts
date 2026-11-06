@@ -60,7 +60,8 @@ export class DecantingApp {
   this.currentItem.set(item);
   this.step.set('QUANTITY');
   this.hasError.set(false);
-  this.instructions.set(`${item.description} (${item.packaging}): ${item.quantity} available. `
+  const reserved = item.reservedQuantity > 0 ? ` (of which ${item.reservedQuantity} reserved)` : '';
+  this.instructions.set(`${item.description} (${item.packaging}): ${item.quantity} available${reserved}. `
     + `How many do you move into a new tote?`);
 }
 

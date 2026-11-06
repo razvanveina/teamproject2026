@@ -1,6 +1,8 @@
 package ro.demo.usersbackend.service;
 
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -56,28 +58,41 @@ public class DecantingService {
 	@Transactional
 	public DecantingResponse transfer(DecantingTransferRequest request) {
 		LoadUnit loadUnit = findLoadUnit(request.loadUnitBarcode());
-
-		StockItem item = availableItems(loadUnit).stream()
+		List<StockItem> matching = availableItems(loadUnit).stream()
 				.filter(s -> s.getArticlePackagingUnitType().getBarcode().equals(request.packagingBarcode()))
-				.findFirst()
-				.orElseThrow(() -> badRequest("Item " + request.packagingBarcode() + " is not on load unit "
-						+ request.loadUnitBarcode() + "."));
+				.toList();
+		if (matching.isEmpty()) {
+			throw badRequest("Item " + request.packagingBarcode() + " is not on load unit "
+					+ request.loadUnitBarcode() + ".");
+		}
 
+		int total = matching.stream().mapToInt(StockItem::getQuantity).sum();
 		int quantity = request.quantity();
 		if (quantity <= 0) {
 			throw badRequest("Quantity must be greater than 0.");
 		}
-		if (quantity > item.getQuantity()) {
-			throw badRequest("Cannot move " + quantity + ": only " + item.getQuantity() + " available.");
+		if (quantity > total) {
+			throw badRequest("Cannot move " + quantity + ": only " + total + " available.");
 		}
 
 		LoadUnit tote = createTote();
 
-		if (quantity == item.getQuantity()) {
-			item.setLoadUnit(tote);
-		} else {
-			item.setQuantity(item.getQuantity() - quantity);
-			stockItemRepository.save(new StockItem(item.getArticlePackagingUnitType(), quantity, tote));
+		int left = quantity;
+		for (StockItem item : matching) {
+			if (left == 0) {
+				break;
+			}
+			if (left >= item.getQuantity()) {
+				left -= item.getQuantity();
+				item.setLoadUnit(tote);
+			} else if (item.getReservation() == null) {
+				item.setQuantity(item.getQuantity() - left);
+				stockItemRepository.save(new StockItem(item.getArticlePackagingUnitType(), left, tote));
+				left = 0;
+			} else {
+				throw badRequest("Moving " + quantity + " would split stock reserved for an order. "
+						+ "Choose another quantity.");
+			}
 		}
 
 		List<StockItem> remaining = availableItems(loadUnit);
@@ -111,16 +126,36 @@ public class DecantingService {
 				.orElseThrow(() -> badRequest("Load unit " + barcode + " not found."));
 	}
 
+//	private DecantingResponse response(LoadUnit loadUnit, LoadUnit tote, List<StockItem> items, boolean finished) {
+//		return new DecantingResponse(loadUnit.getBarcode(), tote == null ? null : tote.getBarcode(),
+//				items.stream().map(this::toItem).toList(), finished);
+//	}
+	
 	private DecantingResponse response(LoadUnit loadUnit, LoadUnit tote, List<StockItem> items, boolean finished) {
 		return new DecantingResponse(loadUnit.getBarcode(), tote == null ? null : tote.getBarcode(),
-				items.stream().map(this::toItem).toList(), finished);
+				toItems(items), finished);
 	}
 
-	private DecantingItem toItem(StockItem stockItem) {
-		ArticlePackagingUnitType packaging = stockItem.getArticlePackagingUnitType();
-		return new DecantingItem(packaging.getBarcode(), packaging.getArticle().getBarcode(),
-				packaging.getArticle().getDescription(), packaging.getPackagingUnitType().getName(),
-				stockItem.getQuantity());
+//	private DecantingItem toItem(StockItem stockItem) {
+//		ArticlePackagingUnitType packaging = stockItem.getArticlePackagingUnitType();
+//		return new DecantingItem(packaging.getBarcode(), packaging.getArticle().getBarcode(),
+//				packaging.getArticle().getDescription(), packaging.getPackagingUnitType().getName(),
+//				stockItem.getQuantity());
+//	}
+	
+	private List<DecantingItem> toItems(List<StockItem> stockItems) {
+		Map<String, DecantingItem> byBarcode = new LinkedHashMap<>();
+		for (StockItem s : stockItems) {
+			ArticlePackagingUnitType p = s.getArticlePackagingUnitType();
+			int reserved = s.getReservation() != null ? s.getQuantity() : 0;
+			DecantingItem line = new DecantingItem(p.getBarcode(), p.getArticle().getBarcode(),
+					p.getArticle().getDescription(), p.getPackagingUnitType().getName(), s.getQuantity(), reserved);
+
+			byBarcode.merge(p.getBarcode(), line, (a, b) -> new DecantingItem(a.packagingBarcode(),
+					a.articleBarcode(), a.description(), a.packaging(),
+					a.quantity() + b.quantity(), a.reservedQuantity() + b.reservedQuantity()));
+		}
+		return List.copyOf(byBarcode.values());
 	}
 
 	private static ResponseStatusException badRequest(String message) {

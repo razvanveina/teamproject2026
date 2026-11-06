@@ -9,6 +9,7 @@ export interface DecantingItem {
     description: string;
     packaging: string;
     quantity: number;
+    reservedQuantity: number;
 }
 
 export interface DecantingResponse {
