@@ -103,6 +103,11 @@ export class DialogPage implements OnInit {
     }
   }
 
+  refresh(): void {
+    this.error.set('');
+    this.loadRows();
+  }
+
   loadRows(): void {
     const config = this.dialog();
     if (config !== null) {

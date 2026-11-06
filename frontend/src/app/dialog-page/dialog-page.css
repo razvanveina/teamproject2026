@@ -104,7 +104,6 @@ tr:last-child td {
 /* Add: green button above the table, same as the Add button in the Users table */
 .add-button {
     min-height: 42px;
-    margin-bottom: 14px;
     padding: 0 17px;
     color: #f2fffc;
     font-family: "Segoe UI", "Inter", "Aptos", sans-serif;
@@ -119,6 +118,31 @@ tr:last-child td {
 .add-button:hover {
     background: #125c64;
     border-color: #125c64;
+}
+
+.toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.refresh-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    color: #176f78;
+    background: #fff;
+    border: 1px solid #e1e8ef;
+    border-radius: 9px;
+    cursor: pointer;
+}
+
+.refresh-button:hover {
+    background: #eff8f7;
 }
 
 .filters {
