@@ -9,9 +9,10 @@ import ro.demo.usersbackend.dto.ProcessResponse;
 import ro.demo.usersbackend.server.host.HostReceivingProcess;
 import ro.demo.usersbackend.server.host.HostRetrievalProcess;
 import ro.demo.usersbackend.server.reservation.ReservationService;
+import ro.demo.usersbackend.server.transport.ToteTransportService;
 
 public class ProcessManager {
-	private static final AbstractProcess[] processes = { new HostReceivingProcess(), new HostRetrievalProcess(), new ReservationService() };
+	private static final AbstractProcess[] processes = { new HostReceivingProcess(), new HostRetrievalProcess(), new ReservationService(), new ToteTransportService() };
 	private static final Map<String, Thread> threads = new HashMap<>();
 
 	public static synchronized void startAll() {

@@ -63,6 +63,7 @@ INSERT INTO location (dtype, name) VALUES ('TRANSIT', 'GATE01');
 INSERT INTO location (dtype, name) VALUES ('TRANSIT', 'GATE02');
 INSERT INTO location (dtype, name) VALUES ('TRANSIT', 'GATE03');
 INSERT INTO location (dtype, name) VALUES ('TRANSIT', 'GATE04');
+INSERT INTO location (dtype, name) VALUES ('TRANSIT', 'DECANTING');
 INSERT INTO location (dtype, name, aisle, x, y, z) VALUES ('STORAGE', 'HBW010010101', 1, 1, 1, 1);
 INSERT INTO location (dtype, name, aisle, x, y, z) VALUES ('STORAGE', 'HBW010010102', 1, 1, 1, 2);
 INSERT INTO location (dtype, name, aisle, x, y, z) VALUES ('STORAGE', 'HBW010020101', 1, 2, 1, 1);
@@ -81,12 +82,26 @@ INSERT INTO destination_to_gate (destination_id, gate_id) VALUES ((SELECT id FRO
 INSERT INTO destination_to_gate (destination_id, gate_id) VALUES ((SELECT id FROM destination WHERE name = 'Timisoara'), (SELECT id FROM location WHERE name = 'GATE03'));
 INSERT INTO destination_to_gate (destination_id, gate_id) VALUES ((SELECT id FROM destination WHERE name = 'Iasi'), (SELECT id FROM location WHERE name = 'GATE04'));
 
--- 6. Load units: one virtual pallet in every picking place (barcode V + place name), real pallets in storage
+-- 6. Load units: one virtual pallet in every picking place (barcode V + place name), real pallets in storage,
+--    and two totes in the decanting zone DECANTING (one article per tote, like the decanting app makes them)
 INSERT INTO load_unit (barcode, type, location_id) SELECT 'V' || name, 'PALLET', id FROM location WHERE name LIKE 'PICK%';
 INSERT INTO load_unit (barcode, type, location_id) VALUES ('10000001', 'PALLET', (SELECT id FROM location WHERE name = 'HBW010010101'));
 INSERT INTO load_unit (barcode, type, location_id) VALUES ('10000002', 'PALLET', (SELECT id FROM location WHERE name = 'HBW010010102'));
 INSERT INTO load_unit (barcode, type, location_id) VALUES ('10000003', 'PALLET', (SELECT id FROM location WHERE name = 'HBW010020101'));
-UPDATE location l SET load_unit_id = (SELECT id FROM load_unit u WHERE u.location_id = l.id) WHERE name LIKE 'PICK%' OR name LIKE 'HBW%';
+INSERT INTO load_unit (barcode, type, location_id) VALUES ('T0001', 'TOTE', (SELECT id FROM location WHERE name = 'DECANTING'));
+INSERT INTO load_unit (barcode, type, location_id) VALUES ('T0002', 'TOTE', (SELECT id FROM location WHERE name = 'DECANTING'));
+--    only the storage places hold a pallet; picking places stay free, so totes can be transported there
+UPDATE location l SET load_unit_id = (SELECT id FROM load_unit u WHERE u.location_id = l.id) WHERE name LIKE 'HBW%';
+
+--    which picking place belongs to which article (used by the tote transport)
+INSERT INTO article_picking_location (article_id, location_id) VALUES ((SELECT id FROM article WHERE barcode = '1001'), (SELECT id FROM location WHERE name = 'PICK00101'));
+INSERT INTO article_picking_location (article_id, location_id) VALUES ((SELECT id FROM article WHERE barcode = '1002'), (SELECT id FROM location WHERE name = 'PICK00102'));
+INSERT INTO article_picking_location (article_id, location_id) VALUES ((SELECT id FROM article WHERE barcode = '1003'), (SELECT id FROM location WHERE name = 'PICK00103'));
+INSERT INTO article_picking_location (article_id, location_id) VALUES ((SELECT id FROM article WHERE barcode = '1004'), (SELECT id FROM location WHERE name = 'PICK00104'));
+INSERT INTO article_picking_location (article_id, location_id) VALUES ((SELECT id FROM article WHERE barcode = '1006'), (SELECT id FROM location WHERE name = 'PICK00105'));
+INSERT INTO article_picking_location (article_id, location_id) VALUES ((SELECT id FROM article WHERE barcode = '1007'), (SELECT id FROM location WHERE name = 'PICK00201'));
+INSERT INTO article_picking_location (article_id, location_id) VALUES ((SELECT id FROM article WHERE barcode = '1008'), (SELECT id FROM location WHERE name = 'PICK00202'));
+INSERT INTO article_picking_location (article_id, location_id) VALUES ((SELECT id FROM article WHERE barcode = '1005'), (SELECT id FROM location WHERE name = 'PICK00203'));
 
 -- 7. Retrieval orders (oldest first), with the statuses the ReservationService uses:
 --    NEW -> ACTIVE (stock reserved by the ReservationService, lines ACTIVE) -> STARTED (box scanned) -> PICKED (box closed).
@@ -96,11 +111,13 @@ UPDATE location l SET load_unit_id = (SELECT id FROM load_unit u WHERE u.locatio
 --    SO-1003 ACTIVE:  Milk 14 = 2 cases of 6 + 2 pieces, Coffee 12 = 1 box, Bread 2   -> ready (next one)
 --    SO-1004 ACTIVE:  Sugar 10 = 1 crate in picking + 1 crate still in storage        -> NOT ready
 --    SO-1005 NEW:     Rice 4, no reservation yet; the ReservationService will reserve it from storage -> NOT ready
+--    SO-1006 ACTIVE:  Rice 8 = 2 boxes of 4 in tote T0001 at DECANTING -> NOT ready until the tote transport takes T0001 to PICK00202
 INSERT INTO retrieval_order (order_id, status, destination_id) VALUES ('SO-1001', 'ACTIVE', (SELECT id FROM destination WHERE name = 'Bucharest'));
 INSERT INTO retrieval_order (order_id, status, destination_id) VALUES ('SO-1002', 'ACTIVE', (SELECT id FROM destination WHERE name = 'Cluj-Napoca'));
 INSERT INTO retrieval_order (order_id, status, destination_id) VALUES ('SO-1003', 'ACTIVE', (SELECT id FROM destination WHERE name = 'Timisoara'));
 INSERT INTO retrieval_order (order_id, status, destination_id) VALUES ('SO-1004', 'ACTIVE', (SELECT id FROM destination WHERE name = 'Iasi'));
 INSERT INTO retrieval_order (order_id, status, destination_id) VALUES ('SO-1005', 'NEW', (SELECT id FROM destination WHERE name = 'Bucharest'));
+INSERT INTO retrieval_order (order_id, status, destination_id) VALUES ('SO-1006', 'ACTIVE', (SELECT id FROM destination WHERE name = 'Iasi'));
 
 INSERT INTO retrieval_order_line (order_id, article_id, quantity, status) VALUES ((SELECT id FROM retrieval_order WHERE order_id = 'SO-1001'), (SELECT id FROM article WHERE barcode = '1001'), 10, 'ACTIVE');
 INSERT INTO retrieval_order_line (order_id, article_id, quantity, status) VALUES ((SELECT id FROM retrieval_order WHERE order_id = 'SO-1001'), (SELECT id FROM article WHERE barcode = '1005'), 6, 'ACTIVE');
@@ -111,6 +128,7 @@ INSERT INTO retrieval_order_line (order_id, article_id, quantity, status) VALUES
 INSERT INTO retrieval_order_line (order_id, article_id, quantity, status) VALUES ((SELECT id FROM retrieval_order WHERE order_id = 'SO-1003'), (SELECT id FROM article WHERE barcode = '1004'), 2, 'ACTIVE');
 INSERT INTO retrieval_order_line (order_id, article_id, quantity, status) VALUES ((SELECT id FROM retrieval_order WHERE order_id = 'SO-1004'), (SELECT id FROM article WHERE barcode = '1007'), 10, 'ACTIVE');
 INSERT INTO retrieval_order_line (order_id, article_id, quantity, status) VALUES ((SELECT id FROM retrieval_order WHERE order_id = 'SO-1005'), (SELECT id FROM article WHERE barcode = '1008'), 4, 'NEW');
+INSERT INTO retrieval_order_line (order_id, article_id, quantity, status) VALUES ((SELECT id FROM retrieval_order WHERE order_id = 'SO-1006'), (SELECT id FROM article WHERE barcode = '1008'), 8, 'ACTIVE');
 
 -- 8. Stock. stock_item.article_packaging_unit_type_id points to article_packaging_unit_type, quantity = number of packs (a box of 6 with quantity 1 = 6 pieces).
 --    Every reserved stock item is followed by its reservation (MAX(id) = the stock item just inserted).
@@ -149,6 +167,11 @@ INSERT INTO stock_item (article_packaging_unit_type_id, quantity, load_unit_id) 
 INSERT INTO reservation (stock_item_id, retrieval_order_line_id) VALUES ((SELECT MAX(id) FROM stock_item), (SELECT l.id FROM retrieval_order_line l JOIN retrieval_order o ON o.id = l.order_id JOIN article a ON a.id = l.article_id WHERE o.order_id = 'SO-1004' AND a.barcode = '1007'));
 INSERT INTO stock_item (article_packaging_unit_type_id, quantity, load_unit_id) VALUES ((SELECT id FROM article_packaging_unit_type WHERE barcode = 'P1007'), 1, (SELECT id FROM load_unit WHERE barcode = '10000003'));
 INSERT INTO reservation (stock_item_id, retrieval_order_line_id) VALUES ((SELECT MAX(id) FROM stock_item), (SELECT l.id FROM retrieval_order_line l JOIN retrieval_order o ON o.id = l.order_id JOIN article a ON a.id = l.article_id WHERE o.order_id = 'SO-1004' AND a.barcode = '1007'));
+--    SO-1006: Rice 2 boxes of 4 in tote T0001 (decanting zone), reserved
+INSERT INTO stock_item (article_packaging_unit_type_id, quantity, load_unit_id) VALUES ((SELECT id FROM article_packaging_unit_type WHERE barcode = 'P1008'), 2, (SELECT id FROM load_unit WHERE barcode = 'T0001'));
+INSERT INTO reservation (stock_item_id, retrieval_order_line_id) VALUES ((SELECT MAX(id) FROM stock_item), (SELECT l.id FROM retrieval_order_line l JOIN retrieval_order o ON o.id = l.order_id JOIN article a ON a.id = l.article_id WHERE o.order_id = 'SO-1006' AND a.barcode = '1008'));
+--    Tote T0002: Coffee 2 boxes of 12, not reserved -> the tote transport leaves it in the decanting zone
+INSERT INTO stock_item (article_packaging_unit_type_id, quantity, load_unit_id) VALUES ((SELECT id FROM article_packaging_unit_type WHERE barcode = 'P1006'), 2, (SELECT id FROM load_unit WHERE barcode = 'T0002'));
 UPDATE stock_item SET reservation_id = (SELECT r.id FROM reservation r WHERE r.stock_item_id = stock_item.id) WHERE id IN (SELECT stock_item_id FROM reservation);
 
 -- 9. One receiving order, so the receiving screen has something too
