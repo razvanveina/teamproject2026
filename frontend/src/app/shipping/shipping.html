@@ -43,7 +43,7 @@
     </div>
 
     <div class="bottom">
-        <button (click)=onCancel()>Cancel</button>
-        <button (click)=onConfirm()>Confirm</button>
+        <button (click)=onCancel() class="cancel">Cancel</button>
+        <button (click)=onConfirm() [disabled]="confirmDisabled()" class="confirm">Confirm</button>
     </div>
 </div>
