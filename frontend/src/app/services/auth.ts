@@ -2,12 +2,13 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { tap } from 'rxjs';
+import { SERVER_URL } from '../api.config';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
-  private url = 'http://localhost:8080/auth';
+  private url = SERVER_URL + '/auth';
 
   private tokenSignal = signal<string | null>(localStorage.getItem('token'));
   private timer?: ReturnType<typeof setTimeout>;

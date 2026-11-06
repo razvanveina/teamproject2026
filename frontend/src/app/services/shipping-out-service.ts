@@ -3,11 +3,12 @@ import { ReceivingOrder } from '../models/receiving-order.model';
 import { inject, Service } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { LoadUnit } from '../models/load-unit-model';
+import { API_BASE_URL } from '../api.config';
 
 @Service()
 export class ShippingService {
     private httpClient = inject(HttpClient)
-    private url = 'http://localhost:8080/api/shipping';
+    private url = API_BASE_URL + '/shipping';
 
     getLoadUnit(loadUnitBarcode: string) {
         return this.httpClient.get<LoadUnit>( `${this.url}/${loadUnitBarcode}`)
