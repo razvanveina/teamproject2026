@@ -50,61 +50,59 @@ export class DecantingApp {
   }
 
   private scanItem(barcode: string): void {
-    const session = this.session();
-    const item = session?.items.find((i) => i.packagingBarcode === barcode);
-    if (!session || !item) {
-      this.showError(`Item ${barcode} is not on load unit ${session?.loadUnitBarcode}. Scan another item.`);
-      return;
-    }
-
-    this.currentItem.set(item);
-    this.step.set('QUANTITY');
-    this.hasError.set(false);
-    this.instructions.set(`${item.description} (${item.packaging}): ${item.quantity} available. `
-      + `How many do you move into tote ${session.toteBarcode}?`);
+  const session = this.session();
+  const item = session?.items.find((i) => i.packagingBarcode === barcode);
+  if (!session || !item) {
+    this.showError(`Item ${barcode} is not on load unit ${session?.loadUnitBarcode}. Scan another item.`);
+    return;
   }
 
-  private enterQuantity(value: string): void {
-    const session = this.session();
-    const item = this.currentItem();
-    if (!session || !item || !session.toteBarcode) {
-      return;
-    }
+  this.currentItem.set(item);
+  this.step.set('QUANTITY');
+  this.hasError.set(false);
+  this.instructions.set(`${item.description} (${item.packaging}): ${item.quantity} available. `
+    + `How many do you move into a new tote?`);
+}
 
-    const quantity = Number(value);
-    if (!Number.isInteger(quantity) || quantity <= 0) {
-      this.showError('Enter a whole number greater than 0.');
-      return;
-    }
-    if (quantity > item.quantity) {
-      this.showError(`Cannot move ${quantity}: only ${item.quantity} available. Enter a smaller quantity.`);
-      return;
-    }
-
-    const tote = session.toteBarcode;
-    this.log.action(`DECANT ${quantity} x ${item.packagingBarcode} -> TOTE ${tote}`);
-    this.api.transfer(session.loadUnitBarcode, tote, item.packagingBarcode, quantity).subscribe({
-      next: (next) => this.showNextItem(next, `Moved ${quantity} into tote ${tote}. `),
-      error: (err: HttpErrorResponse) => this.showError(err.error?.detail ?? 'Transfer failed. Please try again.'),
-    });
+private enterQuantity(value: string): void {
+  const session = this.session();
+  const item = this.currentItem();
+  if (!session || !item) {
+    return;
   }
 
-  private showNextItem(session: DecantingResponse, done = ''): void {
-    this.currentItem.set(null);
-    this.hasError.set(false);
-
-    if (session.finished) {
-      this.session.set(null);
-      this.step.set('LOAD_UNIT');
-      this.instructions.set(`${done}Load unit ${session.loadUnitBarcode} is empty. Scan the next load unit.`);
-      return;
-    }
-
-    this.session.set(session);
-    this.step.set('ITEM');
-    this.instructions.set(`${done}New tote ${session.toteBarcode}. `
-      + `Scan an item from load unit ${session.loadUnitBarcode}.`);
+  const quantity = Number(value);
+  if (!Number.isInteger(quantity) || quantity <= 0) {
+    this.showError('Enter a whole number greater than 0.');
+    return;
   }
+  if (quantity > item.quantity) {
+    this.showError(`Cannot move ${quantity}: only ${item.quantity} available. Enter a smaller quantity.`);
+    return;
+  }
+
+  this.log.action(`DECANT ${quantity} x ${item.packagingBarcode} FROM LU ${session.loadUnitBarcode}`);
+  this.api.transfer(session.loadUnitBarcode, item.packagingBarcode, quantity).subscribe({
+    next: (next) => this.showNextItem(next, `Put ${quantity} x ${item.description} into tote ${next.toteBarcode}. `),
+    error: (err: HttpErrorResponse) => this.showError(err.error?.detail ?? 'Transfer failed. Please try again.'),
+  });
+}
+
+private showNextItem(session: DecantingResponse, done = ''): void {
+  this.currentItem.set(null);
+  this.hasError.set(false);
+
+  if (session.finished) {
+    this.session.set(null);
+    this.step.set('LOAD_UNIT');
+    this.instructions.set(`${done}Load unit ${session.loadUnitBarcode} is empty. Scan the next load unit.`);
+    return;
+  }
+
+  this.session.set(session);
+  this.step.set('ITEM');
+  this.instructions.set(`${done}Scan an item from load unit ${session.loadUnitBarcode}.`);
+}
 
   private showError(message: string): void {
     this.instructions.set(message);

@@ -8,10 +8,12 @@
                         <th scope="row">Load Unit</th>
                         <td>{{s.loadUnitBarcode}}</td>
                     </tr>
+                    @if (s.toteBarcode) {
                     <tr>
-                        <th scope="row">Tote</th>
+                        <th scope="row">Last tote</th>
                         <td>{{s.toteBarcode}}</td>
                     </tr>
+                    }
                     @if (currentItem(); as item) {
                     <tr>
                         <th scope="row">Item</th>

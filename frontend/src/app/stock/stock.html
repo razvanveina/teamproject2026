@@ -50,6 +50,7 @@
                     <tr>
                         <th>Article</th>
                         <th>Description</th>
+                        <th>Packaging</th>
                         <th>Quantity</th>
                     </tr>
                 </thead>
@@ -58,11 +59,12 @@
                     <tr>
                         <td>{{ item.articleBarcode }}</td>
                         <td>{{ item.description }}</td>
+                        <td>{{ item.packaging }}</td>
                         <td>{{ item.quantity }}</td>
                     </tr>
                     } @empty {
                     <tr>
-                        <td colspan="3">This load unit is empty.</td>
+                        <td colspan="4">This load unit is empty.</td>
                     </tr>
                     }
                 </tbody>

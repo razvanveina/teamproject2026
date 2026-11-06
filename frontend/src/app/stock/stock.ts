@@ -5,6 +5,7 @@ import { DialogConfigService } from '../services/dialog-config.service';
 interface StockLine {
     articleBarcode: string;
     description: string;
+    packaging: string;
     quantity: number;
 }
 
@@ -16,7 +17,6 @@ interface LoadUnitRow {
     items: StockLine[];
 }
 
-// cheile din backend vin in alt case, le convertim la lower case
 const lowerKeys = (row: Record<string, any>): Record<string, any> =>
     Object.fromEntries(Object.entries(row).map(([key, value]) => [key.toLowerCase(), value]));
 
@@ -53,10 +53,12 @@ export class Stock implements OnInit {
             loadUnits: this.service.getRows('LoadUnit'),
             items: this.service.getRows('StockItem'),
             packages: this.service.getRows('ArticlePackagingUnitType'),
+            packagingTypes: this.service.getRows('PackagingUnitType'),
             articles: this.service.getRows('Article'),
             locations: this.service.getRows('StorageLocation')
         }).subscribe({
             next: data => {
+                const packagingTypes = byId(data.packagingTypes);
                 const articles = byId(data.articles);
                 const locations = byId(data.locations);
                 const packages = byId(data.packages);
@@ -65,7 +67,9 @@ export class Stock implements OnInit {
                 for (const item of data.items.map(lowerKeys)) {
                     // stock item -> package -> article
                     const pack = packages.get(Number(item['article_packaging_unit_type_id']));
-                    const article = articles.get(Number(pack?.['article_id']));
+                    const packaging = packages.get(Number(item['article_packaging_unit_type_id']));
+                    const article = articles.get(Number(packaging?.['article_id']));
+                    const packagingType = packagingTypes.get(Number(packaging?.['packaging_unit_type_id']));
                     const loadUnitId = Number(item['load_unit_id']);
 
                     itemsOf.set(loadUnitId, [
@@ -73,6 +77,7 @@ export class Stock implements OnInit {
                         {
                             articleBarcode: String(article?.['barcode'] ?? ''),
                             description: String(article?.['description'] ?? ''),
+                            packaging: String(packagingType?.['name'] ?? ''),
                             quantity: Number(item['quantity'])
                         }
                     ]);

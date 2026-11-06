@@ -38,7 +38,6 @@ public class DecantingService {
 		this.entityManager = entityManager;
 	}
 
-	// userul scanează LU-ul → se creează primul tote
 	@Transactional
 	public DecantingResponse start(String loadUnitBarcode) {
 		LoadUnit loadUnit = findLoadUnit(loadUnitBarcode);
@@ -51,16 +50,12 @@ public class DecantingService {
 			throw badRequest("Load unit " + loadUnitBarcode + " is empty.");
 		}
 
-		return response(loadUnit, createTote(), items);
+		return response(loadUnit, null, items, false);
 	}
 
 	@Transactional
 	public DecantingResponse transfer(DecantingTransferRequest request) {
 		LoadUnit loadUnit = findLoadUnit(request.loadUnitBarcode());
-		LoadUnit tote = findLoadUnit(request.toteBarcode());
-		if (tote.getType() != LoadUnitType.TOTE) {
-			throw badRequest(request.toteBarcode() + " is not a tote.");
-		}
 
 		StockItem item = availableItems(loadUnit).stream()
 				.filter(s -> s.getArticlePackagingUnitType().getBarcode().equals(request.packagingBarcode()))
@@ -76,18 +71,17 @@ public class DecantingService {
 			throw badRequest("Cannot move " + quantity + ": only " + item.getQuantity() + " available.");
 		}
 
+		LoadUnit tote = createTote();
+
 		if (quantity == item.getQuantity()) {
-			item.setLoadUnit(tote); 
+			item.setLoadUnit(tote);
 		} else {
 			item.setQuantity(item.getQuantity() - quantity);
 			stockItemRepository.save(new StockItem(item.getArticlePackagingUnitType(), quantity, tote));
 		}
 
 		List<StockItem> remaining = availableItems(loadUnit);
-		if (remaining.isEmpty()) {
-			return new DecantingResponse(loadUnit.getBarcode(), null, List.of(), true);
-		}
-		return response(loadUnit, createTote(), remaining);
+		return response(loadUnit, tote, remaining, remaining.isEmpty());
 	}
 
 	private List<StockItem> availableItems(LoadUnit loadUnit) {
@@ -95,8 +89,9 @@ public class DecantingService {
 	}
 
 	private LoadUnit createTote() {
-		Location decanting = locationRepository.findByName(DECANTING_LOCATION)
-				.orElseGet(() -> locationRepository.save(new TransitLocation(DECANTING_LOCATION)));
+	    Location decanting = locationRepository.findByName(DECANTING_LOCATION)
+	            .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+	                    "Location " + DECANTING_LOCATION + " is missing."));
 
 		LoadUnit tote = new LoadUnit();
 		tote.setBarcode(generateToteBarcode());
@@ -116,9 +111,9 @@ public class DecantingService {
 				.orElseThrow(() -> badRequest("Load unit " + barcode + " not found."));
 	}
 
-	private DecantingResponse response(LoadUnit loadUnit, LoadUnit tote, List<StockItem> items) {
-		return new DecantingResponse(loadUnit.getBarcode(), tote.getBarcode(),
-				items.stream().map(this::toItem).toList(), false);
+	private DecantingResponse response(LoadUnit loadUnit, LoadUnit tote, List<StockItem> items, boolean finished) {
+		return new DecantingResponse(loadUnit.getBarcode(), tote == null ? null : tote.getBarcode(),
+				items.stream().map(this::toItem).toList(), finished);
 	}
 
 	private DecantingItem toItem(StockItem stockItem) {
