@@ -1,0 +1,165 @@
+.container {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto 25% 100px;
+    gap: 10px;
+    height: 80vh;
+    width: 90vw;
+}
+
+.top,
+.bottom {
+    grid-column: 1 / 3;
+}
+
+.left {
+    display: flex;
+    align-items: center;
+    padding: 20px;
+}
+
+.left.error {
+    background: #fff3b0;
+}
+
+.bottom {
+    display: flex;
+    justify-content: left;
+    align-items: center;
+    gap: 10px;
+}
+
+p {
+    font-size: 30px;
+}
+
+input {
+    width: 90%;
+    height: 20%;
+    font-size: 25px;
+}
+
+button {
+    width: 10%;
+    height: 80%;
+    margin: 10px;
+    color: white;
+    
+    border: none;
+    border-radius: 10px;
+
+    font-family: "Segoe UI", "Inter", "Aptos", sans-serif;
+    font-size: 25px;
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.left,
+.right,
+.bottom
+{
+    background-color:lightgray;
+    box-shadow: 0 4px 12px rgb(20 37 63 / 10%);
+    border-radius: 12px;
+    font-family: "Segoe UI", "Inter", "Aptos", sans-serif;
+}
+
+.top {
+    width: 100%;
+    background: #fff;
+    font-family: "Segoe UI", "Inter", "Aptos", sans-serif;
+    overflow: hidden;
+}
+
+.table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.94rem;
+
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+thead {
+    color: #dce8f5;
+    background: #203b5e;
+}
+
+thead th {
+    font-size: 20px;
+}
+
+tbody tr td {
+    background: #fff;
+    border-bottom: 1px solid #a6bbd2;
+}
+
+.data-container {
+    height: 300px; 
+    overflow-y: auto;
+
+}
+
+.data-container td {
+    font-size: 20px;
+    border-bottom: 1px solid #748699;
+}
+
+.load-unit {
+    padding: 13px 16px;
+    color: #354b66;
+    border-bottom: 1px solid #e9eef3;
+    background: #fff;
+    font-size:30px;
+}
+
+.hidden-content {
+    visibility: hidden;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th,
+td {
+    width: 50%;
+    text-align: left;
+    padding: 20px 20px 20px 25px;
+    box-sizing: border-box;
+}
+
+.right {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    padding-bottom: 20px;
+}
+
+input {
+    width: 90%;
+    height: 20%;
+    font-size: 25px;
+}
+
+.cancel {
+    background-color: red;
+}
+
+.finish {
+    background-color: green;
+}
+
+.finish:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #b8c4d0;
+    border-color: #b8c4d0;
+    color: #ffffff;
+}

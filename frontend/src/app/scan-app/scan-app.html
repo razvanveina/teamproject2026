@@ -1,0 +1,69 @@
+<div class="container">
+
+    <div class="top" [class.hidden-content]="!loadUnit || !lines?.length">
+
+    <div class="load-unit">
+        <strong>Load Unit:</strong> {{ loadUnit }}
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Article</th>
+                <th>Qty</th>
+            </tr>
+        </thead>
+    </table>
+
+    <div class="data-container">
+        <table>
+            <tbody>
+                @for (line of lines; track $index) {
+                <tr>
+                    <td>{{ line.article }}</td>
+                    <td>{{ line.quantity }}</td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+</div>
+    <div class="left">
+        <div class="instruction-container">
+            <p>{{ currentInstruction }}</p>
+        </div>
+    </div>
+
+    <div class="right">               
+        <input
+        class="scan-input"
+        [ngClass]="{
+            'load-unit-step': step === 1,
+            'article-step': step === 2,
+            'quantity-step': step === 3
+        }"
+        type="text"
+        [placeholder]="currentPlaceholder"
+        #barcode
+        (keyup.enter)="onScan(barcode.value); barcode.value = ''">
+    </div>
+
+    <div class="bottom">
+
+        <button
+            class="cancel"
+            (click)="onCancel()">
+            Cancel
+        </button>
+
+        <button
+            class="finish"
+            (click)="onFinish()"
+            [disabled]="lines.length === 0 || !loadUnit">
+            Finish
+        </button>
+
+    </div>
+
+</div>

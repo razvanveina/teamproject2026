@@ -13,6 +13,7 @@ import { Stock } from './stock/stock';
 import { Shipping } from './shipping/shipping';
 import { PickingApp } from './picking-app/picking-app';
 import { DecantingApp } from './decanting-app/decanting-app';
+import { ScanApp } from './scan-app/scan-app';
 
 export const routes: Routes = [
     { path: 'login', component: Login },
@@ -35,6 +36,7 @@ export const routes: Routes = [
             { path: 'processes', component: Processes },
             {path: 'stock', component: Stock},
             { path: 'picking', component: PickingApp },
+            { path: 'scan', component: ScanApp }
         ]
     },
     { path: '**', redirectTo: 'home' }
