@@ -95,19 +95,25 @@
 		</dependency>
 		<!-- Java Messaging Service-->
 		<dependency>
-        	<groupId>jakarta.jms</groupId>
-        	<artifactId>jakarta.jms-api</artifactId>
-        	</dependency>
-
-    	<dependency>
-    		<groupId>org.apache.activemq</groupId>
-    		<artifactId>activemq-client-jakarta</artifactId>
-    		<version>5.18.3</version>
+			<groupId>jakarta.jms</groupId>
+			<artifactId>jakarta.jms-api</artifactId>
 		</dependency>
-	
+
 		<dependency>
-    		<groupId>org.slf4j</groupId>
-    		<artifactId>slf4j-simple</artifactId>
+			<groupId>org.apache.activemq</groupId>
+			<artifactId>activemq-client</artifactId>
+			<version>6.2.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.activemq</groupId>
+			<artifactId>activemq-broker</artifactId>
+			<version>6.2.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-simple</artifactId>
 		</dependency>
 
 	</dependencies>
