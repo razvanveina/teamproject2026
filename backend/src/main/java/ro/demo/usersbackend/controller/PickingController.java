@@ -52,9 +52,9 @@ public class PickingController {
 	}
 
 	@PostMapping("/move-to-box")
-	public void moveLineToBox(@RequestBody PickingRequest request) {
+	public void moveItemToBox(@RequestBody PickingRequest request) {
 		log.info("Picking: moved {} to box {} for order {}", request.barcode(), request.box(), request.orderId());
-		pickingService.moveLineToBox(request.orderId(), request.barcode(), request.box());
+		pickingService.moveItemToBox(request.orderId(), request.barcode(), request.box());
 	}
 
 	@PostMapping("/close-box")

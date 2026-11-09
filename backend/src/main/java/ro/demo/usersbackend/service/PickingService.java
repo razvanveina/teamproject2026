@@ -12,6 +12,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import ro.demo.usersbackend.dto.PickingLineResponse;
 import ro.demo.usersbackend.dto.PickingOrderResponse;
+import ro.demo.usersbackend.dto.PickingStepResponse;
 import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.LoadUnitType;
 import ro.demo.usersbackend.entity.Location;
@@ -85,18 +86,33 @@ public class PickingService {
 		return "Box " + barcode + " ready";
 	}
 
-	// muncitorul a apasat confirm: stock itemurile rezervate pentru linie intra in cutie si linia e gata
-	public void moveLineToBox(String orderId, String barcode, String boxBarcode) {
+	// muncitorul a apasat confirm: primul stock item rezervat cu acest barcode intra in cutie
+	// linia e gata doar cand toate stock itemurile ei sunt in cutie
+	public void moveItemToBox(String orderId, String barcode, String boxBarcode) {
 		LoadUnit box = findBox(boxBarcode);
 		for (RetrievalOrderLine line : findOrder(orderId).getLines()) {
-			if (line.getArticle().getBarcode().equals(barcode)) {
-				for (Reservation reservation : line.getReservations()) {
-					reservation.getStockItem().setLoadUnit(box);
+			for (Reservation reservation : line.getReservations()) {
+				StockItem item = reservation.getStockItem();
+				if (item.getLoadUnit().getType() != LoadUnitType.CARTON
+						&& item.getArticlePackagingUnitType().getBarcode().equals(barcode)) {
+					item.setLoadUnit(box);
+					if (isLineInBox(line)) {
+						line.setStatus(RetrievalOrderLineStatus.FINISHED);
+					}
+					log.info("Picking: {} of order {} moved into box {}", line.getArticle().getDescription(), orderId, boxBarcode);
+					return;
 				}
-				line.setStatus(RetrievalOrderLineStatus.FINISHED);
-				log.info("Picking: {} of order {} moved into box {}", line.getArticle().getDescription(), orderId, boxBarcode);
 			}
 		}
+	}
+
+	private boolean isLineInBox(RetrievalOrderLine line) {
+		for (Reservation reservation : line.getReservations()) {
+			if (reservation.getStockItem().getLoadUnit().getType() != LoadUnitType.CARTON) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	// muncitorul a scanat iar cutia: daca toate liniile sunt gata, cutia merge la OUT si comanda devine PICKED
@@ -132,21 +148,25 @@ public class PickingService {
 		return true;
 	}
 
-	// ce primeste frontendul: comanda, cutia (daca exista deja) si liniile cu locatia de unde se ia marfa
+	// ce primeste frontendul: comanda, cutia (daca exista deja) si liniile cu pasii ramasi, cate un pas de stock item rezervat
 	private PickingOrderResponse toResponse(RetrievalOrder order) {
 		String box = null;
 		List<PickingLineResponse> lines = new ArrayList<>();
 		for (RetrievalOrderLine line : order.getLines()) {
-			String location = null;
+			List<PickingStepResponse> steps = new ArrayList<>();
 			for (Reservation reservation : line.getReservations()) {
-				LoadUnit loadUnit = reservation.getStockItem().getLoadUnit();
-				location = loadUnit.getLocation().getName();
+				StockItem item = reservation.getStockItem();
+				LoadUnit loadUnit = item.getLoadUnit();
 				if (loadUnit.getType() == LoadUnitType.CARTON) {
 					box = loadUnit.getBarcode();
+				} else {
+					steps.add(new PickingStepResponse(loadUnit.getLocation().getName(),
+							item.getArticlePackagingUnitType().getBarcode(), item.getQuantity(),
+							item.getArticlePackagingUnitType().getPackagingUnitType().getQuantity()));
 				}
 			}
 			lines.add(new PickingLineResponse(line.getArticle().getBarcode(), line.getArticle().getDescription(),
-					line.getQuantity(), line.getStatus().toString(), location));
+					line.getQuantity(), line.getStatus().toString(), steps));
 		}
 		return new PickingOrderResponse(order.getOrderId(), order.getDestination().getName(), box, lines);
 	}

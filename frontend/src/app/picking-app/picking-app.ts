@@ -66,8 +66,17 @@ export class PickingApp implements OnInit, OnDestroy {
     });
   }
 
+  itemText(line: any): string {
+    const step = line.steps[0];
+    if (step.piecesPerBox === 1) {
+      return step.quantity + ' pieces of ' + line.description;
+    }
+    return step.quantity + ' box(es) of ' + step.piecesPerBox + ' ' + line.description;
+  }
+
   takeText(line: any): string {
-    return 'Go to ' + line.location + ', take ' + line.quantity + ' ' + line.description + ' and scan the article barcode';
+    const code = line.steps[0].piecesPerBox === 1 ? 'article' : 'box';
+    return 'Go to ' + line.steps[0].location + ', take ' + this.itemText(line) + ' and scan the ' + code + ' barcode';
   }
 
   showNextLine(): void {
@@ -114,23 +123,24 @@ export class PickingApp implements OnInit, OnDestroy {
 
   scanArticle(barcode: string): void {
     const line = this.line();
+    const step = line.steps[0];
     if (this.waitingConfirm()) {
-      this.show('First put ' + line.quantity + ' ' + line.description + ' into box ' + this.box() + ', then click the Confirm button', 'warning');
+      this.show('First put ' + this.itemText(line) + ' into box ' + this.box() + ', then click the Confirm button', 'warning');
       return;
     }
-    if (barcode !== line.barcode) {
-      this.api.logError('wrong article ' + barcode + ' instead of ' + line.barcode + ' in box ' + this.box());
-      this.show('Wrong article (' + barcode + '). ' + this.takeText(line), 'warning');
+    if (barcode !== step.barcode) {
+      this.api.logError('wrong article ' + barcode + ' instead of ' + step.barcode + ' in box ' + this.box());
+      this.show('Wrong barcode (' + barcode + '). ' + this.takeText(line), 'warning');
       return;
     }
     this.waitingConfirm.set(true);
-    this.log.action('PICKING scan ' + barcode + ' for ' + line.quantity + ' ' + line.description);
-    this.show('Put all ' + line.quantity + ' ' + line.description + ' into box ' + this.box() + ', then click the Confirm button', 'ok');
+    this.log.action('PICKING scan ' + barcode + ' for ' + this.itemText(line));
+    this.show('Put all ' + this.itemText(line) + ' into box ' + this.box() + ', then click the Confirm button', 'ok');
   }
 
   onConfirm(): void {
     const line = this.line();
-    this.api.moveLineToBox(this.order().orderId, line.barcode, this.box()).subscribe({
+    this.api.moveLineToBox(this.order().orderId, line.steps[0].barcode, this.box()).subscribe({
       next: () => {
         this.loadOrder();
       },
