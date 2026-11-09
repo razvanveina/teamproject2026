@@ -1,14 +1,36 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="INFO">
+    <Properties>
+        <Property name="pattern">%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%t] %40.40F:%4.4L - %msg%n</Property>
+    </Properties>
+
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-<PatternLayout
-    pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%t] %40.40F:%4.4L - %msg%n" />
+            <PatternLayout pattern="${pattern}" />
         </Console>
 
-        <File name="ApplicationFile" fileName="log/server.txt" append="true">
-<PatternLayout
-    pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%t] %40.40F:%4.4L - %msg%n" />
+        <File name="ApplicationFile" fileName="log/server.log" append="true">
+            <PatternLayout pattern="${pattern}" />
+        </File>
+
+        <File name="HostReceivingFile" fileName="log/hostReceiving.log" append="true">
+            <PatternLayout pattern="${pattern}" />
+        </File>
+
+        <File name="HostRetrievalFile" fileName="log/hostRetrieval.log" append="true">
+            <PatternLayout pattern="${pattern}" />
+        </File>
+
+        <File name="ReplenishmentFile" fileName="log/replenishment.log" append="true">
+            <PatternLayout pattern="${pattern}" />
+        </File>
+
+        <File name="ReservationFile" fileName="log/reservation.log" append="true">
+            <PatternLayout pattern="${pattern}" />
+        </File>
+
+        <File name="ToteTransportFile" fileName="log/toteTransport.log" append="true">
+            <PatternLayout pattern="${pattern}" />
         </File>
     </Appenders>
 
@@ -16,6 +38,31 @@
         <Logger name="application" level="info" additivity="false">
             <AppenderRef ref="Console" />
             <AppenderRef ref="ApplicationFile" />
+        </Logger>
+
+        <Logger name="hostReceiving" level="info" additivity="false">
+            <AppenderRef ref="Console" />
+            <AppenderRef ref="HostReceivingFile" />
+        </Logger>
+
+        <Logger name="hostRetrieval" level="info" additivity="false">
+            <AppenderRef ref="Console" />
+            <AppenderRef ref="HostRetrievalFile" />
+        </Logger>
+
+        <Logger name="replenishment" level="info" additivity="false">
+            <AppenderRef ref="Console" />
+            <AppenderRef ref="ReplenishmentFile" />
+        </Logger>
+
+        <Logger name="reservation" level="info" additivity="false">
+            <AppenderRef ref="Console" />
+            <AppenderRef ref="ReservationFile" />
+        </Logger>
+
+        <Logger name="toteTransport" level="info" additivity="false">
+            <AppenderRef ref="Console" />
+            <AppenderRef ref="ToteTransportFile" />
         </Logger>
 
         <Root level="info">

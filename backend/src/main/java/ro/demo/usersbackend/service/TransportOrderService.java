@@ -16,6 +16,7 @@ import ro.demo.usersbackend.entity.TransportOrder;
 import ro.demo.usersbackend.entity.TransportOrderErrorReason;
 import ro.demo.usersbackend.entity.TransportOrderStatus;
 import ro.demo.usersbackend.repository.LocationRepository;
+import ro.demo.usersbackend.repository.StorageLocationRepository;
 import ro.demo.usersbackend.repository.TransportOrderRepository;
 
 @Service
@@ -26,12 +27,14 @@ public class TransportOrderService {
 
 	private final TransportOrderRepository transportOrderRepository;
 	private final LocationRepository locationRepository;
+	private final StorageLocationRepository storageLocationRepository;
 
 	public TransportOrderService(TransportOrderRepository transportOrderRepository,
-			LocationRepository locationRepository) {
+			LocationRepository locationRepository, StorageLocationRepository storageLocationRepository) {
 		super();
 		this.transportOrderRepository = transportOrderRepository;
 		this.locationRepository = locationRepository;
+		this.storageLocationRepository = storageLocationRepository;
 	}
 
 	private Location decanting() {
@@ -113,10 +116,12 @@ public class TransportOrderService {
 					"Location " + target.getName() + " is already occupied");
 		}
 
-		if (loadUnit.getLocation() instanceof StorageLocation previous) {
-			previous.setLoadUnit(null);
-			transportOrderRepository.flush();
+		for (StorageLocation previous : storageLocationRepository.findByLoadUnit(loadUnit)) {
+			if (!previous.equals(target)) {
+				previous.setLoadUnit(null);
+			}
 		}
+		transportOrderRepository.flush();
 		if (target instanceof StorageLocation storage) {
 			storage.setLoadUnit(loadUnit);
 		}

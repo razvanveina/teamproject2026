@@ -27,7 +27,7 @@ import ro.demo.usersbackend.server.process.AbstractProcess;
 import ro.demo.usersbackend.server.session.ServerSessionFactory;
 
 public class HostReceivingProcess extends AbstractProcess {
-	private static final Logger Log = LogManager.getLogger("application");
+	private static final Logger Log = LogManager.getLogger("hostReceiving");
 
 	private Path folder;
 

@@ -29,7 +29,7 @@ import ro.demo.usersbackend.entity.TransitLocation;
 import ro.demo.usersbackend.entity.TransportOrder;
 
 public final class ServerSessionFactory {
-	private static final Logger Log = LogManager.getLogger("application");
+	private static final Logger Log = LogManager.getLogger("serverSession");
 
 	private static SessionFactory sessionFactory;
 

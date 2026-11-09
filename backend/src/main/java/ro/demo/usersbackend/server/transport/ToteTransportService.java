@@ -19,7 +19,7 @@ import ro.demo.usersbackend.server.session.ServerSessionFactory;
 
 // proces care trimite tote-urile cu marfa rezervata din zona de decanting spre locatia de picking a articolului lor
 public class ToteTransportService extends AbstractProcess {
-	private static final Logger log = LogManager.getLogger("application");
+	private static final Logger log = LogManager.getLogger("toteTransport");
 
 	public ToteTransportService() {
 		super("toteTransportService");

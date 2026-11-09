@@ -16,7 +16,7 @@ import ro.demo.usersbackend.server.session.ServerSessionFactory;
 
 // muta load unit-urile din HBW care au stoc rezervat la DECANTING
 public class ReplenishmentProcess extends AbstractProcess {
-	private static final Logger Log = LogManager.getLogger(ReplenishmentProcess.class);
+	private static final Logger Log = LogManager.getLogger("replenishment");
 	private static final String DECANTING = "DECANTING";
 	private static final List<TransportOrderStatus> OPEN = List.of(TransportOrderStatus.NEW,
 			TransportOrderStatus.ACTIVE);
