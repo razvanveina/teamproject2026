@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,16 +19,16 @@ import ro.demo.usersbackend.dto.ScannedInventoryItemRequest;
 import ro.demo.usersbackend.entity.Article;
 import ro.demo.usersbackend.entity.ArticlePackagingUnitType;
 import ro.demo.usersbackend.entity.InventoryCheck;
-import ro.demo.usersbackend.entity.StockAdjustment;
 import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.PackagingUnitType;
+import ro.demo.usersbackend.entity.StockAdjustment;
 import ro.demo.usersbackend.entity.StockItem;
 import ro.demo.usersbackend.repository.ArticlePackagingUnitTypeRepository;
 import ro.demo.usersbackend.repository.ArticleRepository;
 import ro.demo.usersbackend.repository.InventoryCheckRepository;
-import ro.demo.usersbackend.repository.StockAdjustmentRepository;
 import ro.demo.usersbackend.repository.LoadUnitRepository;
 import ro.demo.usersbackend.repository.PackagingUnitTypeRepository;
+import ro.demo.usersbackend.repository.StockAdjustmentRepository;
 import ro.demo.usersbackend.repository.StockItemRepository;
 
 @Service
@@ -39,6 +41,7 @@ public class InventoryCheckService {
 	private final ArticleRepository articleRepository;
 	private final PackagingUnitTypeRepository packagingUnitTypeRepository;
 	private final ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository;
+	private static final Logger log = LoggerFactory.getLogger(InventoryCheckService.class);
 
 	public InventoryCheckService(InventoryCheckRepository inventoryCheckRepository,
 			StockAdjustmentRepository inventoryDifferenceRepository, LoadUnitRepository loadUnitRepository,
@@ -65,7 +68,10 @@ public class InventoryCheckService {
 
 		InventoryCheck savedCheck = inventoryCheckRepository.save(check);
 
-		Map<ItemKey, Integer> expectedQuantities = getExpectedQuantities(loadUnit);
+		List<StockItem> stockItems = loadUnit == null ? new ArrayList<>()
+				: stockItemRepository.findByLoadUnitOrderByIdAsc(loadUnit);
+
+		Map<ItemKey, Integer> expectedQuantities = getExpectedQuantities(stockItems);
 		Map<ItemKey, ScannedInventoryItemRequest> scannedItems = getScannedItems(request.items());
 
 		Set<ItemKey> allItems = new LinkedHashSet<>();
@@ -86,7 +92,102 @@ public class InventoryCheckService {
 		}
 
 		inventoryDifferenceRepository.saveAll(differences);
+
+		updateExistingStockItems(stockItems, scannedItems);
+
 		return savedCheck;
+	}
+
+	private Map<ItemKey, Integer> getExpectedQuantities(List<StockItem> stockItems) {
+		Map<ItemKey, Integer> quantities = new LinkedHashMap<>();
+
+		for (StockItem stockItem : stockItems) {
+			ItemKey key = getItemKey(stockItem);
+			quantities.merge(key, stockItem.getQuantity(), Integer::sum);
+		}
+
+		return quantities;
+	}
+
+	private void updateExistingStockItems(List<StockItem> stockItems,
+			Map<ItemKey, ScannedInventoryItemRequest> scannedItems) {
+		if (stockItems.isEmpty()) {
+			if (!scannedItems.isEmpty()) {
+				log.warn("Cannot update StockItems: load unit was not found or has no existing stock.");
+			}
+			return;
+		}
+
+		Map<ItemKey, List<StockItem>> itemsByKey = new LinkedHashMap<>();
+		for (StockItem stockItem : stockItems) {
+			itemsByKey.computeIfAbsent(getItemKey(stockItem), key -> new ArrayList<>()).add(stockItem);
+		}
+
+		for (Map.Entry<ItemKey, ScannedInventoryItemRequest> entry : scannedItems.entrySet()) {
+			if (!itemsByKey.containsKey(entry.getKey()) && entry.getValue().quantity() > 0) {
+				log.warn("Skipping stock update for unknown article/package: {} / {}", entry.getKey().articleBarcode(),
+						entry.getKey().packagingUnitName());
+			}
+		}
+
+		for (Map.Entry<ItemKey, List<StockItem>> entry : itemsByKey.entrySet()) {
+			ItemKey key = entry.getKey();
+			List<StockItem> existingItems = entry.getValue();
+			ScannedInventoryItemRequest scanned = scannedItems.get(key);
+			int countedQuantity = scanned == null ? 0 : scanned.quantity();
+
+			List<StockItem> unreservedItems = new ArrayList<>();
+			int reservedQuantity = 0;
+
+			for (StockItem stockItem : existingItems) {
+				if (stockItem.getReservation() == null) {
+					unreservedItems.add(stockItem);
+				} else {
+					reservedQuantity += stockItem.getQuantity();
+				}
+			}
+
+			if (countedQuantity < reservedQuantity) {
+				log.warn(
+						"Skipping stock update for article/package {} / {}: counted quantity {} is below reserved quantity {}.",
+						key.articleBarcode(), key.packagingUnitName(), countedQuantity, reservedQuantity);
+				continue;
+			}
+
+			int unreservedCountedQuantity = countedQuantity - reservedQuantity;
+
+			if (unreservedItems.isEmpty()) {
+				if (unreservedCountedQuantity > 0) {
+					log.warn(
+							"Skipping surplus stock update for reserved article/package {} / {}: no existing unreserved StockItem to update.",
+							key.articleBarcode(), key.packagingUnitName());
+				}
+				continue;
+			}
+
+			StockItem itemToKeep = unreservedItems.get(0);
+
+			if (unreservedCountedQuantity == 0) {
+				for (StockItem stockItem : unreservedItems) {
+					stockItemRepository.delete(stockItem);
+				}
+				continue;
+			}
+
+			itemToKeep.setQuantity(unreservedCountedQuantity);
+			stockItemRepository.save(itemToKeep);
+
+			for (int i = 1; i < unreservedItems.size(); i++) {
+				stockItemRepository.delete(unreservedItems.get(i));
+			}
+		}
+	}
+
+	private ItemKey getItemKey(StockItem stockItem) {
+		ArticlePackagingUnitType articlePackaging = stockItem.getArticlePackagingUnitType();
+
+		return new ItemKey(articlePackaging.getArticle().getBarcode(),
+				articlePackaging.getPackagingUnitType().getName());
 	}
 
 	private Map<ItemKey, Integer> getExpectedQuantities(LoadUnit loadUnit) {
