@@ -21,6 +21,11 @@ import ro.demo.usersbackend.entity.ArticlePackagingUnitType;
 import ro.demo.usersbackend.entity.InventoryCheck;
 import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.PackagingUnitType;
+import ro.demo.usersbackend.entity.Reservation;
+import ro.demo.usersbackend.entity.RetrievalOrder;
+import ro.demo.usersbackend.entity.RetrievalOrderLine;
+import ro.demo.usersbackend.entity.RetrievalOrderLineStatus;
+import ro.demo.usersbackend.entity.RetrievalOrderStatus;
 import ro.demo.usersbackend.entity.StockAdjustment;
 import ro.demo.usersbackend.entity.StockItem;
 import ro.demo.usersbackend.repository.ArticlePackagingUnitTypeRepository;
@@ -28,6 +33,7 @@ import ro.demo.usersbackend.repository.ArticleRepository;
 import ro.demo.usersbackend.repository.InventoryCheckRepository;
 import ro.demo.usersbackend.repository.LoadUnitRepository;
 import ro.demo.usersbackend.repository.PackagingUnitTypeRepository;
+import ro.demo.usersbackend.repository.ReservationRepository;
 import ro.demo.usersbackend.repository.StockAdjustmentRepository;
 import ro.demo.usersbackend.repository.StockItemRepository;
 
@@ -38,6 +44,7 @@ public class InventoryCheckService {
 	private final StockAdjustmentRepository inventoryDifferenceRepository;
 	private final LoadUnitRepository loadUnitRepository;
 	private final StockItemRepository stockItemRepository;
+	private final ReservationRepository reservationRepository;
 	private final ArticleRepository articleRepository;
 	private final PackagingUnitTypeRepository packagingUnitTypeRepository;
 	private final ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository;
@@ -45,13 +52,15 @@ public class InventoryCheckService {
 
 	public InventoryCheckService(InventoryCheckRepository inventoryCheckRepository,
 			StockAdjustmentRepository inventoryDifferenceRepository, LoadUnitRepository loadUnitRepository,
-			StockItemRepository stockItemRepository, ArticleRepository articleRepository,
+			StockItemRepository stockItemRepository, ReservationRepository reservationRepository,
+			ArticleRepository articleRepository,
 			PackagingUnitTypeRepository packagingUnitTypeRepository,
 			ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository) {
 		this.inventoryCheckRepository = inventoryCheckRepository;
 		this.inventoryDifferenceRepository = inventoryDifferenceRepository;
 		this.loadUnitRepository = loadUnitRepository;
 		this.stockItemRepository = stockItemRepository;
+		this.reservationRepository = reservationRepository;
 		this.articleRepository = articleRepository;
 		this.packagingUnitTypeRepository = packagingUnitTypeRepository;
 		this.articlePackagingUnitTypeRepository = articlePackagingUnitTypeRepository;
@@ -136,31 +145,26 @@ public class InventoryCheckService {
 			ScannedInventoryItemRequest scanned = scannedItems.get(key);
 			int countedQuantity = scanned == null ? 0 : scanned.quantity();
 
-			List<StockItem> unreservedItems = new ArrayList<>();
-			int reservedQuantity = 0;
-
-			for (StockItem stockItem : existingItems) {
-				if (stockItem.getReservation() == null) {
-					unreservedItems.add(stockItem);
-				} else {
-					reservedQuantity += stockItem.getQuantity();
-				}
+			int reservedQuantity = getReservedQuantity(existingItems);
+			if (countedQuantity < reservedQuantity) {
+				requeueActiveOrders(existingItems);
+				reservedQuantity = getReservedQuantity(existingItems);
 			}
 
 			if (countedQuantity < reservedQuantity) {
-				log.warn(
-						"Skipping stock update for article/package {} / {}: counted quantity {} is below reserved quantity {}.",
-						key.articleBarcode(), key.packagingUnitName(), countedQuantity, reservedQuantity);
+				reconcileShortage(existingItems, countedQuantity, key);
 				continue;
 			}
 
+			List<StockItem> unreservedItems = existingItems.stream()
+					.filter(stockItem -> stockItem.getReservation() == null).toList();
 			int unreservedCountedQuantity = countedQuantity - reservedQuantity;
 
 			if (unreservedItems.isEmpty()) {
 				if (unreservedCountedQuantity > 0) {
-					log.warn(
-							"Skipping surplus stock update for reserved article/package {} / {}: no existing unreserved StockItem to update.",
-							key.articleBarcode(), key.packagingUnitName());
+					StockItem template = existingItems.get(0);
+					stockItemRepository.save(new StockItem(template.getArticlePackagingUnitType(),
+							unreservedCountedQuantity, template.getLoadUnit()));
 				}
 				continue;
 			}
@@ -180,6 +184,65 @@ public class InventoryCheckService {
 			for (int i = 1; i < unreservedItems.size(); i++) {
 				stockItemRepository.delete(unreservedItems.get(i));
 			}
+		}
+	}
+
+	private int getReservedQuantity(List<StockItem> stockItems) {
+		return stockItems.stream().filter(stockItem -> stockItem.getReservation() != null)
+				.mapToInt(StockItem::getQuantity).sum();
+	}
+
+	private void requeueActiveOrders(List<StockItem> stockItems) {
+		Set<RetrievalOrder> ordersToRequeue = new LinkedHashSet<>();
+		for (StockItem stockItem : stockItems) {
+			Reservation reservation = stockItem.getReservation();
+			if (reservation == null) {
+				continue;
+			}
+
+			RetrievalOrder order = reservation.getRetrievalOrderLine().getOrder();
+			if (order.getStatus() == RetrievalOrderStatus.ACTIVE) {
+				ordersToRequeue.add(order);
+			}
+		}
+
+		for (RetrievalOrder order : ordersToRequeue) {
+			List<Reservation> reservations = new ArrayList<>();
+			for (RetrievalOrderLine line : order.getLines()) {
+				for (Reservation reservation : line.getReservations()) {
+					reservation.getStockItem().setReservation(null);
+					reservations.add(reservation);
+				}
+				line.getReservations().clear();
+				line.setStatus(RetrievalOrderLineStatus.NEW);
+			}
+
+			stockItemRepository.flush();
+			reservationRepository.deleteAll(reservations);
+			order.setStatus(RetrievalOrderStatus.NEW);
+			log.warn("Released reservations for order {} after an inventory shortage; queued it for re-reservation.",
+					order.getOrderId());
+		}
+	}
+
+	private void reconcileShortage(List<StockItem> stockItems, int countedQuantity, ItemKey key) {
+		int remaining = countedQuantity;
+		for (StockItem stockItem : stockItems) {
+			if (stockItem.getReservation() == null) {
+				stockItemRepository.delete(stockItem);
+				continue;
+			}
+
+			int previousQuantity = stockItem.getQuantity();
+			int correctedQuantity = Math.min(previousQuantity, remaining);
+			stockItem.setQuantity(correctedQuantity);
+			remaining -= correctedQuantity;
+
+			RetrievalOrder order = stockItem.getReservation().getRetrievalOrderLine().getOrder();
+			log.warn(
+					"Inventory shortage for reserved order {} (status {}): article/package {} / {} corrected from {} to {}.",
+					order.getOrderId(), order.getStatus(), key.articleBarcode(), key.packagingUnitName(),
+					previousQuantity, correctedQuantity);
 		}
 	}
 
