@@ -3,7 +3,7 @@ import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { API_BASE_URL } from '../api.config';
-import { forkJoin, Observable, of, throwError } from 'rxjs';
+import { forkJoin, Observable, of } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 
 export interface ScanLine {
@@ -69,8 +69,8 @@ interface SavedStockItem {
     selector: 'app-scan-app',
     standalone: true,
     imports: [CommonModule, FormsModule],
-    templateUrl: './scan-app.html',
-    styleUrl: './scan-app.css'
+    templateUrl: './inventory-app.html',
+    styleUrl: './inventory-app.css'
 })
 
 export class ScanApp {
@@ -96,8 +96,8 @@ export class ScanApp {
     showCompletionDialog = false;
     mismatchAccepted = false;
     comparisonError = '';
-    validationMessage = '';
     isComparing = false;
+    isSaving = false;
 
     step = 1;
 
@@ -122,8 +122,6 @@ export class ScanApp {
         if (!barcode) {
             return;
         }
-        this.validationMessage = '';
-
         switch (this.step) {
 
             case 1:
@@ -133,7 +131,10 @@ export class ScanApp {
                         next: result => {
                             const loadUnit = result.find(row => row.BARCODE === barcode);
                             if (!loadUnit) {
-                                this.validationMessage = 'Load unit not found. Please scan the load unit barcode again.';
+                                this.loadUnit = barcode;
+                                this.loadUnitType = this.getLoadUnitTypeFromBarcode(barcode);
+                                this.loadUnitId = null;
+                                this.step = 2;
                                 this.cdr.markForCheck();
                                 return;
                             }
@@ -228,6 +229,16 @@ export class ScanApp {
         this.comparisonError = '';
     }
 
+    private getLoadUnitTypeFromBarcode(barcode: string): string {
+        if (/^1\d{7}$/.test(barcode)) {
+            return 'PALLET';
+        }
+        if (/^0\d{11}$/.test(barcode)) {
+            return 'CARTON';
+        }
+        return 'Unknown';
+    }
+
     private loadArticleBarcode(barcode: string): void {
         this.http
             .get<ArticleRow[]>(`${this.dataUrl}/Article`, { params: { BARCODE: barcode } })
@@ -235,14 +246,40 @@ export class ScanApp {
                 next: rows => {
                     const article = rows.find(row => row.BARCODE === barcode);
                     if (!article) {
-                        this.validationMessage = 'Article not found. Please scan the article barcode again.';
-                        this.cdr.markForCheck();
+                        this.prepareUnknownArticle(barcode);
                         return;
                     }
-                    this.loadArticlePackagingUnit(article.ID, null);
+                    if (this.loadUnitId === null) {
+                        this.loadArticleAsUnit(article.ID);
+                    } else {
+                        this.loadArticlePackagingUnit(article.ID, null);
+                    }
                 },
                 error: () => alert('Could not fetch article')
             });
+    }
+
+    private prepareUnknownArticle(barcode: string): void {
+        this.article = barcode;
+        this.currentArticleDescription = 'Unknown article';
+        this.currentQuantityUnit = 'unit';
+        this.currentQuantityPerUnit = 1;
+        this.step = 3;
+        this.cdr.markForCheck();
+    }
+
+    private loadArticleAsUnit(articleId: number): void {
+        this.http.get<ArticleRow>(`${this.dataUrl}/Article/${articleId}`).subscribe({
+            next: article => {
+                this.article = article.BARCODE;
+                this.currentArticleDescription = article.DESCRIPTION;
+                this.currentQuantityUnit = 'unit';
+                this.currentQuantityPerUnit = 1;
+                this.step = 3;
+                this.cdr.markForCheck();
+            },
+            error: () => alert('Could not fetch article')
+        });
     }
 
     private loadArticlePackagingUnit(
@@ -251,7 +288,11 @@ export class ScanApp {
         scannedPackaging?: ArticlePackagingUnitRecord
     ): void {
         if (this.loadUnitId === null) {
-            alert('Load unit has not been selected');
+            if (scannedPackaging) {
+                this.loadArticlePackagingUnitDetails(scannedPackaging);
+            } else {
+                this.loadArticleAsUnit(articleId);
+            }
             return;
         }
 
@@ -341,6 +382,7 @@ export class ScanApp {
         console.log('Saved:', data);
 
         this.isComparing = true;
+        this.isSaving = false;
         this.comparisonComplete = false;
         this.showMismatchDialog = false;
         this.mismatchAccepted = false;
@@ -350,7 +392,11 @@ export class ScanApp {
             .subscribe({
                 next: stockItems => {
                     this.compareQuantities(stockItems);
-                    this.isComparing = false;
+                    if (this.quantityDifferences.length === 0) {
+                        this.saveInventoryCheck();
+                    } else {
+                        this.isComparing = false;
+                    }
                     this.cdr.markForCheck();
                 },
                 error: () => {
@@ -362,13 +408,17 @@ export class ScanApp {
     }
 
     private getSavedStockItems(loadUnitBarcode: string): Observable<SavedStockItem[]> {
+        if (this.loadUnitId === null) {
+            return of([]);
+        }
+
         return this.http
             .get<LoadUnitRow[]>(`${this.dataUrl}/LoadUnit`, { params: { BARCODE: loadUnitBarcode } })
             .pipe(
                 map(rows => rows.find(row => row.BARCODE === loadUnitBarcode)),
                 switchMap(loadUnit => {
                     if (!loadUnit) {
-                        return throwError(() => new Error('Load unit not found'));
+                        return of([]);
                     }
 
                     return this.http
@@ -470,18 +520,47 @@ export class ScanApp {
             .filter(comparison => comparison.difference !== 0);
         if (this.quantityDifferences.length > 0) {
             this.showMismatchDialog = true;
-            return;
         }
+    }
 
-        this.comparisonComplete = true;
-        this.showCompletionDialog = true;
+    private saveInventoryCheck(): void {
+        const request = {
+            loadUnitBarcode: this.loadUnit,
+            loadUnitType: this.loadUnitType,
+            items: this.lines.map(line => ({
+                articleBarcode: line.article,
+                articleDescription: line.description,
+                packagingUnitName: line.quantityUnit,
+                quantity: line.quantity
+            }))
+        };
+
+        this.isComparing = true;
+        this.isSaving = true;
+        this.comparisonError = '';
+
+        this.http.post<void>(`${API_BASE_URL}/inventory-checks`, request).subscribe({
+            next: () => {
+                this.isComparing = false;
+                this.isSaving = false;
+                this.comparisonComplete = true;
+                this.mismatchAccepted = this.quantityDifferences.length > 0;
+                this.showCompletionDialog = true;
+                this.cdr.markForCheck();
+            },
+            error: error => {
+                this.isComparing = false;
+                this.isSaving = false;
+                this.comparisonError =
+                    error.error?.message ?? 'Could not save the inventory check. Please try again.';
+                this.cdr.markForCheck();
+            }
+        });
     }
 
     confirmMismatch(): void {
         this.showMismatchDialog = false;
-        this.mismatchAccepted = true;
-        this.comparisonComplete = true;
-        this.showCompletionDialog = true;
+        this.saveInventoryCheck();
     }
 
     cancelMismatch(): void {
@@ -507,6 +586,7 @@ export class ScanApp {
         this.mismatchAccepted = false;
         this.comparisonError = '';
         this.isComparing = false;
+        this.isSaving = false;
         this.step = 1;
         localStorage.removeItem('scanData');
     }
