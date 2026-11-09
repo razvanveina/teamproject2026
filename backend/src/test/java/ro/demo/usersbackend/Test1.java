@@ -25,6 +25,7 @@ import ro.demo.usersbackend.entity.RetrievalOrderStatus;
 import ro.demo.usersbackend.entity.StockItem;
 import ro.demo.usersbackend.entity.StorageLocation;
 import ro.demo.usersbackend.server.reservation.ReservationService;
+import ro.demo.usersbackend.server.session.ServerSessionFactory;
 
 public class Test1 {
 	private static final String PIECE = "TESTPIECE";
@@ -48,7 +49,7 @@ public class Test1 {
 
 	@BeforeAll
 	static void start() throws Exception {
-		sessionFactory = ReservationService.buildSessionFactory();
+		sessionFactory = ServerSessionFactory.getInstance();
 //		sessionFactory.inTransaction(Test1::cleanup);
 //		sessionFactory.inTransaction(Test1::createTestData);
 	}

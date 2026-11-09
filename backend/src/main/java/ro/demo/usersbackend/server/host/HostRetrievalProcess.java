@@ -14,34 +14,23 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hibernate.SessionFactory;
-import org.hibernate.boot.MetadataSources;
-import org.hibernate.boot.registry.StandardServiceRegistry;
-import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import ro.demo.usersbackend.entity.Article;
-import ro.demo.usersbackend.entity.ArticlePackagingUnitType;
 import ro.demo.usersbackend.entity.Destination;
-import ro.demo.usersbackend.entity.LoadUnit;
-import ro.demo.usersbackend.entity.Location;
-import ro.demo.usersbackend.entity.PackagingUnitType;
-import ro.demo.usersbackend.entity.Reservation;
 import ro.demo.usersbackend.entity.RetrievalOrder;
 import ro.demo.usersbackend.entity.RetrievalOrderLine;
 import ro.demo.usersbackend.entity.RetrievalOrderLineStatus;
 import ro.demo.usersbackend.entity.RetrievalOrderStatus;
-import ro.demo.usersbackend.entity.StockItem;
-import ro.demo.usersbackend.entity.StorageLocation;
-import ro.demo.usersbackend.entity.TransitLocation;
 import ro.demo.usersbackend.server.process.AbstractProcess;
+import ro.demo.usersbackend.server.session.ServerSessionFactory;
 
 public class HostRetrievalProcess extends AbstractProcess {
 	private static final Logger Log = LogManager.getLogger("application");
 
 	private Path folder;
-	private SessionFactory sessionFactory;
 
 	public HostRetrievalProcess() {
 		super("hostRetrievalProcess");
@@ -54,11 +43,11 @@ public class HostRetrievalProcess extends AbstractProcess {
 	@Override
 	protected void doAction() {
 		try {
-			if (sessionFactory == null) {
+			if (folder == null) {
 				folder = Path.of(readFolder());
-				sessionFactory = buildSessionFactory();
 				Log.info("watching path {}", folder.toAbsolutePath());
 			}
+			SessionFactory sessionFactory = ServerSessionFactory.getInstance();
 
 			try (Stream<Path> files = Files.list(folder)) {
 				files.filter(f -> f.toString().endsWith(".xml")).forEach(f -> process(sessionFactory, f));
@@ -173,29 +162,6 @@ public class HostRetrievalProcess extends AbstractProcess {
 			throw new IllegalArgumentException("missing <" + tag + "> element");
 		}
 		return nodes.item(0).getTextContent().trim();
-	}
-
-	private static SessionFactory buildSessionFactory() throws Exception {
-		Properties properties = new Properties();
-		try (InputStream in = HostRetrievalProcess.class.getResourceAsStream("/application.properties")) {
-			properties.load(in);
-		}
-
-		StandardServiceRegistry registry = new StandardServiceRegistryBuilder()
-				.applySetting("jakarta.persistence.jdbc.url", properties.getProperty("spring.datasource.url"))
-				.applySetting("jakarta.persistence.jdbc.user", properties.getProperty("spring.datasource.username"))
-				.applySetting("jakarta.persistence.jdbc.password", properties.getProperty("spring.datasource.password"))
-				.applySetting("hibernate.physical_naming_strategy",
-						"org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy")
-				.build();
-
-		return new MetadataSources(registry).addAnnotatedClass(Article.class)
-				.addAnnotatedClass(ArticlePackagingUnitType.class).addAnnotatedClass(PackagingUnitType.class)
-				.addAnnotatedClass(Destination.class).addAnnotatedClass(Reservation.class)
-				.addAnnotatedClass(StockItem.class).addAnnotatedClass(LoadUnit.class).addAnnotatedClass(Location.class)
-				.addAnnotatedClass(StorageLocation.class).addAnnotatedClass(TransitLocation.class)
-				.addAnnotatedClass(RetrievalOrder.class).addAnnotatedClass(RetrievalOrderLine.class).buildMetadata()
-				.buildSessionFactory();
 	}
 
 }

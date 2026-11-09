@@ -1,39 +1,27 @@
 package ro.demo.usersbackend.server.reservation;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Properties;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.boot.MetadataSources;
-import org.hibernate.boot.registry.StandardServiceRegistry;
-import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 
 import ro.demo.usersbackend.entity.Article;
 import ro.demo.usersbackend.entity.ArticlePackagingUnitType;
-import ro.demo.usersbackend.entity.Destination;
-import ro.demo.usersbackend.entity.LoadUnit;
-import ro.demo.usersbackend.entity.Location;
-import ro.demo.usersbackend.entity.PackagingUnitType;
 import ro.demo.usersbackend.entity.Reservation;
 import ro.demo.usersbackend.entity.RetrievalOrder;
 import ro.demo.usersbackend.entity.RetrievalOrderLine;
 import ro.demo.usersbackend.entity.RetrievalOrderLineStatus;
 import ro.demo.usersbackend.entity.RetrievalOrderStatus;
 import ro.demo.usersbackend.entity.StockItem;
-import ro.demo.usersbackend.entity.StorageLocation;
-import ro.demo.usersbackend.entity.TransitLocation;
 import ro.demo.usersbackend.server.process.AbstractProcess;
+import ro.demo.usersbackend.server.session.ServerSessionFactory;
 
 public class ReservationService extends AbstractProcess {
 	private static final Logger Log = LogManager.getLogger("application");
-
-	private SessionFactory sessionFactory;
 
 	public ReservationService() {
 		super("reservationService");
@@ -46,10 +34,7 @@ public class ReservationService extends AbstractProcess {
 	@Override
 	public void doAction() {
 		try {
-			if (sessionFactory == null) {
-				sessionFactory = buildSessionFactory();
-				Log.info("session factory built");
-			}
+			SessionFactory sessionFactory = ServerSessionFactory.getInstance();
 
 			List<String> orderIds = sessionFactory.fromTransaction(session -> session
 					.createQuery("select o.orderId from RetrievalOrder o where o.status = :status", String.class)
@@ -137,7 +122,6 @@ public class ReservationService extends AbstractProcess {
 		Article article = line.getArticle();
 		items.add("reserved " + article.getDescription() + " with id " + article.getBarcode() + " with package type "
 				+ item.getArticlePackagingUnitType().getPackagingUnitType().getName() + " and quantity " + pieces);
-
 		if (item.getQuantity() > packages) {
 			item.setQuantity(item.getQuantity() - packages);
 			StockItem split = new StockItem(item.getArticlePackagingUnitType(), packages, item.getLoadUnit());
@@ -216,28 +200,5 @@ public class ReservationService extends AbstractProcess {
 				where p.article = :article and s.reservation is null and type(l) = StorageLocation
 				order by case when l.name like 'PICK%' then 0 else 1 end, s.id
 				""", StockItem.class).setParameter("article", article).getResultList();
-	}
-
-	public static SessionFactory buildSessionFactory() throws Exception {
-		Properties properties = new Properties();
-		try (InputStream in = ReservationService.class.getResourceAsStream("/application.properties")) {
-			properties.load(in);
-		}
-
-		StandardServiceRegistry registry = new StandardServiceRegistryBuilder()
-				.applySetting("jakarta.persistence.jdbc.url", properties.getProperty("spring.datasource.url"))
-				.applySetting("jakarta.persistence.jdbc.user", properties.getProperty("spring.datasource.username"))
-				.applySetting("jakarta.persistence.jdbc.password", properties.getProperty("spring.datasource.password"))
-				.applySetting("hibernate.physical_naming_strategy",
-						"org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy")
-				.build();
-
-		return new MetadataSources(registry).addAnnotatedClass(Article.class)
-				.addAnnotatedClass(ArticlePackagingUnitType.class).addAnnotatedClass(PackagingUnitType.class)
-				.addAnnotatedClass(StockItem.class).addAnnotatedClass(LoadUnit.class).addAnnotatedClass(Location.class)
-				.addAnnotatedClass(StorageLocation.class).addAnnotatedClass(TransitLocation.class)
-				.addAnnotatedClass(Reservation.class).addAnnotatedClass(RetrievalOrder.class)
-				.addAnnotatedClass(RetrievalOrderLine.class).addAnnotatedClass(Destination.class).buildMetadata()
-				.buildSessionFactory();
 	}
 }

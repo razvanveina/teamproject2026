@@ -14,26 +14,22 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hibernate.SessionFactory;
-import org.hibernate.boot.MetadataSources;
-import org.hibernate.boot.registry.StandardServiceRegistry;
-import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import ro.demo.usersbackend.entity.Article;
-import ro.demo.usersbackend.entity.PackagingUnitType;
 import ro.demo.usersbackend.entity.ReceivingOrder;
 import ro.demo.usersbackend.entity.ReceivingOrderLine;
 import ro.demo.usersbackend.entity.ReceivingOrderLineStatus;
 import ro.demo.usersbackend.entity.ReceivingOrderStatus;
 import ro.demo.usersbackend.server.process.AbstractProcess;
+import ro.demo.usersbackend.server.session.ServerSessionFactory;
 
 public class HostReceivingProcess extends AbstractProcess {
 	private static final Logger Log = LogManager.getLogger("application");
 
 	private Path folder;
-	private SessionFactory sessionFactory;
 
 	public HostReceivingProcess() {
 		super("hostReceivingProcess");
@@ -47,11 +43,11 @@ public class HostReceivingProcess extends AbstractProcess {
 	@Override
 	protected void doAction() {
 		try {
-			if (sessionFactory == null) {
+			if (folder == null) {
 				folder = Path.of(readFolder());
-				sessionFactory = buildSessionFactory();
 				Log.info("watching path {}", folder.toAbsolutePath());
 			}
+			SessionFactory sessionFactory = ServerSessionFactory.getInstance();
 
 			try (Stream<Path> files = Files.list(folder)) {
 				files.filter(f -> f.toString().endsWith(".xml")).forEach(f -> process(sessionFactory, f));
@@ -156,24 +152,5 @@ public class HostReceivingProcess extends AbstractProcess {
 			throw new IllegalArgumentException("missing <" + tag + "> element");
 		}
 		return nodes.item(0).getTextContent().trim();
-	}
-
-	private static SessionFactory buildSessionFactory() throws Exception {
-		Properties properties = new Properties();
-		try (InputStream in = HostReceivingProcess.class.getResourceAsStream("/application.properties")) {
-			properties.load(in);
-		}
-
-		StandardServiceRegistry registry = new StandardServiceRegistryBuilder()
-				.applySetting("jakarta.persistence.jdbc.url", properties.getProperty("spring.datasource.url"))
-				.applySetting("jakarta.persistence.jdbc.user", properties.getProperty("spring.datasource.username"))
-				.applySetting("jakarta.persistence.jdbc.password", properties.getProperty("spring.datasource.password"))
-				.applySetting("hibernate.physical_naming_strategy",
-						"org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy")
-				.build();
-
-		return new MetadataSources(registry).addAnnotatedClass(Article.class).addAnnotatedClass(PackagingUnitType.class)
-				.addAnnotatedClass(ReceivingOrder.class).addAnnotatedClass(ReceivingOrderLine.class).buildMetadata()
-				.buildSessionFactory();
 	}
 }
