@@ -22,6 +22,8 @@ import ro.demo.usersbackend.repository.TransportOrderRepository;
 @Transactional
 public class TransportOrderService {
 
+	private static final String DECANTING = "DECANTING";
+
 	private final TransportOrderRepository transportOrderRepository;
 	private final LocationRepository locationRepository;
 
@@ -32,18 +34,25 @@ public class TransportOrderService {
 		this.locationRepository = locationRepository;
 	}
 
+	private Location decanting() {
+		return locationRepository.findByName(DECANTING)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+						"Cannot find location with the name " + DECANTING));
+	}
+
 	@Transactional(readOnly = true)
 	public Optional<TransportOrderResponse> findNextOrder() {
-		return transportOrderRepository.findFirstByStatusOrderByIdAsc(TransportOrderStatus.ACTIVE)
-				.or(() -> transportOrderRepository.findFirstByStatusOrderByIdAsc(TransportOrderStatus.NEW))
+		Location decanting = decanting();
+		return transportOrderRepository
+				.findFirstByStatusAndSourceNotOrderByIdAsc(TransportOrderStatus.ACTIVE, decanting)
+				.or(() -> transportOrderRepository.findFirstByStatusAndSourceNotOrderByIdAsc(TransportOrderStatus.NEW,
+						decanting))
 				.map(this::toResponse);
 	}
 
 	@Transactional(readOnly = true)
 	public TransportOrderResponse findNextToteOrder() {
-		Location decanting = locationRepository.findByName("DECANTING")
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-						"Cannot find location with the name DECANTING"));
+		Location decanting = decanting();
 
 		TransportOrder order = transportOrderRepository
 				.findFirstByStatusAndSourceOrderByIdAsc(TransportOrderStatus.ACTIVE, decanting)
@@ -58,8 +67,8 @@ public class TransportOrderService {
 
 	@Transactional(readOnly = true)
 	public List<TransportOrderResponse> findOpenOrders() {
-		return transportOrderRepository.findByStatusOrderByIdAsc(TransportOrderStatus.NEW).stream()
-				.map(this::toResponse).toList();
+		return transportOrderRepository.findByStatusAndSourceNotOrderByIdAsc(TransportOrderStatus.NEW, decanting())
+				.stream().map(this::toResponse).toList();
 	}
 
 	public TransportOrderResponse scan(Long id, String barcode) {

@@ -10,9 +10,9 @@ import ro.demo.usersbackend.entity.TransportOrder;
 import ro.demo.usersbackend.entity.TransportOrderStatus;
 
 public interface TransportOrderRepository extends JpaRepository<TransportOrder, Long> {
-	Optional<TransportOrder> findFirstByStatusOrderByIdAsc(TransportOrderStatus status);
-
 	Optional<TransportOrder> findFirstByStatusAndSourceOrderByIdAsc(TransportOrderStatus status, Location source);
 
-	List<TransportOrder> findByStatusOrderByIdAsc(TransportOrderStatus status);
+	Optional<TransportOrder> findFirstByStatusAndSourceNotOrderByIdAsc(TransportOrderStatus status, Location source);
+
+	List<TransportOrder> findByStatusAndSourceNotOrderByIdAsc(TransportOrderStatus status, Location source);
 }
