@@ -12,7 +12,9 @@
     { "file": "Location.json" },
 	{"file": "ArticlePickingLocation.json"},
 	{"file": "DestinationToGate.json"},
-	{"file": "ArticlePackagingUnitType.json"}
+	{"file": "ArticlePackagingUnitType.json"},
+	{ "file": "InventoryCheck.json" },
+	{ "file": "StockAdjustment.json" }
   ],
   "entitySpec": [
     { "name": "Article", "show": [ { "field": "BARCODE", "label": "Barcode" }, { "field": "DESCRIPTION", "label": "Description" } ] },
@@ -21,6 +23,9 @@
     { "name": "PackagingUnitType", "show": [ { "field": "NAME", "label": "Name" } ] },
     { "name": "ArticlePackagingUnitType", "show": [ { "field": "BARCODE", "label": "Barcode" }, { "field": "ARTICLE_ID", "label": "Article", "from": "Article", "column": "DESCRIPTION" } ] },
     { "name": "Destination", "show": [ { "field": "NAME", "label": "Name" } ] },
-    { "name": "RetrievalOrderLine", "show": [ { "field": "ID", "label": "ID" }, { "field": "ORDER_ID", "label": "Retrieval Order ID", "from": "RetrievalOrder", "column": "ORDER_ID" } ] }
-  ]
+    { "name": "RetrievalOrderLine", "show": [ { "field": "ID", "label": "ID" }, { "field": "ORDER_ID", "label": "Retrieval Order ID", "from": "RetrievalOrder", "column": "ORDER_ID" } ] },
+	{ "name": "ArticlePackagingUnitType", "show": [ { "field": "BARCODE", "label": "Barcode" } ] },
+	{"name": "InventoryCheck","show": [{ "field": "LOAD_UNIT_BARCODE", "label": "Load unit" },{ "field": "SCANNED_AT", "label": "Scanned at" }]},
+	{"name": "StockAdjustment","show": [{ "field": "ARTICLE_BARCODE", "label": "Article" }]}
+	]
 }

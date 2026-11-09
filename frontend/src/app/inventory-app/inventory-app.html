@@ -40,12 +40,7 @@
     }
 
 </div>
-    <div class="left" [class.warning]="validationMessage">
-        @if (validationMessage) {
-        <div class="instruction-container warning-message" role="alert">
-            <p>{{ validationMessage }}</p>
-        </div>
-        } @else {
+    <div class="left">
         @if (comparisonComplete && mismatchAccepted) {
         <section class="comparison-results" aria-live="polite">
             <h2>Inventory check complete</h2>
@@ -56,12 +51,11 @@
         </section>
         } @else {
         <div class="instruction-container">
-            <p>{{ isComparing ? 'Comparing quantities...' : currentInstruction }}</p>
+            <p>{{ isSaving ? 'Saving inventory check...' : isComparing ? 'Comparing quantities...' : currentInstruction }}</p>
             @if (comparisonError) {
             <p class="comparison-error" role="alert">{{ comparisonError }}</p>
             }
         </div>
-        }
         }
     </div>
 
@@ -122,8 +116,8 @@
         <button
             class="finish"
             (click)="onFinish()"
-            [disabled]="lines.length === 0 || !loadUnit || isComparing || comparisonComplete || showMismatchDialog || showCompletionDialog">
-            {{ isComparing ? 'Comparing...' : 'Finish' }}
+            [disabled]="!loadUnit || isComparing || comparisonComplete || showMismatchDialog || showCompletionDialog">
+            {{ isSaving ? 'Saving...' : isComparing ? 'Comparing...' : 'Finish' }}
         </button>
 
     </div>
