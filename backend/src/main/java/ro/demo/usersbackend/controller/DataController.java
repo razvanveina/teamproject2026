@@ -51,6 +51,7 @@ public class DataController {
 	@GetMapping("/{entity}")
 	public List<Map<String, Object>> findAll(@PathVariable String entity, @RequestParam Map<String, String> filters) throws IOException {
 		// no dialog file (e.g. StorageLocation, used by the home page): just all the rows
+		log.info("Data: {} with filters {}", entity, filters);
 		if (!new ClassPathResource("static/api/dialogs/" + entity + ".json").exists()) {
 			return jdbcTemplate.queryForList("SELECT * FROM " + tableNameOf(entity));
 		}
@@ -113,6 +114,7 @@ public class DataController {
 	// The columns of a table: name, type and if it can be empty
 	@GetMapping("/{entity}/columns")
 	public List<Map<String, Object>> columns(@PathVariable String entity) {
+		log.info("Data: columns of table {}", entity);
 		String sql = "SELECT COLUMN_NAME, DATA_TYPE, NULLABLE FROM USER_TAB_COLUMNS WHERE TABLE_NAME = ?";
 		return jdbcTemplate.queryForList(sql, tableNameOf(entity).toUpperCase());
 	}
@@ -120,6 +122,7 @@ public class DataController {
 	// Adds one row, e.g. POST /api/data/Destination with { "NAME": "Sibiu" }
 	@PostMapping("/{entity}")
 	public ResponseEntity<Map<String, String>> add(@PathVariable String entity, @RequestBody Map<String, Object> values) {
+		log.info("Data: added a row to {} with columns", entity, values.keySet());
 		List<String> names = new ArrayList<>();
 		List<String> marks = new ArrayList<>();
 		List<Object> params = new ArrayList<>();
@@ -137,6 +140,7 @@ public class DataController {
 		String sql = "INSERT INTO " + tableNameOf(entity) + " (" + String.join(", ", names) + ") VALUES ("
 				+ String.join(", ", marks) + ")";
 		try {
+			log.info("Data: row added to {}", entity);
 			jdbcTemplate.update(sql, params.toArray());
 			return ResponseEntity.ok(Map.of("message", "Saved"));
 		} catch (DataAccessException e) {
@@ -146,11 +150,13 @@ public class DataController {
 
 	@GetMapping("/{entity}/{id}")
 	public Map<String, Object> findOne(@PathVariable String entity, @PathVariable Long id) {
+		log.info("Data: read {} {}", entity, id);
 		return jdbcTemplate.queryForMap("SELECT * FROM " + tableNameOf(entity) + " WHERE ID = ?", id);
 	}
 
 	@PutMapping("/{entity}/{id}")
 	public ResponseEntity<Map<String, String>> update(@PathVariable String entity, @PathVariable Long id, @RequestBody Map<String, Object> values) {
+		log.info("Data: update {} {} with columns {}", entity, id, values.keySet());
 		List<String> sets = new ArrayList<>();
 		List<Object> params = new ArrayList<>();
 
@@ -165,6 +171,7 @@ public class DataController {
 
 		String sql = "UPDATE " + tableNameOf(entity) + " SET " + String.join(", ", sets) + " WHERE ID = ?";
 		try {
+			log.info("Data: {] {} updated", entity, id);
 			jdbcTemplate.update(sql, params.toArray());
 			return ResponseEntity.ok(Map.of("message", "Saved"));
 		} catch (DataAccessException e) {
@@ -176,7 +183,9 @@ public class DataController {
 	@DeleteMapping("/{entity}/{id}")
 	public ResponseEntity<Map<String, String>> delete(@PathVariable String entity, @PathVariable Long id) {
 		try {
+			log.info("Data: delete {} {} ", entity, id);
 			jdbcTemplate.update("DELETE FROM " + tableNameOf(entity) + " WHERE ID = ?", id);
+			log.info("Data: {} {} deleted", entity, id);
 			return ResponseEntity.ok(Map.of("message", "Deleted"));
 		} catch (DataAccessException e) {
 			return error("Cannot delete " + entity + " " + id, e);
@@ -199,6 +208,7 @@ public class DataController {
 	private String tableNameOf(String entity) {
 		// never the login accounts: they hold the passwords
 		if (entity.equals("Account")) {
+			log.warn("Data: access to Account refused");
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown entity: " + entity);
 		}
 
@@ -210,7 +220,7 @@ public class DataController {
 						.getIdentifierTableName();
 			}
 		}
-
+		log.warn("Data: entity {} not found", entity);
 		throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown entity: " + entity);
 	}
 }

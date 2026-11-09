@@ -34,50 +34,59 @@ public class ReceivingController {
 
 	@GetMapping("/{orderId}")
 	public ReceivingOrderResponse findByOrderId(@PathVariable String orderId) {
-		log.info("User scaned order barcode {}", orderId);
+		log.info("Receiving: scaned order barcode {}", orderId);
 
 		try {
 			return receivingService.findByOrderId(orderId);
 		} catch (ResponseStatusException e) {
-			log.warn("Scan error: {}", e.getMessage());
+			log.warn("Receiving: scan error: {}", e.getMessage());
 			throw e;
 		} catch (Exception e) {
-			log.error("Exception: " + e.getMessage());
+			log.error("Receiving: exception: " + e.getMessage());
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
 		}
 	}
 
 	@PutMapping("/finish")
 	public ReceivingOrderResponse finishOrder(@RequestBody FinishReceivingRequest request) {
-		log.info("User finished order: {}", request);
+		log.info("Receiving: finished order: {}", request);
 
 		try {
 			return receivingService.updateOrder(request);
 		} catch (ResponseStatusException e) {
-			log.error("Error occured while finishing order: {}", e.getMessage());
+			log.error("Receiving: error occured while finishing order: {}", e.getMessage());
 			throw e;
 		} catch (Exception e) {
-			log.error("Exception: " + e.getMessage());
+			log.error("Receiving: exception: " + e.getMessage());
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
 		}
 	}
 
 	@GetMapping("/package/{barcode}")
 	public PackageResponse findPackage(@PathVariable String barcode) {
-		log.info("User scanned package with barcode: {}", barcode);
+		log.info("Receiving: scanned package with barcode: {}", barcode);
 		try {
 			return receivingService.findPackage(barcode);
 		} catch (ResponseStatusException e) {
-			log.warn("Error at scanning package barcode: {}", e.getMessage());
+			log.warn("Receiving: error at scanning package barcode: {}", e.getMessage());
 			throw e;
 		} catch (Exception e) {
-			log.error("Exception: " + e.getMessage());
+			log.error("Receiving: exception: " + e.getMessage());
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
 		}
 	}
 	
 	@GetMapping("/{orderId}/packages")
 	public List<PackageOption> findPackageOptions(@PathVariable String orderId){
-		return receivingService.findPackageOptions(orderId);
+		log.info("Receiving: packaging options requested for order {}", orderId);
+		try {
+			return receivingService.findPackageOptions(orderId);
+		} catch (ResponseStatusException e) {
+			log.warn("Receiving: error at loading packaging options {}", e.getMessage());
+			throw e;
+		} catch (Exception e) {
+			log.error("Receiving: exception {}", e.getMessage());
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+		}
 	}
 }

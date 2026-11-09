@@ -31,16 +31,19 @@ public class PickingController {
 
 	@GetMapping("/next-order")
 	public PickingOrderResponse findNextOrder() {
+		log.info("Picking: asked for next order");
 		return pickingService.findNextOrder();
 	}
 
 	@GetMapping("/order/{orderId}")
 	public PickingOrderResponse findOrderDetails(@PathVariable String orderId) {
+		log.info("Picking: opened order {}", orderId);
 		return pickingService.findOrderDetails(orderId);
 	}
 
 	@PostMapping("/create-box")
 	public ResponseEntity<Map<String, String>> createBox(@RequestBody PickingRequest request) {
+		log.info("Picking: created box {} for order {}", request.box(), request.orderId());
 		try {
 			return ResponseEntity.ok(Map.of("message", pickingService.createBox(request.orderId(), request.box())));
 		} catch (ResponseStatusException e) {
@@ -50,11 +53,13 @@ public class PickingController {
 
 	@PostMapping("/move-to-box")
 	public void moveLineToBox(@RequestBody PickingRequest request) {
+		log.info("Picking: moved {} to box {} for order {}", request.barcode(), request.box(), request.orderId());
 		pickingService.moveLineToBox(request.orderId(), request.barcode(), request.box());
 	}
 
 	@PostMapping("/close-box")
 	public ResponseEntity<Map<String, String>> closeBox(@RequestBody PickingRequest request) {
+		log.info("Picking: closed box {} for order {}", request.box(), request.orderId());
 		try {
 			return ResponseEntity.ok(Map.of("message", pickingService.closeBox(request.orderId(), request.box())));
 		} catch (ResponseStatusException e) {

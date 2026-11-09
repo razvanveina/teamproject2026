@@ -35,27 +35,29 @@ public class TransportOrderController {
 
 	@GetMapping("/open")
 	public List<TransportOrderResponse> findOpenOrders() {
+		log.info("Transport: listed the open orders");
 		return transportOrderService.findOpenOrders();
 	}
 
 	@GetMapping("/next")
 	public ResponseEntity<TransportOrderResponse> findNextOrder() {
+		log.info("Transport: asked for next order");
 		return transportOrderService.findNextOrder().map(ResponseEntity::ok)
 				.orElseGet(() -> ResponseEntity.noContent().build());
 	}
 
 	@PostMapping("/{id}/scan")
 	public TransportOrderResponse scan(@PathVariable Long id, @Valid @RequestBody TransportOrderRequest request) {
-		log.info("Order {}: user scanned '{}'", id, request.barcode());
+		log.info("Transport: order {} user scanned '{}'", id, request.barcode());
 		try {
 			TransportOrderResponse response = transportOrderService.scan(id, request.barcode());
-			log.info("Order {}: scan accepted, status is now {}", id, response.status());
+			log.info("Transport: order {} scan accepted, status is now {}", id, response.status());
 			return response;
 		} catch (ResponseStatusException e) {
-			log.warn("Order {}: scan rejected - {}", id, e.getReason());
+			log.warn("Transport: order {} scan rejected - {}", id, e.getReason());
 			throw e;
 		} catch (Exception e) {
-			log.error("Exception: " + e.getMessage());
+			log.error("Transport: exception: " + e.getMessage());
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
 		}
 	}
@@ -63,22 +65,23 @@ public class TransportOrderController {
 	@PostMapping("/{id}/error")
 	public TransportOrderResponse reportError(@PathVariable Long id,
 			@Valid @RequestBody TransportOrderErrorRequest request) {
-		log.info("Order {}: user reported error {}", id, request.reason());
+		log.info("Transport: order {} user reported error {}", id, request.reason());
 		try {
 			TransportOrderResponse response = transportOrderService.reportError(id, request.reason());
-			log.info("Order {}: status is now {}", id, response.status());
+			log.info("Transport: order {} status is now {}", id, response.status());
 			return response;
 		} catch (ResponseStatusException e) {
-			log.warn("Order {}: error report rejected - {}", id, e.getReason());
+			log.warn("Transport: order {} error report rejected {}", id, e.getReason());
 			throw e;
 		} catch (Exception e) {
-			log.error("Exception: " + e.getMessage());
+			log.error("Transport: exception: " + e.getMessage());
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
 		}
 	}
 
 	@GetMapping("/nextTote")
 	public TransportOrderResponse findNextToteTransport() {
+		log.info("Transport: asked for next tote order");
 		return transportOrderService.findNextToteOrder();
 	}
 }

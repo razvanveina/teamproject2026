@@ -27,32 +27,32 @@ public class ShippingController {
 
 	@GetMapping("/{barcode}")
 	public LoadUnitResponse findByOrderId(@PathVariable String barcode) {
-		log.info("User scaned load unit barcode {}", barcode);
+		log.info("Shipping: scaned load unit barcode {}", barcode);
 
 		try {
 			LoadUnitResponse response = loadUnitService.findByBarcode(barcode);
 			System.out.println(response);
 			return response;
 		} catch (ResponseStatusException e) {
-			log.warn("Scan error: ", e.getMessage());
+			log.warn("Shipping: scan error: ", e.getMessage());
 			throw e;
 		} catch (Exception e) {
-			log.error("Exception: " + e.getMessage());
+			log.error("Shipping: exception: " + e.getMessage());
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
 		}
 	}
 
 	@PutMapping("/{barcode}/finish")
 	public void confirmLoadUnit(@PathVariable String barcode) {
-		log.info("User confirmed load unit barcode {}", barcode);
+		log.info("Shipping: confirmed load unit barcode {}", barcode);
 
 		try {
 			loadUnitService.finishLoadUnit(barcode);
 		} catch (ResponseStatusException e) {
-			log.warn("Scan error: ", e.getMessage());
+			log.warn("Shipping: scan error: ", e.getMessage());
 			throw e;
 		} catch (Exception e) {
-			log.error("Exception: " + e.getMessage());
+			log.error("Shipping: exception: " + e.getMessage());
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
 		}
 	}

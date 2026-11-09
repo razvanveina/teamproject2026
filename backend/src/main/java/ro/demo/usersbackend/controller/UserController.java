@@ -1,8 +1,9 @@
-
 package ro.demo.usersbackend.controller;
 
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -22,6 +23,7 @@ import ro.demo.usersbackend.service.UserService;
 @RequestMapping("/api/users")
 @CrossOrigin(origins = "http://localhost:4200")
 public class UserController {
+	public static final Logger log = LogManager.getLogger("application");
 
 	private final UserService userService;
 
@@ -31,28 +33,39 @@ public class UserController {
 
 	@GetMapping
 	public List<User> findAll() {
+		log.info("Users: listed all users");
+
 		return userService.findAll();
 	}
 
 	@GetMapping("/{id}")
 	public User findById(@PathVariable Long id) {
+		log.info("Users: opened user {}", id);
+
 		return userService.findById(id);
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	public User create(@RequestBody User user) {
+		// the user data is not logged, it contains personal information
+		log.info("Users: created a new user");
+
 		return userService.create(user);
 	}
 
 	@PutMapping("/{id}")
 	public User update(@PathVariable Long id, @RequestBody User user) {
+		log.info("Users: updated user {}", id);
+
 		return userService.update(id, user);
 	}
 
 	@DeleteMapping("/{id}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void delete(@PathVariable Long id) {
+		log.info("Users: deleted user {}", id);
+
 		userService.delete(id);
 	}
 }
