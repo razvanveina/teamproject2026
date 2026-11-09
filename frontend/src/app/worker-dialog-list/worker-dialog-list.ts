@@ -7,6 +7,7 @@ import { RouterLink } from '@angular/router';
   selector: 'app-worker-dialog-list',
   styleUrl: './worker-dialog-list.css',
   templateUrl: './worker-dialog-list.html',
+  host: { '(document:click)': 'clickOutside($event)' },
 })
 export class WorkerDialogList {
   // private service = inject(DialogConfigService);
@@ -20,8 +21,7 @@ export class WorkerDialogList {
     {id: 4, routerLink:"/shipping", title:"Shipping"},
     {id: 5, routerLink:"/toteTransport", title:"Tote Transport"},
     {id: 6, routerLink:"/scan", title:"Inventory"},
-    {id: 7, routerLink:"/picking", title:"Picking"},
-    {id: 8, routerLink:"/stock", title:"Stock"},
+    {id: 7, routerLink:"/picking", title:"Picking"}
   ]);
   open = signal(false);
 
