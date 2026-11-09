@@ -22,5 +22,6 @@ public class UsersBackendApplication {
 		Broker.start();
 		Consumer.start();
 		ProcessManager.startAll();
+		
 	}
 }

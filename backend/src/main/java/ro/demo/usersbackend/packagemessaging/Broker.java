@@ -4,7 +4,7 @@ import org.apache.activemq.broker.BrokerService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-// broker-ul ActiveMQ pornit odata cu serverul
+// broker-ul ActiveMQ pornit odata cu serveru
 public class Broker {
 	public static final String URL = "tcp://localhost:61616";
 

@@ -11,7 +11,7 @@ import jakarta.jms.Message;
 import jakarta.jms.Queue;
 import jakarta.jms.TextMessage;
 
-// citeste mesajele din TEST_QUEUE intr-un thread, pornit cu serverul dupa broker
+// citeste mesajele din TEST_QUEUE intr-un thread, pornit cu serveru dupa broker
 public class Consumer {
 	private static final Logger log = LogManager.getLogger("application");
 
