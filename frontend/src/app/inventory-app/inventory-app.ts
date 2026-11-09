@@ -73,7 +73,7 @@ interface SavedStockItem {
     styleUrl: './inventory-app.css'
 })
 
-export class ScanApp {
+export class InventoryApp {
 
     private readonly http = inject(HttpClient);
     private readonly cdr = inject(ChangeDetectorRef);

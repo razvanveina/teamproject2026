@@ -14,7 +14,7 @@ import { Stock } from './stock/stock';
 import { Shipping } from './shipping/shipping';
 import { PickingApp } from './picking-app/picking-app';
 import { DecantingApp } from './decanting-app/decanting-app';
-import { ScanApp } from './inventory-app/inventory-app';
+import { InventoryApp } from './inventory-app/inventory-app';
 import { RetrievalOrders } from './retrieval-orders/retrieval-orders';
 import { ToteTransport } from './tote-transport/tote-transport';
 
@@ -41,7 +41,7 @@ export const routes: Routes = [
             { path: 'stock', component: Stock, title: 'Stock' },
             { path: 'picking', component: PickingApp, title: 'Picking' },
 			{ path: 'picking/orders', component: RetrievalOrders },
-            { path: 'inventory', component: ScanApp, title: 'Scan'},            
+            { path: 'inventory', component: InventoryApp, title: 'Inventory' },            
             { path: 'toteTransport', component: ToteTransport, title: 'Tote Transport' }
         ]
     },
