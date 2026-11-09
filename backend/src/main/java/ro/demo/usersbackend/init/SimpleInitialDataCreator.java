@@ -33,6 +33,21 @@ public class SimpleInitialDataCreator {
 		createPickingLocations();
 		createArticles();
 		createLoadUnit();
+		createSimulatorData();
+	}
+
+	private void createSimulatorData() {
+		TransitLocation ip1 = new TransitLocation("IP1");
+		TransitLocation ip2 = new TransitLocation("IP2");
+		TransitLocation ip3 = new TransitLocation("IP3");
+		TransitLocation dp1 = new TransitLocation("DP1");
+		TransitLocation dp2 = new TransitLocation("DP2");
+
+		session.persist(ip1);
+		session.persist(ip2);
+		session.persist(ip3);
+		session.persist(dp1);
+		session.persist(dp2);
 	}
 
 	private void createLoadUnit() {
