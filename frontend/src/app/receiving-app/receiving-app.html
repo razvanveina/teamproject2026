@@ -1,9 +1,10 @@
 <div class="container">
     <div class="top">
         <div [hidden]="!displayTable()">
-            <p>Order ID: <b>{{order().orderId}}</b></p>
-            <br>
-            <p>Order Status: <b>{{order().status}}</b> </p>
+            <div class="orderDetails">
+                <p>Order ID: <b>{{order().orderId}}</b></p>
+                <p>Order Status: <b>{{order().status}}</b> </p>
+            </div>
             <table>
                 <thead>
                     <tr>

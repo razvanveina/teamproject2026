@@ -1,11 +1,11 @@
 .orderDetails {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    /* display: grid; */
+    /* grid-template-columns: 1fr 1fr; */
     font-family: "Segoe UI", "Inter", "Aptos", sans-serif;
     font-weight: bold;
 }
 
-.orderDetails p:first-child {
+/* .orderDetails p:first-child {
     text-align: left;
     padding-right: 10px;
 }
@@ -13,7 +13,7 @@
 .orderDetails p:last-child {
     text-align: right;
     padding-right: 10px;
-}
+} */
 
 table {
     width: 100%;
