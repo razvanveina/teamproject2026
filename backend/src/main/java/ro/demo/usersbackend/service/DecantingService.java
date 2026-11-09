@@ -3,6 +3,7 @@ package ro.demo.usersbackend.service;
 import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Comparator;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -60,6 +61,7 @@ public class DecantingService {
 		LoadUnit loadUnit = findLoadUnit(request.loadUnitBarcode());
 		List<StockItem> matching = availableItems(loadUnit).stream()
 				.filter(s -> s.getArticlePackagingUnitType().getBarcode().equals(request.packagingBarcode()))
+				.sorted(Comparator.comparing((StockItem s) -> s.getReservation() == null))
 				.toList();
 		if (matching.isEmpty()) {
 			throw badRequest("Item " + request.packagingBarcode() + " is not on load unit "
