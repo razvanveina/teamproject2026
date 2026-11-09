@@ -23,9 +23,9 @@ export class ToteTransport implements OnInit, OnDestroy {
   openOrders = signal<TransportOrderResponse[]>([]);
 
   private readonly errorReasonLabels: Record<TransportOrderErrorReason, string> = {
-    LOCATION_EMPTY: 'Pallet is missing',
-    WRONG_PALLET: 'Another pallet is at the source location',
-    TARGET_LOCATION_OCCUPIED: 'Location is already occupied by another pallet',
+    LOCATION_EMPTY: 'Tote is missing',
+    WRONG_PALLET: 'Another tote is at the source location',
+    TARGET_LOCATION_OCCUPIED: 'Location is already occupied by another tote',
   };
 
   private checker: ReturnType<typeof setInterval> | undefined;
@@ -188,7 +188,7 @@ export class ToteTransport implements OnInit, OnDestroy {
       this.order.set(null);
       this.hasError.set(false);
       this.instructions.set(order.status === 'FINISHED'
-        ? `Pallet stored at ${order.destinationLocation}. Waiting for the next order...`
+        ? `Tote stored at ${order.destinationLocation}. Waiting for the next order...`
         : `No new orders. Waiting for the next order...`);
       this.noOrderTimer = setTimeout(() => {
         if (!this.order() && !this.hasError()) {
@@ -202,9 +202,9 @@ export class ToteTransport implements OnInit, OnDestroy {
     this.order.set(order);
     this.hasError.set(false);
     if (order.status === 'NEW') {
-      this.instructions.set(`New transport order: go to ${order.sourceLocation} and scan pallet ${order.palletBarcode}.`);
+      this.instructions.set(`New transport order: go to ${order.sourceLocation} and scan tote ${order.palletBarcode}.`);
     } else if (order.status === 'ACTIVE') {
-      this.instructions.set(`Move the pallet to ${order.destinationLocation} and scan the location barcode.`);
+      this.instructions.set(`Move the tote to ${order.destinationLocation} and scan the location barcode.`);
     }
   }
 
@@ -219,6 +219,3 @@ export class ToteTransport implements OnInit, OnDestroy {
     history.back();
   }
 }
-
-// lu type tote
-// location decatinig

@@ -80,8 +80,10 @@ public class TransportOrderController {
 	}
 
 	@GetMapping("/nextTote")
-	public TransportOrderResponse findNextToteTransport() {
+	public ResponseEntity<TransportOrderResponse> findNextToteTransport() {
 		log.info("Transport: asked for next tote order");
-		return transportOrderService.findNextToteOrder();
+
+		return transportOrderService.findNextToteOrder().map(ResponseEntity::ok)
+				.orElseGet(() -> ResponseEntity.noContent().build());
 	}
 }

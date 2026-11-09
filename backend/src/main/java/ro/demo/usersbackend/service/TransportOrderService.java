@@ -51,18 +51,13 @@ public class TransportOrderService {
 	}
 
 	@Transactional(readOnly = true)
-	public TransportOrderResponse findNextToteOrder() {
+	public Optional<TransportOrderResponse> findNextToteOrder() {
 		Location decanting = decanting();
 
-		TransportOrder order = transportOrderRepository
-				.findFirstByStatusAndSourceOrderByIdAsc(TransportOrderStatus.ACTIVE, decanting)
+		return transportOrderRepository.findFirstByStatusAndSourceOrderByIdAsc(TransportOrderStatus.ACTIVE, decanting)
 				.or(() -> transportOrderRepository.findFirstByStatusAndSourceOrderByIdAsc(TransportOrderStatus.NEW,
 						decanting))
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-						"Cannot find location with the name DECANTING"));
-
-		return new TransportOrderResponse(order.getId(), order.getStatus(), order.getLoadUnit().getBarcode(),
-				order.getSource().getName(), order.getTarget().getName(), order.getLoadUnit().getLocation().getName());
+				.map(this::toResponse);
 	}
 
 	@Transactional(readOnly = true)
