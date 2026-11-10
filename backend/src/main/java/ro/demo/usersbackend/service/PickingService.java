@@ -58,14 +58,26 @@ public class PickingService {
 	// doar orderele manuale, cele automate merg pe conveyor
 	@Transactional(readOnly = true)
 	public PickingOrderResponse findNextOrder() {
+		List<PickingOrderResponse> orders = findReadyOrders();
+		if (orders.isEmpty()) {
+			return null;
+		}
+		return orders.get(0);
+	}
+
+	// toate orderele gata de picking, pentru lista din butonul Select order
+	@Transactional(readOnly = true)
+	public List<PickingOrderResponse> findReadyOrders() {
 		List<RetrievalOrder> orders = new ArrayList<>(retrievalOrderRepository.findByStatusAndAutomaticFalseOrderByIdAsc(RetrievalOrderStatus.STARTED));
 		orders.addAll(retrievalOrderRepository.findByStatusAndAutomaticFalseOrderByIdAsc(RetrievalOrderStatus.ACTIVE));
+
+		List<PickingOrderResponse> ready = new ArrayList<>();
 		for (RetrievalOrder order : orders) {
 			if (isInPicking(order)) {
-				return toResponse(order);
+				ready.add(toResponse(order));
 			}
 		}
-		return null;
+		return ready;
 	}
 
 	@Transactional(readOnly = true)
@@ -185,7 +197,7 @@ public class PickingService {
 			lines.add(new PickingLineResponse(line.getArticle().getBarcode(), line.getArticle().getDescription(),
 					line.getQuantity(), moved, line.getStatus().toString(), steps));
 		}
-		return new PickingOrderResponse(order.getOrderId(), order.getDestination().getName(), box, lines);
+		return new PickingOrderResponse(order.getOrderId(), order.getStatus().toString(), order.getDestination().getName(), box, lines);
 	}
 
 	private RetrievalOrder findOrder(String orderId) {

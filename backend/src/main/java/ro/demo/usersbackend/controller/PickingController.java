@@ -1,5 +1,6 @@
 package ro.demo.usersbackend.controller;
 
+import java.util.List;
 import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
@@ -33,6 +34,12 @@ public class PickingController {
 	public PickingOrderResponse findNextOrder() {
 		log.info("Picking: asked for next order");
 		return pickingService.findNextOrder();
+	}
+
+	@GetMapping("/orders")
+	public List<PickingOrderResponse> findReadyOrders() {
+		log.info("Picking: asked for the list of ready orders");
+		return pickingService.findReadyOrders();
 	}
 
 	@GetMapping("/order/{orderId}")

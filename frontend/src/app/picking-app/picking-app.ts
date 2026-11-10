@@ -19,6 +19,9 @@ export class PickingApp implements OnInit, OnDestroy {
   box = signal('');
   line = signal<any>(null);
   waitingConfirm = signal(false);
+  showOrders = signal(false);
+  scannedBoxes: any = {};
+  readyOrders = signal<any[]>([]);
   private checker: any;
 
   ngOnInit(): void {
@@ -49,21 +52,40 @@ export class PickingApp implements OnInit, OnDestroy {
           this.show('No order ready for picking. Please wait, the screen checks again every 10 seconds', '');
           return;
         }
-        if (order.box && this.box() === '') {
-          this.box.set(order.box);
-        }
-        if (this.box() === '') {
-          this.order.set(order);
-          this.show('Order ' + order.orderId + ': take an empty box and scan its barcode', '');
-        } else {
-          this.order.set(order);
-          this.showNextLine();
-        }
+        this.showOrder(order);
       },
       error: () => {
         this.show('Cannot reach the server. Try again in a moment', 'error');
       },
     });
+  }
+
+  reloadOrder(): void {
+    this.api.getOrder(this.order().orderId).subscribe({
+      next: (order: any) => {
+        this.showOrder(order);
+      },
+      error: () => {
+        this.show('Cannot reach the server. Try again in a moment', 'error');
+      },
+    });
+  }
+
+  showOrder(order: any): void {
+    this.order.set(order);
+    this.waitingConfirm.set(false);
+    let box = order.box;
+    if (!box) {
+      box = this.scannedBoxes[order.orderId];
+    }
+    if (box) {
+      this.box.set(box);
+      this.showNextLine();
+    } else {
+      this.box.set('');
+      this.line.set(null);
+      this.show('Order ' + order.orderId + ': take an empty box and scan its barcode', '');
+    }
   }
 
   itemText(line: any): string {
@@ -108,7 +130,9 @@ export class PickingApp implements OnInit, OnDestroy {
   scanBox(barcode: string): void {
     this.api.createBox(this.order().orderId, barcode).subscribe({
       next: () => {
+        this.scannedBoxes[this.order().orderId] = barcode;
         this.box.set(barcode);
+        this.order.set({ ...this.order(), status: 'STARTED' });
         this.showNextLine();
       },
       error: (err) => {
@@ -142,7 +166,7 @@ export class PickingApp implements OnInit, OnDestroy {
     const line = this.line();
     this.api.moveItemToBox(this.order().orderId, line.steps[0].id, this.box()).subscribe({
       next: () => {
-        this.loadOrder();
+        this.reloadOrder();
       },
       error: () => {
         this.show('Cannot save ' + line.description + '. Press Confirm again', 'error');
@@ -170,6 +194,28 @@ export class PickingApp implements OnInit, OnDestroy {
         }
       },
     });
+  }
+
+  openOrders(): void {
+    this.api.findReadyOrders().subscribe({
+      next: (orders) => {
+        this.readyOrders.set(orders);
+        this.showOrders.set(true);
+      },
+      error: () => {
+        this.show('Cannot load the orders. Try again in a moment', 'error');
+      },
+    });
+  }
+
+  closeOrders(): void {
+    this.showOrders.set(false);
+  }
+
+  chooseOrder(order: any): void {
+    this.log.action('PICKING choose order ' + order.orderId);
+    this.closeOrders();
+    this.showOrder(order);
   }
 
   onOrders(): void {

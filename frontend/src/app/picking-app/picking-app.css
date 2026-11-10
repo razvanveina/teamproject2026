@@ -135,3 +135,153 @@ button {
 .order {
     background: linear-gradient(110deg, #172b4d, #203b5e);
 }
+
+.order-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 14px;
+    font-family: "Segoe UI", "Inter", "Aptos", sans-serif;
+}
+
+.order-id {
+    color: #172b4d;
+    font-size: 32px;
+    font-weight: 700;
+}
+
+.status {
+    padding: 4px 14px;
+    color: #354b66;
+    font-size: 20px;
+    font-weight: 600;
+    background: #e9eef3;
+    border-radius: 999px;
+}
+
+.status.started {
+    color: #176f78;
+    background: #dff1f3;
+}
+
+.info {
+    color: #5b6b80;
+    font-size: 24px;
+}
+
+.info b {
+    color: #172b4d;
+}
+
+.waiting {
+    padding: 2px 12px;
+    color: #8a5a00;
+    font-weight: 600;
+    background: #fff3cd;
+    border: 1px dashed #e0b44c;
+    border-radius: 8px;
+}
+
+.backdrop {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgb(0 0 0 / 45%);
+}
+
+.popup {
+    width: 80%;
+    max-height: 80vh;
+    overflow: auto;
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    font-family: "Segoe UI", "Inter", "Aptos", sans-serif;
+}
+
+.popup-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.popup-header h3 {
+    flex: 1;
+    margin: 0;
+    color: #172b4d;
+    font-size: 28px;
+}
+
+.refresh {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    margin: 0;
+    padding: 0;
+    color: #176f78;
+    background: #fff;
+    border: 1px solid #e1e8ef;
+    border-radius: 9px;
+}
+
+.refresh:hover {
+    background: #eff8f7;
+}
+
+.close {
+    width: 42px;
+    height: 42px;
+    margin: 0;
+    color: #172b4d;
+    font-size: 30px;
+    background: transparent;
+}
+
+.close:hover {
+    background: #eff3f6;
+}
+
+.empty {
+    padding: 40px 20px;
+    text-align: center;
+    color: #5b6b80;
+    background: #f7f9fb;
+    border: 1px dashed #d5dee8;
+    border-radius: 12px;
+}
+
+.empty p {
+    margin: 0 0 8px;
+    font-size: 26px;
+    font-weight: 600;
+    color: #354b66;
+}
+
+.empty span {
+    font-size: 18px;
+}
+
+.choose {
+    cursor: pointer;
+}
+
+.popup tbody tr.current td {
+    color: #176f78;
+    font-weight: 600;
+    background-color: #dff1f3;
+}
+
+.current-tag {
+    margin-left: 10px;
+    padding: 2px 10px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    background: #176f78;
+    border-radius: 999px;
+}
