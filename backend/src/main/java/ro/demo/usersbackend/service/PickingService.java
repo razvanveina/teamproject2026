@@ -55,10 +55,11 @@ public class PickingService {
 
 	// intai comenzile incepute (STARTED, cutia e deja scanata), apoi cele rezervate (ACTIVE), cea mai veche prima
 	// se ia prima care are toata marfa in zona de picking, sau null daca nu e niciuna
+	// doar orderele manuale, cele automate merg pe conveyor
 	@Transactional(readOnly = true)
 	public PickingOrderResponse findNextOrder() {
-		List<RetrievalOrder> orders = new ArrayList<>(retrievalOrderRepository.findByStatusOrderByIdAsc(RetrievalOrderStatus.STARTED));
-		orders.addAll(retrievalOrderRepository.findByStatusOrderByIdAsc(RetrievalOrderStatus.ACTIVE));
+		List<RetrievalOrder> orders = new ArrayList<>(retrievalOrderRepository.findByStatusAndAutomaticFalseOrderByIdAsc(RetrievalOrderStatus.STARTED));
+		orders.addAll(retrievalOrderRepository.findByStatusAndAutomaticFalseOrderByIdAsc(RetrievalOrderStatus.ACTIVE));
 		for (RetrievalOrder order : orders) {
 			if (isInPicking(order)) {
 				return toResponse(order);
