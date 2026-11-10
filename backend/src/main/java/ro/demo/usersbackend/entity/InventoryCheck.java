@@ -30,6 +30,9 @@ public class InventoryCheck {
 	@Column(name = "scanned_at", nullable = false)
 	private LocalDateTime scannedAt;
 
+	@Column(name = "reason_message", nullable = false, length = 20)
+	private String reasonMessage;
+
 	public LoadUnit getLoadUnit() {
 		return loadUnit;
 	}
@@ -60,5 +63,13 @@ public class InventoryCheck {
 
 	public void setScannedAt(LocalDateTime scannedAt) {
 		this.scannedAt = scannedAt;
+	}
+
+	public String getReasonMessage() {
+		return reasonMessage;
+	}
+
+	public void setReasonMessage(String reasonMessage) {
+		this.reasonMessage = reasonMessage;
 	}
 }

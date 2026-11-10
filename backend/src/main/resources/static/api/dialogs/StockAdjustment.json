@@ -5,12 +5,23 @@
   "actions": [],
   "columns": [
     { "field": "ID", "label": "ID" },
-    { "field": "INVENTORY_CHECK_ID", "label": "Inventory check ID", "filterable" : true },
+    {
+      "field": "INVENTORY_CHECK_ID",
+      "label": "Load unit",
+      "lookup": { "entity": "InventoryCheck" },
+      "filterable": true
+    },
     { "field": "ARTICLE_BARCODE", "label": "Article barcode", "filterable" : true },
     { "field": "ARTICLE_DESCRIPTION", "label": "Description" },
     { "field": "EXPECTED_QUANTITY", "label": "Expected" },
     { "field": "COUNTED_QUANTITY", "label": "Counted" },
     { "field": "DIFFERENCE_QUANTITY", "label": "Difference" },
-    { "field": "PACKAGING_UNIT_TYPE_ID", "label": "Packaging unit" }
+    {
+      "field": "PACKAGING_UNIT_TYPE_ID",
+      "label": "Packaging unit",
+      "lookup": { "entity": "PackagingUnitType" },
+      "filterable": true
+    },
+    { "field": "REASON_MESSAGE", "label": "Reason" }
   ]
 }

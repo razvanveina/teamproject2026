@@ -27,6 +27,7 @@ import ro.demo.usersbackend.entity.RetrievalOrderLine;
 import ro.demo.usersbackend.entity.RetrievalOrderLineStatus;
 import ro.demo.usersbackend.entity.RetrievalOrderStatus;
 import ro.demo.usersbackend.entity.StockAdjustment;
+import ro.demo.usersbackend.entity.StockAdjustmentReason;
 import ro.demo.usersbackend.entity.StockItem;
 import ro.demo.usersbackend.repository.ArticlePackagingUnitTypeRepository;
 import ro.demo.usersbackend.repository.ArticleRepository;
@@ -73,6 +74,7 @@ public class InventoryCheckService {
 		check.setLoadUnitBarcode(request.loadUnitBarcode());
 		check.setLoadUnitType(request.loadUnitType());
 		check.setScannedAt(LocalDateTime.now());
+		check.setReasonMessage("INVENTORY");
 
 		InventoryCheck savedCheck = inventoryCheckRepository.save(check);
 
@@ -307,6 +309,7 @@ public class InventoryCheckService {
 		inventoryDifference.setExpectedQuantity(expected);
 		inventoryDifference.setCountedQuantity(counted);
 		inventoryDifference.setDifferenceQuantity(difference);
+		inventoryDifference.setReasonMessage(StockAdjustmentReason.INVENTORY);
 
 		return inventoryDifference;
 	}

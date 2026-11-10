@@ -2,6 +2,8 @@ package ro.demo.usersbackend.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -45,6 +47,10 @@ public class StockAdjustment {
 
 	@Column(name = "difference_quantity", nullable = false)
 	private int differenceQuantity;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "reason_message", nullable = false, length = 20)
+	private StockAdjustmentReason reasonMessage;
 
 	public InventoryCheck getInventoryCheck() {
 		return inventoryCheck;
@@ -116,5 +122,13 @@ public class StockAdjustment {
 
 	public void setDifferenceQuantity(int differenceQuantity) {
 		this.differenceQuantity = differenceQuantity;
+	}
+
+	public StockAdjustmentReason getReasonMessage() {
+		return reasonMessage;
+	}
+
+	public void setReasonMessage(StockAdjustmentReason reasonMessage) {
+		this.reasonMessage = reasonMessage;
 	}
 }

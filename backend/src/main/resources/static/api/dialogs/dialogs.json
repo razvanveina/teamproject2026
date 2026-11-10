@@ -13,7 +13,6 @@
 	{ "file": "ArticlePickingLocation.json"},
 	{ "file": "DestinationToGate.json"},
 	{ "file": "ArticlePackagingUnitType.json"},
-	{ "file": "InventoryCheck.json" },
 	{ "file": "StockAdjustment.json" },
 	{ "file": "RetrievalOrderLine.json"}
   ],
