@@ -104,6 +104,7 @@ public class HostRetrievalProcess extends AbstractProcess {
 				order.setOrderId(orderId);
 				order.setStatus(RetrievalOrderStatus.NEW);
 				order.setDestination(destination);
+				order.setAutomatic(isAutomatic(xml.getDocumentElement()));
 
 				session.persist(order);
 
@@ -162,6 +163,12 @@ public class HostRetrievalProcess extends AbstractProcess {
 			throw new IllegalArgumentException("missing <" + tag + "> element");
 		}
 		return nodes.item(0).getTextContent().trim();
+	}
+
+	// <automatic>true</automatic> din xml daca lipseste, orderul e manual
+	private static boolean isAutomatic(Element parent) {
+		NodeList nodes = parent.getElementsByTagName("automatic");
+		return nodes.getLength() > 0 && Boolean.parseBoolean(nodes.item(0).getTextContent().trim());
 	}
 
 }

@@ -35,6 +35,9 @@ public class RetrievalOrder {
 	@ManyToOne
 	@JoinColumn(name = "destination_id", nullable = false)
 	private Destination destination;
+	
+	@Column(nullable = false)
+	private boolean automatic;
 
 	public RetrievalOrder() {
 		super();
@@ -70,5 +73,13 @@ public class RetrievalOrder {
 
 	public void setDestination(Destination destination) {
 		this.destination = destination;
+	}
+
+	public boolean isAutomatic() {
+		return automatic;
+	}
+
+	public void setAutomatic(boolean automatic) {
+		this.automatic = automatic;
 	}
 }

@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.ArrayList;
 
 import ro.demo.usersbackend.dto.ProcessResponse;
+import ro.demo.usersbackend.server.automatic.AutomaticRetrievalService;
 import ro.demo.usersbackend.server.host.HostReceivingProcess;
 import ro.demo.usersbackend.server.host.HostRetrievalProcess;
 import ro.demo.usersbackend.server.replenishment.ReplenishmentProcess;
@@ -13,7 +14,7 @@ import ro.demo.usersbackend.server.reservation.ReservationService;
 import ro.demo.usersbackend.server.transport.ToteTransportService;
 
 public class ProcessManager {
-	private static final AbstractProcess[] processes = { new HostReceivingProcess(), new HostRetrievalProcess(), new ReservationService(), new ToteTransportService(), new ReplenishmentProcess() };
+	private static final AbstractProcess[] processes = { new HostReceivingProcess(), new HostRetrievalProcess(), new ReservationService(), new ToteTransportService(), new ReplenishmentProcess(), new AutomaticRetrievalService() };
 	private static final Map<String, Thread> threads = new HashMap<>();
 
 	public static synchronized void startAll() {
