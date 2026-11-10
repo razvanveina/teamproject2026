@@ -26,6 +26,7 @@ import ro.demo.usersbackend.repository.LoadUnitRepository;
 import ro.demo.usersbackend.repository.LocationRepository;
 import ro.demo.usersbackend.repository.RetrievalOrderLineRepository;
 import ro.demo.usersbackend.repository.RetrievalOrderRepository;
+import ro.demo.usersbackend.repository.StockItemRepository;
 
 // toata logica statiei de picking, pe entitati
 @Service
@@ -38,15 +39,18 @@ public class PickingService {
 	private final LoadUnitRepository loadUnitRepository;
 	private final LocationRepository locationRepository;
 	private final TransportOrderService transportOrderService;
+	private final StockItemRepository stockItemRepository;
 
 	public PickingService(RetrievalOrderRepository retrievalOrderRepository,
 			RetrievalOrderLineRepository retrievalOrderLineRepository, LoadUnitRepository loadUnitRepository,
-			LocationRepository locationRepository, TransportOrderService transportOrderService) {
+			LocationRepository locationRepository, TransportOrderService transportOrderService,
+			StockItemRepository stockItemRepository) {
 		this.retrievalOrderRepository = retrievalOrderRepository;
 		this.retrievalOrderLineRepository = retrievalOrderLineRepository;
 		this.loadUnitRepository = loadUnitRepository;
 		this.locationRepository = locationRepository;
 		this.transportOrderService = transportOrderService;
+		this.stockItemRepository = stockItemRepository;
 	}
 
 	// intai comenzile incepute (STARTED, cutia e deja scanata), apoi cele rezervate (ACTIVE), cea mai veche prima
@@ -86,24 +90,20 @@ public class PickingService {
 		return "Box " + barcode + " ready";
 	}
 
-	// muncitorul a apasat confirm: primul stock item rezervat cu acest barcode intra in cutie
+	// muncitorul a apasat confirm: stock itemul din pasul de pe ecran intra in cutie
+	// il luam dupa id, pentru ca acelasi barcode poate fi in mai multe locatii
 	// linia e gata doar cand toate stock itemurile ei sunt in cutie
-	public void moveItemToBox(String orderId, String barcode, String boxBarcode) {
+	public void moveItemToBox(Long stockItemId, String boxBarcode) {
 		LoadUnit box = findBox(boxBarcode);
-		for (RetrievalOrderLine line : findOrder(orderId).getLines()) {
-			for (Reservation reservation : line.getReservations()) {
-				StockItem item = reservation.getStockItem();
-				if (item.getLoadUnit().getType() != LoadUnitType.CARTON
-						&& item.getArticlePackagingUnitType().getBarcode().equals(barcode)) {
-					item.setLoadUnit(box);
-					if (isLineInBox(line)) {
-						line.setStatus(RetrievalOrderLineStatus.FINISHED);
-					}
-					log.info("Picking: {} of order {} moved into box {}", line.getArticle().getDescription(), orderId, boxBarcode);
-					return;
-				}
-			}
+		StockItem item = stockItemRepository.findById(stockItemId)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot find stock item " + stockItemId));
+		item.setLoadUnit(box);
+
+		RetrievalOrderLine line = item.getReservation().getRetrievalOrderLine();
+		if (isLineInBox(line)) {
+			line.setStatus(RetrievalOrderLineStatus.FINISHED);
 		}
+		log.info("Picking: stock item {} ({}) moved into box {}", stockItemId, line.getArticle().getDescription(), boxBarcode);
 	}
 
 	private boolean isLineInBox(RetrievalOrderLine line) {
@@ -163,7 +163,7 @@ public class PickingService {
 					box = loadUnit.getBarcode();
 					moved = moved + item.getTotalQuantity();
 				} else {
-					steps.add(new PickingStepResponse(loadUnit.getLocation().getName(),
+					steps.add(new PickingStepResponse(item.getId(), loadUnit.getLocation().getName(),
 							item.getArticlePackagingUnitType().getBarcode(), item.getQuantity(),
 							item.getArticlePackagingUnitType().getPackagingUnitType().getQuantity()));
 				}

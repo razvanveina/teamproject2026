@@ -19,8 +19,8 @@ export class PickingApi {
     return this.http.post<any>(API_BASE_URL + '/picking/create-box', { orderId: orderId, box: box });
   }
 
-  moveLineToBox(orderId: string, barcode: string, box: string): Observable<any> {
-    return this.http.post<any>(API_BASE_URL + '/picking/move-to-box', { orderId: orderId, barcode: barcode, box: box });
+  moveItemToBox(orderId: string, stockItemId: number, box: string): Observable<any> {
+    return this.http.post<any>(API_BASE_URL + '/picking/move-to-box', { orderId: orderId, stockItemId: stockItemId, box: box });
   }
 
   logError(message: string): void {

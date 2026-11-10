@@ -140,7 +140,7 @@ export class PickingApp implements OnInit, OnDestroy {
 
   onConfirm(): void {
     const line = this.line();
-    this.api.moveLineToBox(this.order().orderId, line.steps[0].barcode, this.box()).subscribe({
+    this.api.moveItemToBox(this.order().orderId, line.steps[0].id, this.box()).subscribe({
       next: () => {
         this.loadOrder();
       },
