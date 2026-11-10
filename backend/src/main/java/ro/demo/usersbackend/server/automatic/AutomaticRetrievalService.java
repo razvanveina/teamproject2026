@@ -54,7 +54,7 @@ public class AutomaticRetrievalService extends AbstractProcess {
 	private void receiveReplies(SessionFactory sessionFactory, JMSContext context) throws JMSException {
 		JMSConsumer consumer = context.createConsumer(context.createQueue(MfsMessages.RESPONSE_QUEUE));
 		Message message;
-		while ((message = consumer.receiveNoWait()) != null) {
+		while ((message = consumer.receive(1000)) != null) {
 			try {
 				String text = ((TextMessage) message).getText();
 				AckGet ack = MfsMessages.fromJson(text, AckGet.class);
