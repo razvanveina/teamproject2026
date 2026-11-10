@@ -93,13 +93,12 @@ public class PickingService {
 	// muncitorul a apasat confirm: stock itemul din pasul de pe ecran intra in cutie
 	// il luam dupa id, pentru ca acelasi barcode poate fi in mai multe locatii
 	// linia e gata doar cand toate stock itemurile ei sunt in cutie
-	// muncitorul a apasat confirm: stock itemul din pasul de pe ecran intra in cutie
-	// il luam dupa id, pentru ca acelasi barcode poate fi in mai multe locatii
-	// linia e gata doar cand toate stock itemurile ei sunt in cutie
+	// daca tote-ul din care am luat a ramas gol, il trimitem la EMPTY_TOTES ca sa se elibereze locatia de picking
 	public void moveItemToBox(Long stockItemId, String boxBarcode) {
 		LoadUnit box = findBox(boxBarcode);
 		StockItem item = stockItemRepository.findById(stockItemId)
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot find stock item " + stockItemId));
+		LoadUnit tote = item.getLoadUnit();
 		item.setLoadUnit(box);
 
 		RetrievalOrderLine line = item.getReservation().getRetrievalOrderLine();
@@ -107,6 +106,17 @@ public class PickingService {
 			line.setStatus(RetrievalOrderLineStatus.PICKED);
 		}
 		log.info("Picking: stock item {} ({}) moved into box {}", stockItemId, line.getArticle().getDescription(), boxBarcode);
+
+		// daca nu exista locatia EMPTY_TOTES, tote-ul ramane pe locatie si pickingul merge mai departe
+		if (tote.getType() == LoadUnitType.TOTE && stockItemRepository.findByLoadUnitOrderByIdAsc(tote).isEmpty()) {
+			Location emptyTotes = locationRepository.findByName("EMPTY_TOTES").orElse(null);
+			if (emptyTotes == null) {
+				log.warn("Picking: tote {} is empty, but there is no EMPTY_TOTES location, the tote stays", tote.getBarcode());
+			} else {
+				transportOrderService.createTransportOrder(tote, emptyTotes);
+				log.info("Picking: tote {} is empty, transport order to EMPTY_TOTES", tote.getBarcode());
+			}
+		}
 	}
 
 	private boolean isLineInBox(RetrievalOrderLine line) {
