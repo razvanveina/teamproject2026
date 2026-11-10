@@ -122,7 +122,7 @@ public class DataController {
 	// Adds one row, e.g. POST /api/data/Destination with { "NAME": "Sibiu" }
 	@PostMapping("/{entity}")
 	public ResponseEntity<Map<String, String>> add(@PathVariable String entity, @RequestBody Map<String, Object> values) {
-		log.info("Data: added a row to {} with columns", entity, values.keySet());
+		log.info("Data: added a row to {} with columns {}", entity, values.keySet());
 		List<String> names = new ArrayList<>();
 		List<String> marks = new ArrayList<>();
 		List<Object> params = new ArrayList<>();

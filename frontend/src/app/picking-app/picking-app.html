@@ -12,7 +12,7 @@
             </thead>
             <tbody>
                 @for (line of current.lines; track line.barcode) {
-                <tr [class.completed]="line.status === 'FINISHED'">
+                <tr [class.completed]="line.status === 'PICKED'">
                     <td>{{ line.description }}</td>
                     <td>{{ line.barcode }}</td>
                     <td>{{ line.moved }} / {{ line.quantity }}</td>

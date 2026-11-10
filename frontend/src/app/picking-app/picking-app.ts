@@ -82,7 +82,7 @@ export class PickingApp implements OnInit, OnDestroy {
   showNextLine(): void {
     this.waitingConfirm.set(false);
     for (const line of this.order().lines) {
-      if (line.status !== 'FINISHED') {
+      if (line.status !== 'PICKED') {
         this.line.set(line);
         this.show(this.takeText(line), 'ok');
         return;

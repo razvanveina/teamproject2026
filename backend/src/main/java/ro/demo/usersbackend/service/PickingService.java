@@ -93,6 +93,9 @@ public class PickingService {
 	// muncitorul a apasat confirm: stock itemul din pasul de pe ecran intra in cutie
 	// il luam dupa id, pentru ca acelasi barcode poate fi in mai multe locatii
 	// linia e gata doar cand toate stock itemurile ei sunt in cutie
+	// muncitorul a apasat confirm: stock itemul din pasul de pe ecran intra in cutie
+	// il luam dupa id, pentru ca acelasi barcode poate fi in mai multe locatii
+	// linia e gata doar cand toate stock itemurile ei sunt in cutie
 	public void moveItemToBox(Long stockItemId, String boxBarcode) {
 		LoadUnit box = findBox(boxBarcode);
 		StockItem item = stockItemRepository.findById(stockItemId)
@@ -101,7 +104,7 @@ public class PickingService {
 
 		RetrievalOrderLine line = item.getReservation().getRetrievalOrderLine();
 		if (isLineInBox(line)) {
-			line.setStatus(RetrievalOrderLineStatus.FINISHED);
+			line.setStatus(RetrievalOrderLineStatus.PICKED);
 		}
 		log.info("Picking: stock item {} ({}) moved into box {}", stockItemId, line.getArticle().getDescription(), boxBarcode);
 	}
@@ -117,7 +120,7 @@ public class PickingService {
 
 	// muncitorul a scanat iar cutia: daca toate liniile sunt gata, cutia merge la OUT si comanda devine PICKED
 	public String closeBox(String orderId, String boxBarcode) {
-		long open = retrievalOrderLineRepository.countByOrderOrderIdAndStatusNot(orderId, RetrievalOrderLineStatus.FINISHED);
+		long open = retrievalOrderLineRepository.countByOrderOrderIdAndStatusNot(orderId, RetrievalOrderLineStatus.PICKED);
 		if (open > 0) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, open + " lines are not finished yet");
 		}
