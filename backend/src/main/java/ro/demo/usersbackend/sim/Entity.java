@@ -39,6 +39,10 @@ public abstract class Entity implements Runnable {
 
 	public abstract String getAvailableLU();
 
+	public String getAvailableLU(Entity asking) {
+		return getAvailableLU();
+	}
+
 	@Override
 	public void run() {
 		while (true) {

@@ -1,32 +1,80 @@
 package ro.demo.usersbackend.sim;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
+import java.util.ArrayDeque;
+import java.util.Deque;
 
-public class Conveyor extends Entity implements Runnable {
+public class Conveyor extends Entity {
 
-	Map<String, Long> lus = new HashMap<>();
+	private record Tote(String barcode, long enteredAt) {
+	}
 
-	public Conveyor(String name) {
+	private long travelTime;
+	private int capacity;
+	private Deque<Tote> totes;
+	private long lastEnteredAt;
+	private volatile boolean ready;
+
+	public Conveyor(String name, long travelTime, int capacity) {
 		super(name);
+		this.travelTime = travelTime;
+		this.capacity = capacity;
+		this.totes = new ArrayDeque<>();
+		ready = true;
 	}
 
-	public void createLU(String barcode) {
-		lus.put(barcode, System.currentTimeMillis());
+	public synchronized void createLU(String barcode) {
+		if (totes.size() < capacity) {
+			add(barcode);
+		}
 	}
 
-	public String getAvailableLU() {
-		String keep = null;
-		for (Entry<String, Long> e : lus.entrySet()) {
-			if (e.getValue() < System.currentTimeMillis() - 5000) {
-				keep = e.getKey();
+	@Override
+	public void run() {
+		try {
+			while (!ready) {
+				Thread.sleep(10);
+			}
+
+			while (true) {
+				pull();
+				Thread.sleep(100);
+			}
+		} catch (InterruptedException e) {
+			return;
+		}
+	}
+
+	private void pull() {
+		synchronized (this) {
+			if (totes.size() >= capacity || System.currentTimeMillis() - lastEnteredAt < travelTime / capacity) {
+				return;
 			}
 		}
 
-		lus.remove(keep);
+		for (Entity e : getSource()) {
+			String barcode = e.getAvailableLU(this);
+			if (barcode != null) {
+				synchronized (this) {
+					add(barcode);
+				}
+				return;
+			}
+		}
+	}
 
-		return keep;
+	private void add(String barcode) {
+		lastEnteredAt = System.currentTimeMillis();
+		totes.addLast(new Tote(barcode, lastEnteredAt));
+	}
+
+	@Override
+	public synchronized String getAvailableLU() {
+		Tote first = totes.peekFirst();
+		if (first == null || System.currentTimeMillis() - first.enteredAt() < travelTime) {
+			return null;
+		}
+		totes.pollFirst();
+		return first.barcode();
 	}
 
 }

@@ -111,11 +111,6 @@
 			<version>6.2.0</version>
 		</dependency>
 
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-simple</artifactId>
-		</dependency>
-
 	</dependencies>
 
 	<build>

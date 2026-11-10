@@ -2,7 +2,7 @@ package ro.demo.usersbackend.sim;
 
 public class InfoPoint extends Entity {
 
-	private String lu;
+	private volatile String lu;
 
 	public InfoPoint(String name) {
 		super(name);
@@ -14,10 +14,10 @@ public class InfoPoint extends Entity {
 
 			for (Entity e : getSource()) {
 				if (lu == null) {
-					String s = e.getAvailableLU();
+					String s = e.getAvailableLU(this);
 					if (s != null) {
 						lu = s;
-						announceLU();
+						announceLU(s);
 					}
 				}
 			}
@@ -31,12 +31,14 @@ public class InfoPoint extends Entity {
 		}
 	}
 
-	private void announceLU() {
-		System.out.println(lu + " arrived at " + name);
+	private void announceLU(String barcode) {
+		System.out.println(barcode + " arrived at " + name);
 	}
 
 	@Override
-	public String getAvailableLU() {
-		return lu;
+	public synchronized String getAvailableLU() {
+		String s = lu;
+		lu = null;
+		return s;
 	}
 }
