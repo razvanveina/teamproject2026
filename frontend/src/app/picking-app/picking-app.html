@@ -6,7 +6,7 @@
                 <tr>
                     <th>Article</th>
                     <th>Barcode</th>
-                    <th>Quantity</th>
+                    <th>Moved / Quantity</th>
                     <th>Status</th>
                 </tr>
             </thead>
@@ -15,7 +15,7 @@
                 <tr [class.completed]="line.status === 'FINISHED'">
                     <td>{{ line.description }}</td>
                     <td>{{ line.barcode }}</td>
-                    <td>{{ line.quantity }}</td>
+                    <td>{{ line.moved }} / {{ line.quantity }}</td>
                     <td>{{ line.status }}</td>
                 </tr>
                 }

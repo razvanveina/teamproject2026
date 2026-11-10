@@ -148,17 +148,20 @@ public class PickingService {
 		return true;
 	}
 
-	// ce primeste frontendul: comanda, cutia (daca exista deja) si liniile cu pasii ramasi, cate un pas de stock item rezervat
+	// ce primeste frontendul: comanda, cutia (daca exista deja) si liniile cu bucatile deja mutate in cutie
+	// si cu pasii ramasi, cate un pas de stock item rezervat
 	private PickingOrderResponse toResponse(RetrievalOrder order) {
 		String box = null;
 		List<PickingLineResponse> lines = new ArrayList<>();
 		for (RetrievalOrderLine line : order.getLines()) {
+			int moved = 0;
 			List<PickingStepResponse> steps = new ArrayList<>();
 			for (Reservation reservation : line.getReservations()) {
 				StockItem item = reservation.getStockItem();
 				LoadUnit loadUnit = item.getLoadUnit();
 				if (loadUnit.getType() == LoadUnitType.CARTON) {
 					box = loadUnit.getBarcode();
+					moved = moved + item.getTotalQuantity();
 				} else {
 					steps.add(new PickingStepResponse(loadUnit.getLocation().getName(),
 							item.getArticlePackagingUnitType().getBarcode(), item.getQuantity(),
@@ -166,7 +169,7 @@ public class PickingService {
 				}
 			}
 			lines.add(new PickingLineResponse(line.getArticle().getBarcode(), line.getArticle().getDescription(),
-					line.getQuantity(), line.getStatus().toString(), steps));
+					line.getQuantity(), moved, line.getStatus().toString(), steps));
 		}
 		return new PickingOrderResponse(order.getOrderId(), order.getDestination().getName(), box, lines);
 	}
