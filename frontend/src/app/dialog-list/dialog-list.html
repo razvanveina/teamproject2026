@@ -3,6 +3,9 @@
 
     @if (open()) {
     <ul class="dropdown-menu">
+        <li>
+            <a routerLink="/accounts" (click)="close()">Accounts</a>
+        </li>
         @for (dialog of dialogs(); track dialog.id) {
         <li>
             <a [routerLink]="['/dialogs', dialog.entity]" (click)="onSelect(dialog)">{{ dialog.title }}</a>

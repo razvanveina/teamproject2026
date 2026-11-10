@@ -3,6 +3,8 @@ import { Home } from './home/home';
 import { UserTable } from './user-table/user-table';
 import { UserDialog } from './user-dialog/user-dialog';
 import { Login } from './login/login';
+import { Accounts } from './accounts/accounts';
+import { AccountForm } from './account-form/account-form';
 import { authGuard } from './guards/auth-guard';
 import { DialogPage } from './dialog-page/dialog-page';
 import { ReceivingApp } from './receiving-app/receiving-app';
@@ -46,7 +48,9 @@ export const routes: Routes = [
             { path: 'inventory', component: InventoryApp, title: 'Inventory' },            
             { path: 'toteTransport', component: ToteTransport, title: 'Tote Transport' },
             { path: 'sim/management', component: SimManagement},
-            { path: 'sim/picking', component: SimPicking}
+            { path: 'sim/picking', component: SimPicking},
+            { path: 'accounts', component: Accounts, title: 'Accounts' },
+            { path: 'accounts/add', component: AccountForm, title: 'Accounts - Add' }
         ]
     },
     { path: '**', redirectTo: 'home' }
