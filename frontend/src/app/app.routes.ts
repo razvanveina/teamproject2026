@@ -21,6 +21,7 @@ import { RetrievalOrders } from './retrieval-orders/retrieval-orders';
 import { ToteTransport } from './tote-transport/tote-transport';
 import { SimManagement } from './simulator/sim-management/sim-management';
 import { SimPicking } from './simulator/sim-picking/sim-picking';
+import { SimVisualization } from './simulator/sim-visualization/sim-visualization';
 
 export const routes: Routes = [
     { path: 'login', component: Login, title: 'Login' },
@@ -47,8 +48,9 @@ export const routes: Routes = [
 			{ path: 'picking/orders', component: RetrievalOrders },
             { path: 'inventory', component: InventoryApp, title: 'Inventory' },            
             { path: 'toteTransport', component: ToteTransport, title: 'Tote Transport' },
-            { path: 'sim/management', component: SimManagement},
-            { path: 'sim/picking', component: SimPicking},
+            { path: 'sim/management', component: SimManagement, title: 'SIM-Management'},
+            { path: 'sim/picking', component: SimPicking, title: 'SIM-Picking'},
+            { path: 'sim/visualization', component: SimVisualization, title: 'SIM-Visialization'},
             { path: 'accounts', component: Accounts, title: 'Accounts' },
             { path: 'accounts/add', component: AccountForm, title: 'Accounts - Add' }
         ]

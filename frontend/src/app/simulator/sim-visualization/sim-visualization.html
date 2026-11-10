@@ -1,0 +1,17 @@
+<table>
+    <thead>
+        <tr>
+            <th>Point</th>
+            <th>Load Units</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @for (point of points(); track point.id) {
+        <tr>
+            <td>{{ point.name }}</td>
+            <td>{{point.loadUnits }}</td>
+        </tr>
+        }
+    </tbody>
+</table>

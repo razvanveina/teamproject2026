@@ -41,4 +41,17 @@ public class InfoPoint extends Entity {
 		lu = null;
 		return s;
 	}
+
+	@Override
+	public String toJSON(int id) {
+		StringBuilder builder = new StringBuilder();
+
+		builder.append("{" + super.toJSON(id) + ",");
+		builder.append("\"barcodes\":[");
+
+		builder.append("\"" + lu + "\"");
+
+		builder.append("]}");
+		return builder.toString();
+	}
 }

@@ -13,11 +13,12 @@ export class SimulatorDialog {
   private log = inject(LogService);
   private element = inject(ElementRef);
 
-  dialogs = signal<DialogEntry[]>([
-    {id: 1, routerLink:"/sim/management", title:"Management"},
-    {id: 2, routerLink:"/sim/picking", title:"Picking"}
-  ]);
   open = signal(false);
+  dialogs = signal<DialogEntry[]>([
+    { id: 1, routerLink: "/sim/management", title: "Management" },
+    { id: 2, routerLink: "/sim/picking", title: "Picking" },
+    { id: 3, routerLink: "/sim/visualization", title: "Visualization" }
+  ]);
 
   toggle(): void {
     this.open.set(!this.open());
@@ -39,7 +40,7 @@ export class SimulatorDialog {
   }
 }
 
-interface DialogEntry{
+interface DialogEntry {
   id: number;
   routerLink: string;
   title: string;

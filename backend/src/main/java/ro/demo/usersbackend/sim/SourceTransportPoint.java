@@ -64,4 +64,16 @@ public class SourceTransportPoint extends ServerPoint {
 		return s;
 	}
 
+	@Override
+	public String toJSON(int id) {
+		StringBuilder builder = new StringBuilder();
+
+		builder.append("{" + super.toJSON(id) + ",");
+		builder.append("\"barcodes\":[");
+
+		builder.append("\"" + super.barcode + "\"");
+
+		builder.append("]}");
+		return builder.toString();
+	}
 }
