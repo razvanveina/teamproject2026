@@ -73,7 +73,7 @@ public class PickingService {
 		return toResponse(findOrder(orderId));
 	}
 
-	// muncitorul a scanat cutia: o cream ca load unit CARTON in locatia PICK unde e marfa comenzii
+	// muncitorul a scanat cutia: o cream ca load unit CARTON in zona PICKING
 	public String createBox(String orderId, String barcode) {
 		if (loadUnitRepository.findByBarcode(barcode).isPresent()) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Box " + barcode + " already exists");
@@ -83,9 +83,9 @@ public class PickingService {
 		LoadUnit box = new LoadUnit();
 		box.setBarcode(barcode);
 		box.setType(LoadUnitType.CARTON);
-		box.setLocation(order.getLines().get(0).getReservations().get(0).getStockItem().getLoadUnit().getLocation());
-		loadUnitRepository.save(box);
-
+		Location picking = locationRepository.findByName("PICKING")
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Location PICKING is missing"));
+		box.setLocation(picking);loadUnitRepository.save(box);
 		order.setStatus(RetrievalOrderStatus.STARTED);
 		log.info("Picking: box {} created for order {}", barcode, orderId);
 		return "Box " + barcode + " ready";
