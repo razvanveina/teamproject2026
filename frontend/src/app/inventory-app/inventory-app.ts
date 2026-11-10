@@ -170,11 +170,7 @@ export class InventoryApp {
                                 )
                                 .subscribe({
                                     next: articlePackagingUnit =>
-                                        this.loadArticlePackagingUnit(
-                                            articlePackagingUnit.ARTICLE_ID,
-                                            packaging.ID,
-                                            articlePackagingUnit
-                                        ),
+                                        this.loadArticlePackagingUnitDetails(articlePackagingUnit),
                                     error: () => alert('Could not fetch article packaging unit')
                                 });
                         },
@@ -249,11 +245,7 @@ export class InventoryApp {
                         this.prepareUnknownArticle(barcode);
                         return;
                     }
-                    if (this.loadUnitId === null) {
-                        this.loadArticleAsUnit(article.ID);
-                    } else {
-                        this.loadArticlePackagingUnit(article.ID, null);
-                    }
+                    this.loadArticlePackagingUnit(article.ID);
                 },
                 error: () => alert('Could not fetch article')
             });
@@ -282,17 +274,9 @@ export class InventoryApp {
         });
     }
 
-    private loadArticlePackagingUnit(
-        articleId: number,
-        scannedPackagingId: number | null,
-        scannedPackaging?: ArticlePackagingUnitRecord
-    ): void {
+    private loadArticlePackagingUnit(articleId: number): void {
         if (this.loadUnitId === null) {
-            if (scannedPackaging) {
-                this.loadArticlePackagingUnitDetails(scannedPackaging);
-            } else {
-                this.loadArticleAsUnit(articleId);
-            }
+            this.loadArticleAsUnit(articleId);
             return;
         }
 
@@ -306,11 +290,7 @@ export class InventoryApp {
                         item => String(item.LOAD_UNIT_ID) === String(this.loadUnitId)
                     );
                     if (stockItems.length === 0) {
-                        if (scannedPackaging) {
-                            this.loadArticlePackagingUnitDetails(scannedPackaging);
-                        } else {
-                            alert('No stock items found for this load unit');
-                        }
+                        alert('No stock items found for this load unit');
                         return;
                     }
 
@@ -320,29 +300,18 @@ export class InventoryApp {
                                 .get<ArticlePackagingUnitRecord>(
                                     `${this.dataUrl}/ArticlePackagingUnitType/${item.ARTICLE_PACKAGING_UNIT_TYPE_ID}`
                                 )
-                                .pipe(map(packaging => ({ item, packaging })))
                         )
                     ).subscribe({
                         next: stockPackaging => {
                             const matchingArticle = stockPackaging.filter(
-                                entry => entry.packaging.ARTICLE_ID === articleId
+                                packaging => packaging.ARTICLE_ID === articleId
                             );
                             if (matchingArticle.length === 0) {
-                                if (scannedPackaging) {
-                                    this.loadArticlePackagingUnitDetails(scannedPackaging);
-                                } else {
-                                    alert('Article is not on this load unit');
-                                }
+                                alert('Article is not on this load unit');
                                 return;
                             }
 
-                            const selectedPackaging =
-                                matchingArticle.find(
-                                    entry =>
-                                        scannedPackagingId !== null &&
-                                        entry.item.ARTICLE_PACKAGING_UNIT_TYPE_ID === scannedPackagingId
-                                )?.packaging ?? matchingArticle[0].packaging;
-                            this.loadArticlePackagingUnitDetails(selectedPackaging);
+                            this.loadArticlePackagingUnitDetails(matchingArticle[0]);
                         },
                         error: () => alert('Could not inspect the load unit stock packaging')
                     });

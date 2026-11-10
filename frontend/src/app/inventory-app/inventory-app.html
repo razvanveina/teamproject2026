@@ -52,6 +52,12 @@
         } @else {
         <div class="instruction-container">
             <p>{{ isSaving ? 'Saving inventory check...' : isComparing ? 'Comparing quantities...' : currentInstruction }}</p>
+            @if (step === 3 && !isComparing && !isSaving) {
+            <p class="scan-selection">
+                {{ currentArticleDescription }} — {{ currentQuantityUnit }}
+                ({{ currentQuantityPerUnit }} pieces per package)
+            </p>
+            }
             @if (comparisonError) {
             <p class="comparison-error" role="alert">{{ comparisonError }}</p>
             }

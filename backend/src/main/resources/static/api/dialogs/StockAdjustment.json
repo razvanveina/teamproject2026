@@ -1,12 +1,12 @@
 {
-  "id": "id001",
+  "id": "sa001",
   "title": "Stock Adjustment",
   "entity": "StockAdjustment",
   "actions": [],
   "columns": [
     { "field": "ID", "label": "ID" },
-    { "field": "INVENTORY_CHECK_ID", "label": "Inventory check" },
-    { "field": "ARTICLE_BARCODE", "label": "Article barcode" },
+    { "field": "INVENTORY_CHECK_ID", "label": "Inventory check ID", "filterable" : true },
+    { "field": "ARTICLE_BARCODE", "label": "Article barcode", "filterable" : true },
     { "field": "ARTICLE_DESCRIPTION", "label": "Description" },
     { "field": "EXPECTED_QUANTITY", "label": "Expected" },
     { "field": "COUNTED_QUANTITY", "label": "Counted" },

@@ -1,0 +1,32 @@
+{
+  "id": "rol004",
+  "title": "Retrieval Order Lines",
+  "entity": "RetrievalOrderLine",
+  "actions": ["add", "edit"],
+  "columns": [
+    { "field": "ID", "label": "ID" },
+    {
+      "field": "ARTICLE_ID",
+      "label": "Article",
+      "addable": true,
+      "lookup": { "entity": "Article" },
+      "filterable": true
+    },
+    { "field": "QUANTITY", "label": "Quantity", "addable": true },
+    {
+      "field": "ORDER_ID",
+      "label": "Retrieval order",
+      "addable": true,
+      "lookup": { "entity": "RetrievalOrder" },
+      "filterable": true
+    },
+    {
+      "field": "STATUS",
+      "label": "Status",
+      "addable": true,
+      "editable": true,
+      "options": ["NEW", "ACTIVE", "STARTED", "FINISHED", "PICKED"],
+      "filterable": true
+    }
+  ]
+}
