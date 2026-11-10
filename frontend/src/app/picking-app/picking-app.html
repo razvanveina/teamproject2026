@@ -119,8 +119,8 @@
         </div>
         <select class="error-field" #reason (change)="errorReason.set(reason.value)">
             <option value="" disabled selected hidden>Select an error</option>
-            <option value="STOCK_DAMAGED">Stock damaged</option>
-            <option value="INSUFFICIENT_STOCK">Insufficient stock</option>
+            <option value="DAMAGED">Stock damaged</option>
+            <option value="MISSING">Insufficient stock</option>
         </select>
         <label class="error-label">How many {{ unitText() }} did you find? (expected {{ line().steps[0].quantity }})</label>
         <input class="error-field" #found type="number" min="0" (input)="foundQuantity.set(found.value)" />

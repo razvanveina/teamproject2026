@@ -1,5 +1,6 @@
 package ro.demo.usersbackend.service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,6 +14,8 @@ import org.springframework.web.server.ResponseStatusException;
 import ro.demo.usersbackend.dto.PickingLineResponse;
 import ro.demo.usersbackend.dto.PickingOrderResponse;
 import ro.demo.usersbackend.dto.PickingStepResponse;
+import ro.demo.usersbackend.entity.ArticlePackagingUnitType;
+import ro.demo.usersbackend.entity.InventoryCheck;
 import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.LoadUnitType;
 import ro.demo.usersbackend.entity.Location;
@@ -21,11 +24,15 @@ import ro.demo.usersbackend.entity.RetrievalOrder;
 import ro.demo.usersbackend.entity.RetrievalOrderLine;
 import ro.demo.usersbackend.entity.RetrievalOrderLineStatus;
 import ro.demo.usersbackend.entity.RetrievalOrderStatus;
+import ro.demo.usersbackend.entity.StockAdjustment;
 import ro.demo.usersbackend.entity.StockItem;
+import ro.demo.usersbackend.repository.InventoryCheckRepository;
 import ro.demo.usersbackend.repository.LoadUnitRepository;
 import ro.demo.usersbackend.repository.LocationRepository;
+import ro.demo.usersbackend.repository.ReservationRepository;
 import ro.demo.usersbackend.repository.RetrievalOrderLineRepository;
 import ro.demo.usersbackend.repository.RetrievalOrderRepository;
+import ro.demo.usersbackend.repository.StockAdjustmentRepository;
 import ro.demo.usersbackend.repository.StockItemRepository;
 
 // toata logica statiei de picking, pe entitati
@@ -40,23 +47,28 @@ public class PickingService {
 	private final LocationRepository locationRepository;
 	private final TransportOrderService transportOrderService;
 	private final StockItemRepository stockItemRepository;
+	private final ReservationRepository reservationRepository;
+	private final InventoryCheckRepository inventoryCheckRepository;
+	private final StockAdjustmentRepository stockAdjustmentRepository;
 
 	public PickingService(RetrievalOrderRepository retrievalOrderRepository,
 			RetrievalOrderLineRepository retrievalOrderLineRepository, LoadUnitRepository loadUnitRepository,
 			LocationRepository locationRepository, TransportOrderService transportOrderService,
-			StockItemRepository stockItemRepository) {
+			StockItemRepository stockItemRepository, ReservationRepository reservationRepository,
+			InventoryCheckRepository inventoryCheckRepository, StockAdjustmentRepository stockAdjustmentRepository) {
 		this.retrievalOrderRepository = retrievalOrderRepository;
 		this.retrievalOrderLineRepository = retrievalOrderLineRepository;
 		this.loadUnitRepository = loadUnitRepository;
 		this.locationRepository = locationRepository;
 		this.transportOrderService = transportOrderService;
 		this.stockItemRepository = stockItemRepository;
+		this.reservationRepository = reservationRepository;
+		this.inventoryCheckRepository = inventoryCheckRepository;
+		this.stockAdjustmentRepository = stockAdjustmentRepository;
 	}
 
-	// intai comenzile incepute (STARTED, cutia e deja scanata), apoi cele rezervate
-	// (ACTIVE), cea mai veche prima
-	// se ia prima care are toata marfa in zona de picking, sau null daca nu e
-	// niciuna
+	// intai comenzile incepute (STARTED, cutia e deja scanata), apoi cele rezervate (ACTIVE), cea mai veche prima
+	// se ia prima care are toata marfa in zona de picking, sau null daca nu e niciuna
 	// doar orderele manuale, cele automate merg pe conveyor
 	@Transactional(readOnly = true)
 	public PickingOrderResponse findNextOrder() {
@@ -97,25 +109,19 @@ public class PickingService {
 		LoadUnit box = new LoadUnit();
 		box.setBarcode(barcode);
 		box.setType(LoadUnitType.CARTON);
-		Location picking = locationRepository.findByName("PICKING").orElseThrow(
-				() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Location PICKING is missing"));
-		box.setLocation(picking);
-		loadUnitRepository.save(box);
+		Location picking = locationRepository.findByName("PICKING")
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Location PICKING is missing"));
+		box.setLocation(picking);loadUnitRepository.save(box);
 		order.setStatus(RetrievalOrderStatus.STARTED);
 		log.info("Picking: box {} created for order {}", barcode, orderId);
 		return "Box " + barcode + " ready";
 	}
 
-	// muncitorul a apasat confirm: stock itemul din pasul de pe ecran intra in
-	// cutie
+	// muncitorul a apasat confirm: stock itemul din pasul de pe ecran intra in cutie
 	// il luam dupa id, pentru ca acelasi barcode poate fi in mai multe locatii
-	// linia e gata doar cand toate stock itemurile ei sunt in cutie
-	// daca tote-ul din care am luat a ramas gol, il trimitem la EMPTY_TOTES ca sa
-	// se elibereze locatia de picking
 	public void moveItemToBox(Long stockItemId, String boxBarcode) {
 		LoadUnit box = findBox(boxBarcode);
-		StockItem item = stockItemRepository.findById(stockItemId).orElseThrow(
-				() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot find stock item " + stockItemId));
+		StockItem item = findStockItem(stockItemId);
 		LoadUnit tote = item.getLoadUnit();
 		item.setLoadUnit(box);
 
@@ -123,16 +129,69 @@ public class PickingService {
 		if (isLineInBox(line)) {
 			line.setStatus(RetrievalOrderLineStatus.PICKED);
 		}
-		log.info("Picking: stock item {} ({}) moved into box {}", stockItemId, line.getArticle().getDescription(),
-				boxBarcode);
+		log.info("Picking: stock item {} ({}) moved into box {}", stockItemId, line.getArticle().getDescription(), boxBarcode);
 
-		// daca nu exista locatia EMPTY_TOTES, tote-ul ramane pe locatie si pickingul
-		// merge mai departe
+		sendToteIfEmpty(tote);
+	}
+
+	// muncitorul a apasat Error: a gasit mai putin decat scrie pe ecran (marfa stricata sau lipsa)
+	// intai salvam diferenta ca stock adjustment, la fel ca la inventar, apoi stocul scade
+	// ce a gasit intra in cutie, restul dispare din baza de date
+	// linia ramane deschisa, partea lipsa trebuie rezervata din nou
+	public void reportError(Long stockItemId, String boxBarcode, String reason, int found) {
+		StockItem item = findStockItem(stockItemId);
+		if (found < 0 || found >= item.getQuantity()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Found quantity must be less than " + item.getQuantity());
+		}
+		LoadUnit tote = item.getLoadUnit();
+		saveStockAdjustment(item, found);
+		log.warn("Picking: error {} for stock item {} ({}) in {}: found {} of {}", reason, stockItemId,
+				item.getArticlePackagingUnitType().getArticle().getDescription(), tote.getBarcode(), found, item.getQuantity());
+
+		if (found > 0) {
+			item.setQuantity(found);
+			moveItemToBox(stockItemId, boxBarcode);
+		} else {
+			Reservation reservation = item.getReservation();
+			reservation.getRetrievalOrderLine().getReservations().remove(reservation);
+			item.setReservation(null);
+			reservationRepository.delete(reservation);
+			stockItemRepository.delete(item);
+			log.info("Picking: stock item {} deleted, nothing was found", stockItemId);
+			sendToteIfEmpty(tote);
+		}
+	}
+
+	// aceeasi inregistrare ca la inventar: o verificare pe tote si diferenta gasita
+	private void saveStockAdjustment(StockItem item, int found) {
+		InventoryCheck check = new InventoryCheck();
+		check.setLoadUnit(item.getLoadUnit());
+		check.setLoadUnitBarcode(item.getLoadUnit().getBarcode());
+		check.setLoadUnitType(item.getLoadUnit().getType().toString());
+		check.setScannedAt(LocalDateTime.now());
+		inventoryCheckRepository.save(check);
+
+		ArticlePackagingUnitType packaging = item.getArticlePackagingUnitType();
+		StockAdjustment adjustment = new StockAdjustment();
+		adjustment.setInventoryCheck(check);
+		adjustment.setArticle(packaging.getArticle());
+		adjustment.setArticleBarcode(packaging.getArticle().getBarcode());
+		adjustment.setArticleDescription(packaging.getArticle().getDescription());
+		adjustment.setArticlePackagingUnitType(packaging);
+		adjustment.setPackagingUnitType(packaging.getPackagingUnitType());
+		adjustment.setExpectedQuantity(item.getQuantity());
+		adjustment.setCountedQuantity(found);
+		adjustment.setDifferenceQuantity(found - item.getQuantity());
+		stockAdjustmentRepository.save(adjustment);
+	}
+
+	// daca tote-ul din care am luat a ramas gol, il trimitem la EMPTY_TOTES ca sa se elibereze locatia de picking
+	// daca nu exista locatia EMPTY_TOTES, tote-ul ramane pe locatie si pickingul merge mai departe
+	private void sendToteIfEmpty(LoadUnit tote) {
 		if (tote.getType() == LoadUnitType.TOTE && stockItemRepository.findByLoadUnitOrderByIdAsc(tote).isEmpty()) {
 			Location emptyTotes = locationRepository.findByName("EMPTY_TOTES").orElse(null);
 			if (emptyTotes == null) {
-				log.warn("Picking: tote {} is empty, but there is no EMPTY_TOTES location, the tote stays",
-						tote.getBarcode());
+				log.warn("Picking: tote {} is empty, but there is no EMPTY_TOTES location, the tote stays", tote.getBarcode());
 			} else {
 				transportOrderService.createTransportOrder(tote, emptyTotes);
 				log.info("Picking: tote {} is empty, transport order to EMPTY_TOTES", tote.getBarcode());
@@ -140,20 +199,22 @@ public class PickingService {
 		}
 	}
 
+	// linia e gata cand bucatile din cutie ajung la cantitatea comandata
+	// (dupa o eroare pot fi mai putine, atunci linia ramane deschisa)
 	private boolean isLineInBox(RetrievalOrderLine line) {
+		int pieces = 0;
 		for (Reservation reservation : line.getReservations()) {
-			if (reservation.getStockItem().getLoadUnit().getType() != LoadUnitType.CARTON) {
-				return false;
+			StockItem item = reservation.getStockItem();
+			if (item.getLoadUnit().getType() == LoadUnitType.CARTON) {
+				pieces = pieces + item.getTotalQuantity();
 			}
 		}
-		return true;
+		return pieces >= line.getQuantity();
 	}
 
-	// muncitorul a scanat iar cutia: daca toate liniile sunt gata, cutia merge la
-	// OUT si comanda devine PICKED
+	// muncitorul a scanat iar cutia: daca toate liniile sunt gata, cutia merge la OUT si comanda devine PICKED
 	public String closeBox(String orderId, String boxBarcode) {
-		long open = retrievalOrderLineRepository.countByOrderOrderIdAndStatusNot(orderId,
-				RetrievalOrderLineStatus.PICKED);
+		long open = retrievalOrderLineRepository.countByOrderOrderIdAndStatusNot(orderId, RetrievalOrderLineStatus.PICKED);
 		if (open > 0) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, open + " lines are not finished yet");
 		}
@@ -167,8 +228,7 @@ public class PickingService {
 		return "Box " + boxBarcode + " goes to OUT";
 	}
 
-	// toate liniile au destule bucati rezervate in locatii PICK (getTotalQuantity =
-	// baxuri x bucati pe bax)
+	// toate liniile au destule bucati rezervate in locatii PICK (getTotalQuantity = baxuri x bucati pe bax)
 	private boolean isInPicking(RetrievalOrder order) {
 		for (RetrievalOrderLine line : order.getLines()) {
 			int pieces = 0;
@@ -185,8 +245,7 @@ public class PickingService {
 		return true;
 	}
 
-	// ce primeste frontendul: comanda, cutia (daca exista deja) si liniile cu
-	// bucatile deja mutate in cutie
+	// ce primeste frontendul: comanda, cutia (daca exista deja) si liniile cu bucatile deja mutate in cutie
 	// si cu pasii ramasi, cate un pas de stock item rezervat
 	private PickingOrderResponse toResponse(RetrievalOrder order) {
 		String box = null;
@@ -210,6 +269,11 @@ public class PickingService {
 					line.getQuantity(), moved, line.getStatus().toString(), steps));
 		}
 		return new PickingOrderResponse(order.getOrderId(), order.getStatus().toString(), order.getDestination().getName(), box, lines);
+	}
+
+	private StockItem findStockItem(Long stockItemId) {
+		return stockItemRepository.findById(stockItemId)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot find stock item " + stockItemId));
 	}
 
 	private RetrievalOrder findOrder(String orderId) {
