@@ -1,0 +1,20 @@
+<div class="dropdown">
+    <button type="button" class="dropdown-button" (click)="toggle()">
+        Simulator
+        <span class="dropdown-arrow">
+            ▾
+        </span>
+    </button>
+
+    @if (open()) {
+    <ul class="dropdown-menu">
+        @for (dialog of dialogs(); track dialog.id) {
+        <li>
+            <a routerLink="{{dialog.routerLink}}" (click)="onSelect(dialog)">
+                {{ dialog.title }}
+            </a>
+        </li>
+        }
+    </ul>
+    }
+</div>

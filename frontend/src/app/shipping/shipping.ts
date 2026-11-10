@@ -38,19 +38,17 @@ export class Shipping {
         this.instructions = "Confirm the status of the package and press confirm"
         // TODO check location
 
-        console.log(this.loadUnit())
-
         if (!this.displayTable()) {
           this.displayTable.set(true)
         }
       },
       error: (err: HttpErrorResponse) => {
         this.error.set(true)
+        this.instructions = err.error.detail
         if (this.displayTable()){
           this.displayTable.set(false)
         }
         this.confirmDisabled.set(true)
-        this.instructions = err.error.detail
       }
     })
   }

@@ -1,0 +1,77 @@
+/* The box that holds the button and the list */
+.dropdown {
+    position: relative;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+/* The button looks like the other menu links (same as .main-menu a in app.css) */
+.dropdown-button {
+    min-height: 42px;
+    white-space: nowrap;
+    padding: 0 17px;
+    color: #d3deec;
+    font-family: "Segoe UI", "Inter", "Aptos", sans-serif;
+    font-size: 0.96rem;
+    font-weight: 650;
+    letter-spacing: 0.015em;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: color 160ms ease, background-color 160ms ease;
+}
+
+.dropdown-button:hover,
+.dropdown:focus-within .dropdown-button {
+    color: #fff;
+    background: rgb(255 255 255 / 9%);
+}
+
+.dropdown-button:focus-visible {
+    outline: 3px solid #72dfd1;
+    outline-offset: 2px;
+}
+
+/* The list that opens under the button: a white card, like the cards in the app */
+.dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    min-width: 200px;
+    margin: 0;
+    padding: 6px;
+    list-style: none;
+    background: #fff;
+    border: 1px solid #e1e8ef;
+    border-radius: 12px;
+    box-shadow: 0 12px 28px rgb(23 43 77 / 16%);
+    z-index: 10;
+}
+
+/* Every link in the list */
+.dropdown-menu a {
+    display: block;
+    padding: 10px 14px;
+    color: #354b66;
+    font-family: "Segoe UI", "Inter", "Aptos", sans-serif;
+    font-size: 0.94rem;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 8px;
+}
+
+.dropdown-menu a:hover {
+    color: #176f78;
+    background: #eff8f7;
+}
+
+.dropdown-menu a:focus-visible {
+    outline: 3px solid #72dfd1;
+    outline-offset: 2px;
+}
+
+.dropdown-arrow {
+    margin-left: 4px;
+    font-size: 0.8em;
+}

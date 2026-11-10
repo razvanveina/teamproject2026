@@ -23,6 +23,10 @@ import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.LoadUnitType;
 import ro.demo.usersbackend.entity.Location;
 import ro.demo.usersbackend.entity.PackagingUnitType;
+import ro.demo.usersbackend.entity.RetrievalOrder;
+import ro.demo.usersbackend.entity.RetrievalOrderLine;
+import ro.demo.usersbackend.entity.RetrievalOrderLineStatus;
+import ro.demo.usersbackend.entity.RetrievalOrderStatus;
 import ro.demo.usersbackend.entity.StockItem;
 import ro.demo.usersbackend.repository.ArticlePackagingUnitTypeRepository;
 import ro.demo.usersbackend.repository.DestinationToGateRepository;
@@ -59,6 +63,11 @@ public class LoadUnitService {
 		LoadUnit loadUnit = loadUnitRepository.findByBarcode(barcode)
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
 						"Cannot find load unit with the barcode: " + barcode));
+
+		if (loadUnit.getStockItems().get(0).getReservation().getRetrievalOrderLine().getOrder()
+				.getStatus() == RetrievalOrderStatus.FINISHED) {
+			new ResponseStatusException(HttpStatus.BAD_REQUEST, "The order for this load unit is already finished");
+		}
 
 		return new LoadUnitResponse(loadUnit.getBarcode(), loadUnit.getType().toString(),
 				loadUnit.getLocation().getName(), createItems(loadUnit.getStockItems()));
@@ -101,8 +110,29 @@ public class LoadUnitService {
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
 						"Cannot find load unit with the barcode: " + barcode));
 
-		Destination dest = loadUnit.getStockItems().get(0).getReservation().getRetrievalOrderLine().getOrder()
-				.getDestination();
+		RetrievalOrder order = loadUnit.getStockItems().get(0).getReservation().getRetrievalOrderLine().getOrder();
+
+		if (order.getStatus() != RetrievalOrderStatus.PICKED) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Order status must be PICKED");
+		} else {
+			int lineCount = 0;
+			for (RetrievalOrderLine line : order.getLines()) {
+				if (line.getStatus() == RetrievalOrderLineStatus.PICKED) {
+					line.setStatus(RetrievalOrderLineStatus.FINISHED);
+				} else {
+					lineCount++;
+				}
+			}
+
+			if (lineCount == 0) {
+				order.setStatus(RetrievalOrderStatus.FINISHED);
+			} else {
+				throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+						"All lines status must be PICKED. There are " + lineCount + " lines with a different status");
+			}
+		}
+
+		Destination dest = order.getDestination();
 
 		DestinationToGate destinationToGate = destinationToGateRepository.findByDestinationName(dest.getName())
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,

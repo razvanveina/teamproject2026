@@ -29,15 +29,15 @@ public class ShippingController {
 	public LoadUnitResponse findByOrderId(@PathVariable String barcode) {
 		log.info("Shipping: scaned load unit barcode {}", barcode);
 
-		try {
+		try { // TODO check if order FINISHED
 			LoadUnitResponse response = loadUnitService.findByBarcode(barcode);
 			System.out.println(response);
 			return response;
 		} catch (ResponseStatusException e) {
-			log.warn("Shipping: scan error: ", e.getMessage());
+			log.error("Shipping: scan error: ", e.getMessage());
 			throw e;
 		} catch (Exception e) {
-			log.error("Shipping: exception: " + e.getMessage());
+			log.error("Shipping: exception: {}", e.getMessage());
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
 		}
 	}
@@ -49,10 +49,10 @@ public class ShippingController {
 		try {
 			loadUnitService.finishLoadUnit(barcode);
 		} catch (ResponseStatusException e) {
-			log.warn("Shipping: scan error: ", e.getMessage());
+			log.error("Shipping: scan error: {}", e.getMessage());
 			throw e;
 		} catch (Exception e) {
-			log.error("Shipping: exception: " + e.getMessage());
+			log.error("Shipping: exception: {}", e.getMessage());
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
 		}
 	}

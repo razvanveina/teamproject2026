@@ -17,6 +17,8 @@ import { DecantingApp } from './decanting-app/decanting-app';
 import { InventoryApp } from './inventory-app/inventory-app';
 import { RetrievalOrders } from './retrieval-orders/retrieval-orders';
 import { ToteTransport } from './tote-transport/tote-transport';
+import { SimManagement } from './simulator/sim-management/sim-management';
+import { SimPicking } from './simulator/sim-picking/sim-picking';
 
 export const routes: Routes = [
     { path: 'login', component: Login, title: 'Login' },
@@ -42,7 +44,9 @@ export const routes: Routes = [
             { path: 'picking', component: PickingApp, title: 'Picking' },
 			{ path: 'picking/orders', component: RetrievalOrders },
             { path: 'inventory', component: InventoryApp, title: 'Inventory' },            
-            { path: 'toteTransport', component: ToteTransport, title: 'Tote Transport' }
+            { path: 'toteTransport', component: ToteTransport, title: 'Tote Transport' },
+            { path: 'sim/management', component: SimManagement},
+            { path: 'sim/picking', component: SimPicking}
         ]
     },
     { path: '**', redirectTo: 'home' }

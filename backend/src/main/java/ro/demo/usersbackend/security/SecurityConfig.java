@@ -35,8 +35,8 @@ public class SecurityConfig {
 	SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		return http.csrf(csrf -> csrf.disable()).cors(Customizer.withDefaults())
 				.sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-				.authorizeHttpRequests(
-						a -> a.requestMatchers("/error", "/auth/**").permitAll().anyRequest().authenticated())
+				.authorizeHttpRequests(a -> a.requestMatchers("/error", "/auth/**", "/api/events/subscribe").permitAll()
+						.anyRequest().authenticated())
 				.oauth2ResourceServer(o -> o.jwt(Customizer.withDefaults())).build();
 	}
 

@@ -1,0 +1,34 @@
+<div class="container">
+    <div class="top">
+        <div [hidden]="!displayTable()">
+            <div class="totes">
+                <div class="upper">
+                    <div class="orderDetails">
+                        <p>Order ID: <b>{{order().orderId}}</b></p>
+                    </div>
+                </div>
+                <div class="lower">
+                    <div class="orderDetails">
+                        <p>Order ID: <b>{{order().orderId}}</b></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div [class.left]="!error()" [class.error]="error()">
+        <div>
+            <p>{{instructions()}}</p>
+        </div>
+    </div>
+
+    <div class="right">
+        <input type="text" placeholder="Scan barcode" #barcodeInput (keyup.enter)="onScan(barcodeInput.value)">
+    </div>
+
+    <div class="bottom">
+        <button (click)=onCancel() class="cancel">Cancel</button>
+        <!-- <button (click)=onMakeLoadUnit() class="makeloadunit">Create LU</button> -->
+        <button (click)=onConfirm() class="confirm">Confirm</button>
+    </div>
+</div>

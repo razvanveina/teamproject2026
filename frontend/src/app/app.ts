@@ -4,11 +4,12 @@ import { AuthService } from './services/auth';
 import { DialogList } from './dialog-list/dialog-list';
 import { LogService } from './services/log';
 import { WorkerDialogList } from './worker-dialog-list/worker-dialog-list';
+import { SimulatorDialog } from './simulator/sim-dialog/sim-dialog';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, DialogList, WorkerDialogList],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, DialogList, WorkerDialogList, SimulatorDialog],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
