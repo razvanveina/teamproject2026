@@ -47,6 +47,7 @@
         <button (click)="onCancel()" class="cancel">Cancel</button>
         <button (click)="onOrders()" class="order">Retrieval Orders</button>
         <button (click)="openOrders()" class="order">Select order</button>
+        <button (click)="openError()" class="order" [disabled]="!waitingConfirm()">Error</button>
         @if (waitingConfirm()) {
         <button (click)="onConfirm(); scan.focus()" class="confirm">Confirm</button>
         }
@@ -99,6 +100,31 @@
             </tbody>
         </table>
         }
+    </div>
+</div>
+}
+
+@if (showError() && waitingConfirm()) {
+<div class="backdrop" (click)="closeError()">
+    <div class="popup error-popup" (click)="$event.stopPropagation()">
+        <div class="popup-header">
+            <h3>Error</h3>
+            <button (click)="closeError()" class="close">&times;</button>
+        </div>
+        <div class="error-item">
+            <span>Article: <b>{{ line().description }}</b></span>
+            <span>Location: <b>{{ line().steps[0].location }}</b></span>
+            <span>Barcode: <b>{{ line().steps[0].barcode }}</b></span>
+            <span>Expected: <b>{{ itemText(line()) }}</b></span>
+        </div>
+        <select class="error-field" #reason (change)="errorReason.set(reason.value)">
+            <option value="" disabled selected hidden>Select an error</option>
+            <option value="STOCK_DAMAGED">Stock damaged</option>
+            <option value="INSUFFICIENT_STOCK">Insufficient stock</option>
+        </select>
+        <label class="error-label">How many {{ unitText() }} did you find? (expected {{ line().steps[0].quantity }})</label>
+        <input class="error-field" #found type="number" min="0" (input)="foundQuantity.set(found.value)" />
+        <button (click)="reportError()" class="report" [disabled]="!canReportError()">Report error</button>
     </div>
 </div>
 }

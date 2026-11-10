@@ -22,6 +22,9 @@ export class PickingApp implements OnInit, OnDestroy {
   showOrders = signal(false);
   scannedBoxes: any = {};
   readyOrders = signal<any[]>([]);
+  showError = signal(false);
+  errorReason = signal('');
+  foundQuantity = signal('');
   private checker: any;
 
   ngOnInit(): void {
@@ -216,6 +219,39 @@ export class PickingApp implements OnInit, OnDestroy {
     this.log.action('PICKING choose order ' + order.orderId);
     this.closeOrders();
     this.showOrder(order);
+  }
+
+  unitText(): string {
+    if (this.line().steps[0].piecesPerBox === 1) {
+      return 'pieces';
+    }
+    return 'boxes of ' + this.line().steps[0].piecesPerBox;
+  }
+
+  openError(): void {
+    this.errorReason.set('');
+    this.foundQuantity.set('');
+    this.showError.set(true);
+  }
+
+  closeError(): void {
+    this.showError.set(false);
+  }
+
+  canReportError(): boolean {
+    if (this.errorReason() === '' || this.foundQuantity() === '') {
+      return false;
+    }
+    const found = Number(this.foundQuantity());
+    return Number.isInteger(found) && found >= 0 && found < this.line().steps[0].quantity;
+  }
+
+  reportError(): void {
+    const line = this.line();
+    const text = this.errorReason() + ' for ' + line.description + ': found ' + this.foundQuantity() + ' of ' + line.steps[0].quantity + ' ' + this.unitText();
+    this.log.action('PICKING error ' + text + ' (stock item ' + line.steps[0].id + ')');
+    this.closeError();
+    this.show('Error reported (' + text + '). It is only written in the log for now', 'warning');
   }
 
   onOrders(): void {
