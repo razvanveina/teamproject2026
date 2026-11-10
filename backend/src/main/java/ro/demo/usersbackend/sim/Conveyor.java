@@ -77,4 +77,18 @@ public class Conveyor extends Entity {
 		return first.barcode();
 	}
 
+	@Override
+	public String toJSON(int id) {
+		StringBuilder builder = new StringBuilder();
+
+		builder.append("{" + super.toJSON(id) + ",");
+		builder.append("\"barcodes\":[");
+
+		for (Tote tote : totes) {
+			builder.append("\"" + tote.barcode + "\", ");
+		}
+
+		builder.append("]}");
+		return builder.toString();
+	}
 }

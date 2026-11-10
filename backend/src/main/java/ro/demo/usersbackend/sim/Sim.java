@@ -1,6 +1,11 @@
 package ro.demo.usersbackend.sim;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Sim {
+	List<Entity> entities = new ArrayList<>();
+
 	public static void main(String[] args) throws InterruptedException {
 		Conveyor c1 = new Conveyor("C1", 30000, 30);
 		Conveyor c2 = new Conveyor("C2", 2000, 2);
@@ -51,5 +56,20 @@ public class Sim {
 		ip3.getSource().add(c9);
 
 		// tps1.get("123");
+	}
+
+	public String getJSON() {
+		StringBuilder builder = new StringBuilder();
+
+		builder.append("{[");
+
+		for (int i = 0; i < entities.size(); i++) {
+			Entity entity = entities.get(i);
+			builder.append(entity.toJSON(i));
+		}
+
+		builder.append("]}");
+
+		return builder.toString();
 	}
 }

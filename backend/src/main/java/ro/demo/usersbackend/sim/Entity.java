@@ -13,6 +13,10 @@ public abstract class Entity implements Runnable {
 		new Thread(this).start();
 	}
 
+	public String toJSON(int id) {
+		return "\"id\": " + id + ", \"name\":\"" + name + "\"";
+	}
+
 	public String getName() {
 		return name;
 	}
