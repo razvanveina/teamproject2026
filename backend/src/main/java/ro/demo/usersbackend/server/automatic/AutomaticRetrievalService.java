@@ -11,6 +11,9 @@ import org.hibernate.SessionFactory;
 import jakarta.jms.JMSConsumer;
 import jakarta.jms.JMSContext;
 import jakarta.jms.Queue;
+import jakarta.jms.JMSException;
+import jakarta.jms.Message;
+import jakarta.jms.TextMessage;
 import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.Location;
 import ro.demo.usersbackend.entity.StorageLocation;
@@ -48,16 +51,16 @@ public class AutomaticRetrievalService extends AbstractProcess {
 	}
 
 	// rasp ACK_GET cand load unitu a ajuns pe conveyor si to e gata
-	private void receiveReplies(SessionFactory sessionFactory, JMSContext context) {
+	private void receiveReplies(SessionFactory sessionFactory, JMSContext context) throws JMSException {
 		JMSConsumer consumer = context.createConsumer(context.createQueue(MfsMessages.RESPONSE_QUEUE));
- 
-		String text;
-		while ((text = consumer.receiveBodyNoWait(String.class)) != null) {
+		Message message;
+		while ((message = consumer.receiveNoWait()) != null) {
 			try {
+				String text = ((TextMessage) message).getText();
 				AckGet ack = MfsMessages.fromJson(text, AckGet.class);
 				sessionFactory.inTransaction(session -> finishTransportOrder(session, ack));
 			} catch (Exception e) {
-				log.error("Automatic retrieval: reply {} not processed {}", text, e.toString());
+				log.error("Automatic retrieval: reply not processed {}", e.toString());
 			}
 		}
 	}
@@ -68,7 +71,7 @@ public class AutomaticRetrievalService extends AbstractProcess {
 			log.warn("Automatic retrieval: ACK_GET for order {} ignored", ack.transportOrderId());
 			return;
 		}
- 
+
 		LoadUnit loadUnit = order.getLoadUnit();
 		session.createQuery("from StorageLocation l where l.loadUnit = :loadUnit", StorageLocation.class)
 				.setParameter("loadUnit", loadUnit).getResultList().forEach(l -> l.setLoadUnit(null));
@@ -84,7 +87,7 @@ public class AutomaticRetrievalService extends AbstractProcess {
 				"select t.id from TransportOrder t where t.status = :status and t.target.name = :target order by t.id",
 				Long.class).setParameter("status", TransportOrderStatus.NEW).setParameter("target", CONVEYOR)
 				.getResultList());
- 
+
 		Queue requests = context.createQueue(MfsMessages.REQUEST_QUEUE);
 		for (Long orderId : orderIds) {
 			try {
