@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+        "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+        "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+
+    <database-object>
+        <create>CREATE SEQUENCE LOADUNIT_SEQUENCE START WITH 1 INCREMENT BY 1</create>
+        <drop>DROP SEQUENCE LOADUNIT_SEQUENCE</drop>
+    </database-object>
+
+    <database-object>
+        <create>CREATE SEQUENCE TOTE_SEQUENCE START WITH 1 INCREMENT BY 1</create>
+        <drop>DROP SEQUENCE TOTE_SEQUENCE</drop>
+    </database-object>
+
+</hibernate-mapping>
