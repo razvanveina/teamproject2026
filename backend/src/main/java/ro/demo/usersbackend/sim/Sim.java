@@ -1,31 +1,76 @@
 package ro.demo.usersbackend.sim;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.apache.activemq.ActiveMQConnectionFactory;
-
-import jakarta.jms.JMSContext;
-import ro.demo.usersbackend.packagemessaging.Broker;
-import ro.demo.usersbackend.packagemessaging.MfsMessages;
-import ro.demo.usersbackend.packagemessaging.MfsMessages.AckGet;
+import java.util.Scanner;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
 
 public class Sim {
+
+	private static final Path SNAPSHOT = Path.of("sim-snapshot.bin");
+	private static final Path SNAPSHOT_TMP = Path.of("sim-snapshot.bin.tmp");
 
 	private final List<Entity> entities = new ArrayList<>();
 
 	public static void main(String[] args) throws IOException {
 		Sim sim = new Sim();
 		sim.run();
-		sim.announceStart();
+		Runtime.getRuntime().addShutdownHook(new Thread(sim::save));
+		Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(sim::save, 5, 5, TimeUnit.SECONDS);
+		new Thread(() -> {
+			Scanner in = new Scanner(System.in);
+			while (in.hasNextLine()) {
+				if (in.nextLine().trim().equalsIgnoreCase("stop")) {
+					System.exit(0);
+				}
+			}
+		}).start();
 		new CustomHttpServer(sim);
 	}
 
-	private void announceStart() {
-		try (JMSContext context = new ActiveMQConnectionFactory(Broker.URL).createContext()) {
-			context.createProducer().send(context.createQueue(MfsMessages.RESPONSE_QUEUE),
-					MfsMessages.toJson(new AckGet("SIM_STARTED", null, null)));
+	private synchronized void save() {
+		Lock lock = Entity.LOCK.writeLock();
+		try {
+			if (!lock.tryLock(2, TimeUnit.SECONDS)) {
+				return;
+			}
+			List<EntityState> states;
+			try {
+				states = entities.stream().map(Entity::snapshot).filter(s -> !s.loadUnits().isEmpty()).toList();
+			} finally {
+				lock.unlock();
+			}
+			try (ObjectOutputStream out = new ObjectOutputStream(Files.newOutputStream(SNAPSHOT_TMP))) {
+				out.writeObject(states);
+			}
+			Files.move(SNAPSHOT_TMP, SNAPSHOT, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+		} catch (Exception e) {
+			System.out.println("snapshot not saved " + e);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private void restore() {
+		if (!Files.exists(SNAPSHOT)) {
+			return;
+		}
+		try (ObjectInputStream in = new ObjectInputStream(Files.newInputStream(SNAPSHOT))) {
+			List<EntityState> states = (List<EntityState>) in.readObject();
+			for (EntityState state : states) {
+				entities.stream().filter(e -> e.getName().equals(state.name())).forEach(e -> e.restore(state));
+			}
+			System.out.println(
+					"snapshot restored from " + SNAPSHOT.toAbsolutePath() + ", " + states.size() + " entities");
+		} catch (Exception e) {
+			System.out.println("snapshot not restored " + e);
 		}
 	}
 
@@ -81,6 +126,7 @@ public class Sim {
 		// DP1: 0 = C7 spre PTTS1 (default), 1 = C2 spre IP2 (bucla)
 		dp1.getTarget().add(c7);
 		dp1.getTarget().add(c2);
+
 		c2.getSource().add(dp1);
 		c7.getSource().add(dp1);
 
@@ -93,6 +139,7 @@ public class Sim {
 		// DP2: 0 = C5 spre TPT1 (default), 1 = C4 spre IP1 (bucla)
 		dp2.getTarget().add(c5);
 		dp2.getTarget().add(c4);
+
 		c4.getSource().add(dp2);
 		c5.getSource().add(dp2);
 
@@ -112,6 +159,7 @@ public class Sim {
 		pttt1.getSource().add(c12);
 		c9.getSource().add(pttt1);
 
+		restore();
 		entities.forEach(Entity::start);
 	}
 

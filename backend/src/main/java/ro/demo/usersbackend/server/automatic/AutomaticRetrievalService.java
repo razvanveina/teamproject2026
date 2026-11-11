@@ -12,9 +12,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import jakarta.jms.JMSConsumer;
 import jakarta.jms.JMSContext;
-import jakarta.jms.Queue;
 import jakarta.jms.JMSException;
 import jakarta.jms.Message;
+import jakarta.jms.Queue;
 import jakarta.jms.TextMessage;
 import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.LoadUnitType;
@@ -55,7 +55,8 @@ public class AutomaticRetrievalService extends AbstractProcess {
 		}
 	}
 
-	// ACK_GET inchide to-ul, restul telegramelor (ARRIVED) merg la handlerul punctului
+	// ACK_GET inchide to-ul, restul telegramelor (ARRIVED) merg la handlerul
+	// punctului
 	private void receiveReplies(SessionFactory sessionFactory, JMSContext context) throws JMSException {
 		JMSConsumer consumer = context.createConsumer(context.createQueue(MfsMessages.RESPONSE_QUEUE));
 		Message message;

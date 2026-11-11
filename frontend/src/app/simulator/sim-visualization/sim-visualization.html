@@ -1,17 +1,18 @@
-<table>
-    <thead>
-        <tr>
-            <th>Point</th>
-            <th>Load Units</th>
-        </tr>
-    </thead>
+@if (error()) {
 
-    <tbody>
-        @for (point of points(); track point.id) {
-        <tr>
-            <td>{{ point.name }}</td>
-            <td>{{point.loadUnits }}</td>
-        </tr>
-        }
-    </tbody>
-</table>
+<p>{{ errorMessage }}</p>
+
+} @else {
+
+<div class="points-grid">
+    @for (point of points(); track point.id) {
+
+    <div class="point-card">
+        <p>{{ point.name }}</p>
+        <p>{{point.loadUnits }}</p>
+    </div>
+
+    }
+</div>
+
+}
