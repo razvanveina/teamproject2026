@@ -53,7 +53,7 @@ export class DialogList implements OnInit {
           // 3. Add the dialog to the list shown on the page
           const list = this.dialogs().slice(); // a copy of the current list
           list.push(dialog);
-          this.dialogs.set(list);
+          this.dialogs.set(list.sort((a, b) => a.title.localeCompare(b.title)));
         });
       }
     });

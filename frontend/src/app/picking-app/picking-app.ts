@@ -106,14 +106,23 @@ export class PickingApp implements OnInit, OnDestroy {
 
   showNextLine(): void {
     this.waitingConfirm.set(false);
+    let missing = false;
     for (const line of this.order().lines) {
       if (line.status !== 'PICKED') {
-        this.line.set(line);
-        this.show(this.takeText(line), 'ok');
-        return;
+        if (line.steps.length === 0) {
+          missing = true;
+        } else {
+          this.line.set(line);
+          this.show(this.takeText(line), 'ok');
+          return;
+        }
       }
     }
     this.line.set(null);
+    if (missing) {
+      this.show('Order ' + this.order().orderId + ' waits for missing stock. Choose another order with Select order', 'warning');
+      return;
+    }
     this.show('All articles are in box ' + this.box() + '. Scan the box barcode to close it', 'ok');
   }
 
@@ -228,6 +237,13 @@ export class PickingApp implements OnInit, OnDestroy {
     return 'boxes of ' + this.line().steps[0].piecesPerBox;
   }
 
+  errorQuestion(): string {
+    if (this.errorReason() === 'DAMAGED') {
+      return 'How many ' + this.unitText() + ' are not damaged?';
+    }
+    return 'How many ' + this.unitText() + ' did you find?';
+  }
+
   openError(): void {
     this.errorReason.set('');
     this.foundQuantity.set('');
@@ -251,7 +267,14 @@ export class PickingApp implements OnInit, OnDestroy {
     const text = this.errorReason() + ' for ' + line.description + ': found ' + this.foundQuantity() + ' of ' + line.steps[0].quantity + ' ' + this.unitText();
     this.log.action('PICKING error ' + text + ' (stock item ' + line.steps[0].id + ')');
     this.closeError();
-    this.show('Error reported (' + text + '). It is only written in the log for now', 'warning');
+    this.api.reportError(this.order().orderId, line.steps[0].id, this.box(), this.errorReason(), Number(this.foundQuantity())).subscribe({
+      next: () => {
+        this.reloadOrder();
+      },
+      error: () => {
+        this.show('Cannot save the error for ' + line.description + '. Press Error again', 'error');
+      },
+    });
   }
 
   onOrders(): void {

@@ -41,6 +41,7 @@ public class StationPoint extends ServerPoint {
 			if (s != null) {
 				barcode = s;
 				released = false;
+				System.out.println(s + " arrived at " + name);
 				announceLU(s);
 				return;
 			}

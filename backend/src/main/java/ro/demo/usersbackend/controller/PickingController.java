@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import ro.demo.usersbackend.dto.PickingErrorRequest;
 import ro.demo.usersbackend.dto.PickingOrderResponse;
 import ro.demo.usersbackend.dto.PickingRequest;
 import ro.demo.usersbackend.service.PickingService;
@@ -62,6 +63,12 @@ public class PickingController {
 	public void moveItemToBox(@RequestBody PickingRequest request) {
 		log.info("Picking: moved stock item {} to box {} for order {}", request.stockItemId(), request.box(), request.orderId());
 		pickingService.moveItemToBox(request.stockItemId(), request.box());
+	}
+
+	@PostMapping("/error")
+	public void reportError(@RequestBody PickingErrorRequest request) {
+		log.info("Picking: error {} for stock item {} in order {}, found {}", request.reason(), request.stockItemId(), request.orderId(), request.found());
+		pickingService.reportError(request.stockItemId(), request.box(), request.reason(), request.found());
 	}
 
 	@PostMapping("/close-box")

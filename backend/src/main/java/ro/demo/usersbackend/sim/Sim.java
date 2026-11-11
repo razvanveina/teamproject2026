@@ -120,6 +120,6 @@ public class Sim {
 		for (int i = 0; i < entities.size(); i++) {
 			items.add(entities.get(i).toJSON(i));
 		}
-		return "[" + String.join(",", items) + "]";
+		return "[\n" + String.join(",\n", items) + "\n]";
 	}
 }

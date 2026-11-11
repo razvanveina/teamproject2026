@@ -68,22 +68,24 @@ public class ReservationService extends AbstractProcess {
 		for (RetrievalOrderLine line : order.getLines()) {
 			int available = findAvailableStock(session, line.getArticle()).stream()
 					.mapToInt(StockItem::getTotalQuantity).sum();
-			if (available < line.getQuantity()) {
+			if (available < missingPieces(line)) {
 				Log.warn("order {} skipped, article {} has {} available, needs {}", order.getOrderId(),
-						line.getArticle().getBarcode(), available, line.getQuantity());
+						line.getArticle().getBarcode(), available, missingPieces(line));
 				return false;
 			}
 		}
 
 		for (RetrievalOrderLine line : order.getLines()) {
-			reserveLine(session, line, items);
+			if (missingPieces(line) > 0) {
+				reserveLine(session, line, items);
+			}
 		}
 		order.setStatus(RetrievalOrderStatus.ACTIVE);
 		return true;
 	}
 
 	private static void reserveLine(Session session, RetrievalOrderLine line, List<String> items) {
-		int remaining = line.getQuantity();
+		int remaining = missingPieces(line);
 
 		for (StockItem item : findReservableStock(session, line)) {
 			if (remaining == 0) {
@@ -114,6 +116,14 @@ public class ReservationService extends AbstractProcess {
 			throw new IllegalStateException("article " + line.getArticle().getBarcode() + " is short by " + remaining);
 		}
 		line.setStatus(RetrievalOrderLineStatus.ACTIVE);
+	}
+
+	private static int missingPieces(RetrievalOrderLine line) {
+		int reserved = 0;
+		for (Reservation reservation : line.getReservations()) {
+			reserved = reserved + reservation.getStockItem().getTotalQuantity();
+		}
+		return line.getQuantity() - reserved;
 	}
 
 	private static void reservePieces(Session session, StockItem item, int pieces, RetrievalOrderLine line,
@@ -168,7 +178,7 @@ public class ReservationService extends AbstractProcess {
 
 	private static List<StockItem> findReservableStock(Session session, RetrievalOrderLine line) {
 		List<StockItem> stock = findAvailableStock(session, line.getArticle());
-		if (reservablePieces(stock, line.getQuantity()) == line.getQuantity()) {
+		if (reservablePieces(stock, missingPieces(line)) == missingPieces(line)) {
 			return stock;
 		}
 		return stock.stream().sorted(Comparator.comparingInt(ReservationService::packageSize).reversed()).toList();

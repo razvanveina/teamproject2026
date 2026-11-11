@@ -26,6 +26,8 @@ export class DialogPage implements OnInit {
   page = signal(0); //pagina current page number, starting from 0
   pages = signal(1); //total number of pages, starting from 1
 
+  sortColumn = '';
+  sortDirection: 'asc' | 'desc' = 'asc';
 
   // The error message shown above the table. Empty when everything is fine.
   error = signal('');
@@ -167,5 +169,27 @@ export class DialogPage implements OnInit {
       dateStyle: 'medium',
       timeStyle: 'short',
     }).format(date);
+  }
+
+  sort(column: string) {
+    if (this.sortColumn === column) {
+    // same column -> flip direction
+    this.sortDirection =
+      this.sortDirection === 'asc' ? 'desc' : 'asc';
+  } else {
+    // new column -> start with ascending
+    this.sortColumn = column;
+    this.sortDirection = 'asc';
+  }
+
+  this.rows.update(rows =>
+    [...rows].sort((a, b) => {
+      const result = String(a[column]).localeCompare(String(b[column]));
+
+      return this.sortDirection === 'asc'
+        ? result
+        : -result;
+    })
+  );
   }
 }
