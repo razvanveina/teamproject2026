@@ -41,7 +41,11 @@
         @if (column.field === 'ID' && config.actions.includes('edit')) {
         <td><a class="id-link" title="Edit" [routerLink]="['/dialogs', config.entity, 'edit', row['ID']]">{{ row['ID'] }} ✎</a></td>
         } @else {
-        <td>{{ row[column.field] }}</td>
+        <td
+            [class.difference-negative]="config.entity === 'StockAdjustment' && column.field === 'DIFFERENCE_QUANTITY' && row[column.field] < 0"
+            [class.difference-positive]="config.entity === 'StockAdjustment' && column.field === 'DIFFERENCE_QUANTITY' && row[column.field] > 0">
+            {{ row[column.field] }}
+        </td>
         }
         }
         @if (config.actions.includes('delete')) {

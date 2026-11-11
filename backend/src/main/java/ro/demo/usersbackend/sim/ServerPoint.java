@@ -1,5 +1,7 @@
 package ro.demo.usersbackend.sim;
 
+import java.util.List;
+
 import org.apache.activemq.ActiveMQConnectionFactory;
 
 import jakarta.jms.JMSContext;
@@ -9,9 +11,6 @@ import ro.demo.usersbackend.packagemessaging.MfsMessages;
 import ro.demo.usersbackend.packagemessaging.MfsMessages.Arrived;
 
 public abstract class ServerPoint extends Entity {
-
-	public static final String IN_QUEUE = MfsMessages.REQUEST_QUEUE;
-	public static final String OUT_QUEUE = MfsMessages.RESPONSE_QUEUE;
 
 	protected String barcode;
 	private Long transportOrderId;
@@ -36,7 +35,7 @@ public abstract class ServerPoint extends Entity {
 	public void run() {
 		try (JMSContext context = new ActiveMQConnectionFactory(Broker.URL).createContext()) {
 			this.context = context;
-			outQueue = context.createQueue(OUT_QUEUE);
+			outQueue = context.createQueue(MfsMessages.RESPONSE_QUEUE);
 			connected(context);
 
 			while (true) {
@@ -45,6 +44,11 @@ public abstract class ServerPoint extends Entity {
 		} catch (Exception e) {
 			System.out.println("Exception " + e);
 		}
+	}
+
+	@Override
+	public synchronized List<String> getLoadUnits() {
+		return barcode == null ? List.of() : List.of(barcode);
 	}
 
 	public Long getTransportOrderId() {

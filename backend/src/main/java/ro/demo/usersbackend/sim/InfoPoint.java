@@ -2,30 +2,39 @@ package ro.demo.usersbackend.sim;
 
 public class InfoPoint extends ServerPoint {
 
-	private volatile String lu;
-
 	public InfoPoint(String name) {
 		super(name);
 	}
 
 	@Override
-	protected void step() throws Exception {
+	protected void step() throws InterruptedException {
+		if (isEmpty()) {
+			pull();
+		}
+		Thread.sleep(100);
+	}
+
+	private void pull() {
 		for (Entity e : getSource()) {
-			if (lu == null) {
-				String s = e.getAvailableLU(this);
-				if (s != null) {
-					lu = s;
-					announceLU(s);
+			String s = e.getAvailableLU(this);
+			if (s != null) {
+				synchronized (this) {
+					barcode = s;
 				}
+				announceLU(s);
+				return;
 			}
 		}
-		Thread.sleep(1000);
+	}
+
+	private synchronized boolean isEmpty() {
+		return barcode == null;
 	}
 
 	@Override
 	public synchronized String getAvailableLU() {
-		String s = lu;
-		lu = null;
+		String s = barcode;
+		barcode = null;
 		return s;
 	}
 }

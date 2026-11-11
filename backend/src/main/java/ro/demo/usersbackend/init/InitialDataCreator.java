@@ -1,5 +1,7 @@
 package ro.demo.usersbackend.init;
 
+import java.util.List;
+
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +26,7 @@ public class InitialDataCreator implements CommandLineRunner {
 		createTransitLocations();
 		createPickingLocations();
 		createDestinations();
+		createSimulatorData();
 //		createArticles();
 //		createPackagingUnitTypes();
 //		createStock();
@@ -57,6 +60,7 @@ public class InitialDataCreator implements CommandLineRunner {
 		createTransitLocation("OUT");
 		createTransitLocation("DECANTING");
 		createTransitLocation("PICKING");
+		createTransitLocation("CONVEYOR");
 
 		for (int gate = 1; gate <= 10; gate++) {
 			createTransitLocation(String.format("GATE%02d", gate));
@@ -74,6 +78,12 @@ public class InitialDataCreator implements CommandLineRunner {
 				StorageLocation location = new StorageLocation(x, y);
 				entityManager.persist(location);
 			}
+		}
+	}
+
+	private void createSimulatorData() {
+		for (String name : List.of("IP1", "IP2", "IP3", "E", "DP1", "DP2", "DP3", "TPS1", "TPT1", "PTTS1", "PTTT1")) {
+			createTransitLocation(name);
 		}
 	}
 

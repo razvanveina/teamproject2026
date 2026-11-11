@@ -15,7 +15,6 @@ public class TargetTransportPoint extends ServerPoint {
 		}
 
 		if (barcode != null) {
-			//put("Ready" + barcode);
 			announceLU(barcode);
 			barcode = null;
 		}
@@ -27,5 +26,4 @@ public class TargetTransportPoint extends ServerPoint {
 	public String getAvailableLU() {
 		return null;
 	}
-
 }

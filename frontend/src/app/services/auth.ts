@@ -14,6 +14,13 @@ export class AuthService {
   private timer?: ReturnType<typeof setTimeout>;
 
   readonly isLoggedIn = computed(() => this.tokenSignal() !== null);
+  private readPayload(token: string): any {
+    return JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+  }
+  readonly username = computed(() => {
+    const token = this.tokenSignal();
+    return token ? (this.readPayload(token).sub ?? '') : '';
+  });
   readonly expired = signal(false);
 
   constructor() {
@@ -49,7 +56,7 @@ export class AuthService {
       return;
     }
 
-    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    const payload = this.readPayload(token);
     const delay = payload.exp * 1000 - Date.now();
 
     this.timer = setTimeout(() => {

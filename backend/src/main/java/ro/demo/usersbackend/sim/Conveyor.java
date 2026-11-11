@@ -2,6 +2,7 @@ package ro.demo.usersbackend.sim;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.List;
 
 public class Conveyor extends Entity {
 
@@ -20,6 +21,14 @@ public class Conveyor extends Entity {
 		this.capacity = capacity;
 		this.totes = new ArrayDeque<>();
 		ready = true;
+	}
+
+	public long getTravelTime() {
+		return travelTime;
+	}
+
+	public int getCapacity() {
+		return capacity;
 	}
 
 	public synchronized void createLU(String barcode) {
@@ -77,4 +86,8 @@ public class Conveyor extends Entity {
 		return first.barcode();
 	}
 
+	@Override
+	public synchronized List<String> getLoadUnits() {
+		return totes.stream().map(Tote::barcode).toList();
+	}
 }

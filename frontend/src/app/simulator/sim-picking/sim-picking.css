@@ -22,7 +22,11 @@
 .lower {
     flex: 1;
     margin: 5px;
+    padding: 2px;
     border: 10px solid #203b5e;
+    background-color: lightgray;
+    border-radius: 16px;
+    box-shadow: 0 4px 18px rgb(20 37 63 / 10%);
 }
 
 .container {
@@ -45,7 +49,6 @@
     /* start a grid line 1 end at 3 -> 2 columns better explanation at the end*/
 }
 
-.top,
 .right,
 .left,
 .bottom {
@@ -58,7 +61,7 @@
 .top {
     display: flex;
     flex-direction: column;
-    background: lightgrey;
+    background: white;
     padding: 20px;
 }
 

@@ -21,8 +21,7 @@ public class SourceTransportPoint extends ServerPoint {
 
 	@Override
 	protected void connected(JMSContext context) {
-		consumer = context.createConsumer(context.createQueue(IN_QUEUE));
-		put("Ready");
+		consumer = context.createConsumer(context.createQueue(MfsMessages.REQUEST_QUEUE));
 	}
 
 	public synchronized void get(String barcode) {
@@ -41,7 +40,6 @@ public class SourceTransportPoint extends ServerPoint {
 	protected void step() throws JMSException {
 		Message message = consumer.receive(100);
 		if (message instanceof TextMessage text) {
-			put("Ready");
 			Get request = MfsMessages.fromJson(text.getText(), Get.class);
 			get(request.loadUnit(), request.transportOrderId());
 		}
@@ -64,5 +62,4 @@ public class SourceTransportPoint extends ServerPoint {
 		barcode = null;
 		return s;
 	}
-
 }

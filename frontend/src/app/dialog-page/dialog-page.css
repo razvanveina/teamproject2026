@@ -52,6 +52,16 @@ tr:last-child td {
     border-bottom: 0;
 }
 
+.difference-negative {
+    color: #b42318;
+    font-weight: 700;
+}
+
+.difference-positive {
+    color: #16803c;
+    font-weight: 700;
+}
+
 /* The error from the server, shown above the table */
 .error {
     margin: 0 0 14px;
