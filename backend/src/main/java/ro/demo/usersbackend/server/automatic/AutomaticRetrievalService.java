@@ -17,6 +17,7 @@ import jakarta.jms.JMSException;
 import jakarta.jms.Message;
 import jakarta.jms.TextMessage;
 import ro.demo.usersbackend.entity.LoadUnit;
+import ro.demo.usersbackend.entity.LoadUnitType;
 import ro.demo.usersbackend.entity.Location;
 import ro.demo.usersbackend.entity.StorageLocation;
 import ro.demo.usersbackend.entity.TransportOrder;
@@ -32,6 +33,7 @@ import ro.demo.usersbackend.server.session.ServerSessionFactory;
 public class AutomaticRetrievalService extends AbstractProcess {
 	public static final Logger log = LogManager.getLogger("automaticRetrieval");
 	private static final String CONVEYOR = "CONVEYOR";
+	private static final String DECANTING = "DECANTING";
 	private static final List<TransportOrderStatus> OPEN = List.of(TransportOrderStatus.NEW,
 			TransportOrderStatus.ACTIVE);
 
@@ -113,15 +115,16 @@ public class AutomaticRetrievalService extends AbstractProcess {
 		}
 	}
 
-	// load units din hbw rezervate pentru ro automatic fara to deschis
+	// totes din DECANTING cu stoc rezervat pentru ro automat, fara to deschis
 	private void createTransportOrders(SessionFactory sessionFactory) {
 		List<Long> loadUnitIds = sessionFactory.fromTransaction(session -> session.createQuery("""
-				select distinct u.id from StorageLocation l
-				join l.loadUnit u
+				select distinct u.id from LoadUnit u
 				join u.stockItems s
-				where l.aisle > 0 and s.reservation.retrievalOrderLine.order.automatic = true
+				where u.type = :tote and u.location.name = :decanting
+				and s.reservation.retrievalOrderLine.order.automatic = true
 				and not exists (select t.id from TransportOrder t where t.loadUnit = u and t.status in :open)
-				""", Long.class).setParameterList("open", OPEN).getResultList());
+				""", Long.class).setParameter("tote", LoadUnitType.TOTE).setParameter("decanting", DECANTING)
+				.setParameterList("open", OPEN).getResultList());
 
 		for (Long loadUnitId : loadUnitIds) {
 			try {

@@ -14,8 +14,7 @@ import ro.demo.usersbackend.entity.TransportOrderStatus;
 import ro.demo.usersbackend.server.process.AbstractProcess;
 import ro.demo.usersbackend.server.session.ServerSessionFactory;
 
-// muta load unit-urile din HBW care au stoc rezervat la DECANTING
-// cele rezervate pentru retrieval order-uri automate le preia AutomaticRetrievalService
+// muta load unit-urile din HBW care au stoc rezervat la DECANTING (si pentru ro automate)
 public class ReplenishmentProcess extends AbstractProcess {
 	private static final Logger Log = LogManager.getLogger("replenishment");
 	private static final String DECANTING = "DECANTING";
@@ -35,15 +34,13 @@ public class ReplenishmentProcess extends AbstractProcess {
 		try {
 			SessionFactory sessionFactory = ServerSessionFactory.getInstance();
 
-			// load unit-uri din HBW (culoar > 0) cu stoc rezervat pentru un order neautomat
-			// si fara transport order deschis
+			// load unit-uri din HBW (culoar > 0) cu stoc rezervat si fara transport order
+			// deschis
 			List<Long> loadUnitIds = sessionFactory.fromTransaction(session -> session.createQuery("""
 					select distinct u.id from StorageLocation l
 					join l.loadUnit u
 					join u.stockItems s
 					where l.aisle > 0 and s.reservation is not null
-					and not exists (select rl.id from RetrievalOrderLine rl
-						where rl = s.reservation.retrievalOrderLine and rl.order.automatic = true)
 					and not exists (select t.id from TransportOrder t where t.loadUnit = u and t.status in :open)
 					""", Long.class).setParameterList("open", OPEN).getResultList());
 
