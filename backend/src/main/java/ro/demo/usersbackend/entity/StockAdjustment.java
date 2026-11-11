@@ -22,6 +22,10 @@ public class StockAdjustment {
 	private InventoryCheck inventoryCheck;
 
 	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "inventory_order_line_id")
+	private InventoryOrderLine inventoryOrderLine;
+
+	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "article_id")
 	private Article article;
 
@@ -58,6 +62,14 @@ public class StockAdjustment {
 
 	public void setInventoryCheck(InventoryCheck inventoryCheck) {
 		this.inventoryCheck = inventoryCheck;
+	}
+
+	public InventoryOrderLine getInventoryOrderLine() {
+		return inventoryOrderLine;
+	}
+
+	public void setInventoryOrderLine(InventoryOrderLine inventoryOrderLine) {
+		this.inventoryOrderLine = inventoryOrderLine;
 	}
 
 	public Article getArticle() {

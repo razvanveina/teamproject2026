@@ -45,6 +45,10 @@ public class LoadUnit {
 		return barcode;
 	}
 
+	public Long getId() {
+		return id;
+	}
+
 	public void setBarcode(String barcode) {
 		this.barcode = barcode;
 	}

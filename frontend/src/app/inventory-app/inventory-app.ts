@@ -27,9 +27,25 @@ interface BarcodeRow {
     BARCODE: string;
 }
 
-interface LoadUnitRow extends BarcodeRow {
-    ID: number;
-    TYPE: string;
+interface EligibleLoadUnit {
+    id: number;
+    barcode: string;
+    loadUnitType: string;
+    locationName: string;
+}
+
+interface InventoryOrderItem {
+    articleBarcode: string;
+    articleDescription: string;
+    packagingUnitName: string;
+    quantity: number;
+}
+
+interface InventoryOrderLine {
+    loadUnitBarcode: string;
+    loadUnitType: string;
+    locationName: string;
+    items: InventoryOrderItem[];
 }
 
 interface ArticleRow extends BarcodeRow {
@@ -81,6 +97,7 @@ export class InventoryApp {
 
     loadUnit = '';
     loadUnitType = '';
+    locationName = '';
     private loadUnitId: number | null = null;
     article = '';
     quantity = 0;
@@ -90,11 +107,11 @@ export class InventoryApp {
     currentQuantityPerUnit = 1;
 
     lines: ScanLine[] = [];
+    completedLines: InventoryOrderLine[] = [];
     quantityDifferences: QuantityDifference[] = [];
     comparisonComplete = false;
     showMismatchDialog = false;
     showCompletionDialog = false;
-    mismatchAccepted = false;
     comparisonError = '';
     isComparing = false;
     isSaving = false;
@@ -125,28 +142,34 @@ export class InventoryApp {
         switch (this.step) {
 
             case 1:
+                this.isComparing = true;
+                this.comparisonError = '';
                 this.http
-                    .get<LoadUnitRow[]>(`${this.dataUrl}/LoadUnit`, { params: { BARCODE: barcode } })
+                    .get<EligibleLoadUnit>(
+                        `${API_BASE_URL}/inventory-orders/load-units/${encodeURIComponent(barcode)}`
+                    )
                     .subscribe({
-                        next: result => {
-                            const loadUnit = result.find(row => row.BARCODE === barcode);
-                            if (!loadUnit) {
-                                this.loadUnit = barcode;
-                                this.loadUnitType = this.getLoadUnitTypeFromBarcode(barcode);
-                                this.loadUnitId = null;
-                                this.step = 2;
+                        next: loadUnit => {
+                            this.isComparing = false;
+                            if (this.completedLines.some(line => line.loadUnitBarcode === loadUnit.barcode)) {
+                                this.comparisonError = 'This load unit is already in the inventory order.';
                                 this.cdr.markForCheck();
                                 return;
                             }
-
-                            this.loadUnit = loadUnit.BARCODE;
-                            this.loadUnitType = loadUnit.TYPE;
-                            this.loadUnitId = loadUnit.ID;
+                            this.loadUnit = loadUnit.barcode;
+                            this.loadUnitType = loadUnit.loadUnitType;
+                            this.locationName = loadUnit.locationName;
+                            this.loadUnitId = loadUnit.id;
+                            this.lines = [];
+                            this.comparisonError = '';
                             this.step = 2;
                             this.cdr.markForCheck();
                         },
-                        error: () => {
-                            alert('Could not verify load unit');
+                        error: error => {
+                            this.isComparing = false;
+                            this.comparisonError =
+                                error.error?.message ?? 'Could not verify this load unit is eligible.';
+                            this.cdr.markForCheck();
                         }
                     });
                 break;
@@ -183,6 +206,11 @@ export class InventoryApp {
             case 3:
 
                 const quantity = Number(barcode);
+                if (!Number.isSafeInteger(quantity) || quantity < 0) {
+                    this.comparisonError = 'Enter a whole-number quantity of zero or more.';
+                    this.cdr.markForCheck();
+                    return;
+                }
 
                 this.lines.push({
                     article: this.article,
@@ -192,7 +220,6 @@ export class InventoryApp {
                     quantityPerUnit: this.currentQuantityPerUnit
                 });
 
-                this.comparisonComplete = false;
                 this.quantityDifferences = [];
                 this.comparisonError = '';
                 this.article = '';
@@ -200,6 +227,7 @@ export class InventoryApp {
                 this.currentArticleDescription = '';
                 this.currentQuantityUnit = '';
                 this.currentQuantityPerUnit = 1;
+                this.comparisonError = '';
 
                 this.step = 2;
 
@@ -221,18 +249,14 @@ export class InventoryApp {
         this.comparisonComplete = false;
         this.showMismatchDialog = false;
         this.showCompletionDialog = false;
-        this.mismatchAccepted = false;
         this.comparisonError = '';
     }
 
-    private getLoadUnitTypeFromBarcode(barcode: string): string {
-        if (/^1\d{7}$/.test(barcode)) {
-            return 'PALLET';
+    removeOrderLine(index: number): void {
+        if (index < 0 || index >= this.completedLines.length) {
+            return;
         }
-        if (/^0\d{11}$/.test(barcode)) {
-            return 'CARTON';
-        }
-        return 'Unknown';
+        this.completedLines = this.completedLines.filter((_, lineIndex) => lineIndex !== index);
     }
 
     private loadArticleBarcode(barcode: string): void {
@@ -290,7 +314,7 @@ export class InventoryApp {
                         item => String(item.LOAD_UNIT_ID) === String(this.loadUnitId)
                     );
                     if (stockItems.length === 0) {
-                        alert('No stock items found for this load unit');
+                        this.loadArticleAsUnit(articleId);
                         return;
                     }
 
@@ -307,7 +331,7 @@ export class InventoryApp {
                                 packaging => packaging.ARTICLE_ID === articleId
                             );
                             if (matchingArticle.length === 0) {
-                                alert('Article is not on this load unit');
+                                this.loadArticleAsUnit(articleId);
                                 return;
                             }
 
@@ -342,29 +366,20 @@ export class InventoryApp {
     }
 
     onFinish(): void {
-        const data = {
-            loadUnit: this.loadUnit,
-            lines: this.lines
-        };
-
-        localStorage.setItem('scanData', JSON.stringify(data));
-        console.log('Saved:', data);
-
+        if (!this.loadUnit || this.loadUnitId === null || this.isComparing || this.isSaving) {
+            return;
+        }
         this.isComparing = true;
-        this.isSaving = false;
-        this.comparisonComplete = false;
         this.showMismatchDialog = false;
-        this.mismatchAccepted = false;
         this.comparisonError = '';
 
-        this.getSavedStockItems(this.loadUnit)
+        this.getSavedStockItems(this.loadUnitId)
             .subscribe({
                 next: stockItems => {
                     this.compareQuantities(stockItems);
+                    this.isComparing = false;
                     if (this.quantityDifferences.length === 0) {
-                        this.saveInventoryCheck();
-                    } else {
-                        this.isComparing = false;
+                        this.completeCurrentLine();
                     }
                     this.cdr.markForCheck();
                 },
@@ -376,34 +391,16 @@ export class InventoryApp {
             });
     }
 
-    private getSavedStockItems(loadUnitBarcode: string): Observable<SavedStockItem[]> {
-        if (this.loadUnitId === null) {
-            return of([]);
-        }
-
+    private getSavedStockItems(loadUnitId: number): Observable<SavedStockItem[]> {
         return this.http
-            .get<LoadUnitRow[]>(`${this.dataUrl}/LoadUnit`, { params: { BARCODE: loadUnitBarcode } })
+            .get<StockItemRow[]>(`${this.dataUrl}/StockItem`, {
+                params: { LOAD_UNIT_ID: String(loadUnitId) }
+            })
             .pipe(
-                map(rows => rows.find(row => row.BARCODE === loadUnitBarcode)),
-                switchMap(loadUnit => {
-                    if (!loadUnit) {
-                        return of([]);
-                    }
-
-                    return this.http
-                        .get<StockItemRow[]>(`${this.dataUrl}/StockItem`, {
-                            params: { LOAD_UNIT_ID: String(loadUnit.ID) }
-                        })
-                        .pipe(
-                            map(rows => rows.filter(row => String(row.LOAD_UNIT_ID) === String(loadUnit.ID))),
-                            switchMap(stockItems => {
-                                if (stockItems.length === 0) {
-                                    return of([]);
-                                }
-                                return forkJoin(stockItems.map(item => this.getSavedStockItem(item)));
-                            })
-                        );
-                })
+                map(rows => rows.filter(row => String(row.LOAD_UNIT_ID) === String(loadUnitId))),
+                switchMap(stockItems => stockItems.length === 0
+                    ? of<SavedStockItem[]>([])
+                    : forkJoin(stockItems.map(item => this.getSavedStockItem(item))))
             );
     }
 
@@ -492,36 +489,54 @@ export class InventoryApp {
         }
     }
 
-    private saveInventoryCheck(): void {
-        const request = {
+    private completeCurrentLine(): void {
+        this.completedLines.push({
             loadUnitBarcode: this.loadUnit,
             loadUnitType: this.loadUnitType,
+            locationName: this.locationName,
             items: this.lines.map(line => ({
                 articleBarcode: line.article,
                 articleDescription: line.description,
                 packagingUnitName: line.quantityUnit,
                 quantity: line.quantity
             }))
-        };
+        });
+        this.loadUnit = '';
+        this.loadUnitType = '';
+        this.locationName = '';
+        this.loadUnitId = null;
+        this.lines = [];
+        this.quantityDifferences = [];
+        this.comparisonError = '';
+        this.step = 1;
+        this.cdr.markForCheck();
+    }
 
-        this.isComparing = true;
+    onFinishOrder(): void {
+        if (!this.completedLines.length || this.loadUnit || this.isComparing || this.isSaving) {
+            return;
+        }
+
         this.isSaving = true;
         this.comparisonError = '';
 
-        this.http.post<void>(`${API_BASE_URL}/inventory-checks`, request).subscribe({
+        const request = {
+            lines: this.completedLines.map(line => ({
+                loadUnitBarcode: line.loadUnitBarcode,
+                items: line.items
+            }))
+        };
+        this.http.post<void>(`${API_BASE_URL}/inventory-orders`, request).subscribe({
             next: () => {
-                this.isComparing = false;
                 this.isSaving = false;
                 this.comparisonComplete = true;
-                this.mismatchAccepted = this.quantityDifferences.length > 0;
                 this.showCompletionDialog = true;
                 this.cdr.markForCheck();
             },
             error: error => {
-                this.isComparing = false;
                 this.isSaving = false;
                 this.comparisonError =
-                    error.error?.message ?? 'Could not save the inventory check. Please try again.';
+                    error.error?.message ?? 'Could not save the inventory order. Please try again.';
                 this.cdr.markForCheck();
             }
         });
@@ -529,18 +544,18 @@ export class InventoryApp {
 
     confirmMismatch(): void {
         this.showMismatchDialog = false;
-        this.saveInventoryCheck();
+        this.completeCurrentLine();
     }
 
     cancelMismatch(): void {
         this.showMismatchDialog = false;
-        this.comparisonComplete = false;
         this.quantityDifferences = [];
     }
 
     startAnotherScan(): void {
         this.loadUnit = '';
         this.loadUnitType = '';
+        this.locationName = '';
         this.loadUnitId = null;
         this.article = '';
         this.quantity = 0;
@@ -548,11 +563,11 @@ export class InventoryApp {
         this.currentQuantityUnit = '';
         this.currentQuantityPerUnit = 1;
         this.lines = [];
+        this.completedLines = [];
         this.quantityDifferences = [];
         this.comparisonComplete = false;
         this.showMismatchDialog = false;
         this.showCompletionDialog = false;
-        this.mismatchAccepted = false;
         this.comparisonError = '';
         this.isComparing = false;
         this.isSaving = false;

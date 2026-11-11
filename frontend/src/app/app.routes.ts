@@ -46,7 +46,7 @@ export const routes: Routes = [
             { path: 'stock', component: Stock, title: 'Stock' },
             { path: 'picking', component: PickingApp, title: 'Picking' },
 			{ path: 'picking/orders', component: RetrievalOrders },
-            { path: 'inventory', component: InventoryApp, title: 'Inventory' },            
+            { path: 'inventory', component: InventoryApp, title: 'Inventory Order' },
             { path: 'toteTransport', component: ToteTransport, title: 'Tote Transport' },
             { path: 'sim/management', component: SimManagement, title: 'SIM-Management'},
             { path: 'sim/picking', component: SimPicking, title: 'SIM-Picking'},

@@ -1,69 +1,102 @@
 <div class="container">
+    <section class="top">
+        <div class="order-heading">
+            <h1>Inventory Order</h1>
+            <span>Completed load units: {{ completedLines.length }}</span>
+        </div>
 
-    <div class="top" [class.hidden-content]="!loadUnit">
+        @if (completedLines.length > 0) {
+        <div class="data-container">
+            <table class="load-unit-table order-lines-table">
+                <thead>
+                    <tr>
+                        <th>Load unit</th>
+                        <th>Location</th>
+                        <th>Type</th>
+                        <th>Scanned items</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (line of completedLines; track $index) {
+                    <tr>
+                        <td>{{ line.loadUnitBarcode }}</td>
+                        <td>{{ line.locationName }}</td>
+                        <td>{{ line.loadUnitType }}</td>
+                        <td>{{ line.items.length }}</td>
+                        <td>
+                            <button type="button" class="remove-line" (click)="removeOrderLine($index)"
+                                [disabled]="isSaving" [attr.aria-label]="'Remove load unit ' + line.loadUnitBarcode">
+                                Remove
+                            </button>
+                        </td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        }
 
-    <div class="load-unit">
-        <span><strong>Load Unit Nr.</strong> {{ loadUnit }}</span>
-        <span><strong>Type:</strong> {{ loadUnitType }}</span>
-    </div>
+        @if (loadUnit) {
+        <div class="current-load-unit">
+            <strong>Current load unit:</strong> {{ loadUnit }}
+            <span>{{ loadUnitType }} — {{ locationName }}</span>
+        </div>
+        <div class="data-container current-items">
+            <table class="load-unit-table">
+                <thead>
+                    <tr>
+                        <th>Article barcode</th>
+                        <th>Description</th>
+                        <th>Quantity</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (line of lines; track $index) {
+                    <tr>
+                        <td>{{ line.article }}</td>
+                        <td>{{ line.description }}</td>
+                        <td>{{ line.quantity }} {{ line.quantityUnit }}</td>
+                        <td>
+                            <button type="button" class="remove-line" (click)="removeLine($index)"
+                                [attr.aria-label]="'Remove ' + line.article">
+                                Remove
+                            </button>
+                        </td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        }
 
-    <div class="data-container">
-        <table class="load-unit-table">
-            <thead>
-                <tr>
-                    <th>Article barcode</th>
-                    <th>Description</th>
-                    <th>Qty</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                @for (line of lines; track $index) {
-                <tr>
-                    <td>{{ line.article }}</td>
-                    <td>{{ line.description }}</td>
-                    <td>{{ line.quantity }} {{ line.quantityUnit }}</td>
-                    <td>
-                        <button type="button" class="remove-line" (click)="removeLine($index)"
-                            [attr.aria-label]="'Remove ' + line.article">
-                            Remove
-                        </button>
-                    </td>
-                </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+        @if (comparisonError) {
+        <p class="comparison-error" role="alert">{{ comparisonError }}</p>
+        }
+    </section>
 
-    @if (comparisonError) {
-    <p class="comparison-error" role="alert">{{ comparisonError }}</p>
-    }
-
-</div>
-    <div class="left">
-        @if (comparisonComplete && mismatchAccepted) {
+    <section class="left">
+        @if (comparisonComplete) {
         <section class="comparison-results" aria-live="polite">
-            <h2>Inventory check complete</h2>
-        </section>
-        } @else if (comparisonComplete) {
-        <section class="comparison-results" aria-live="polite">
-            <h2>Inventory check complete</h2>
+            <h2>Inventory order completed</h2>
         </section>
         } @else {
         <div class="instruction-container">
-            <p>{{ isSaving ? 'Saving inventory check...' : isComparing ? 'Comparing quantities...' : currentInstruction }}</p>
+            <p>
+                {{ isSaving ? 'Saving inventory order...' :
+                   isComparing ? (step === 1 ? 'Verifying load unit...' : 'Comparing quantities...') :
+                   currentInstruction }}
+            </p>
             @if (step === 3 && !isComparing && !isSaving) {
             <p class="scan-selection">
                 {{ currentArticleDescription }} — {{ currentQuantityUnit }}
                 ({{ currentQuantityPerUnit }} pieces per package)
             </p>
             }
-            @if (comparisonError) {
-            <p class="comparison-error" role="alert">{{ comparisonError }}</p>
-            }
         </div>
         }
-    </div>
+    </section>
 
     @if (showMismatchDialog) {
     <div class="dialog-backdrop">
@@ -71,11 +104,18 @@
             aria-labelledby="mismatch-title" aria-describedby="mismatch-description">
             <h2 id="mismatch-title">Quantities do not match</h2>
             <p id="mismatch-description">
-                The counted quantities do not correspond to the saved quantities for this load unit.
-                Are you sure you want to finish anyway?
+                This load unit's counted quantities differ from saved stock. Complete this load-unit line anyway?
             </p>
+            <div class="difference-list">
+                @for (difference of quantityDifferences; track difference.article + difference.packagingUnit) {
+                <p>
+                    {{ difference.article }} — {{ difference.packagingUnit }}:
+                    expected {{ difference.sqlQuantity }}, counted {{ difference.scannedQuantity }}
+                </p>
+                }
+            </div>
             <div class="dialog-actions">
-                <button type="button" class="dialog-confirm" (click)="confirmMismatch()">Yes</button>
+                <button type="button" class="dialog-confirm" (click)="confirmMismatch()">Complete line</button>
                 <button type="button" class="dialog-cancel" (click)="cancelMismatch()">Cancel and rescan</button>
             </div>
         </section>
@@ -86,46 +126,42 @@
     <div class="dialog-backdrop">
         <section class="mismatch-dialog completion-dialog" role="dialog" aria-modal="true"
             aria-labelledby="completion-title" aria-describedby="completion-description">
-            <h2 id="completion-title">Scan completed</h2>
-            <p id="completion-description">Would you like to go back or scan another load unit?</p>
+            <h2 id="completion-title">Inventory order completed</h2>
+            <p id="completion-description">
+                The inventory order and stock adjustments have been saved.
+            </p>
             <div class="dialog-actions">
                 <button type="button" class="dialog-cancel" (click)="onCancel()">Go back</button>
-                <button type="button" class="dialog-confirm" (click)="startAnotherScan()">Scan another</button>
+                <button type="button" class="dialog-confirm" (click)="startAnotherScan()">Start another order</button>
             </div>
         </section>
     </div>
     }
 
-    <div class="right">               
+    <div class="right">
         <input
-        class="scan-input"
-        [disabled]="isComparing || comparisonComplete || showMismatchDialog || showCompletionDialog"
-        [ngClass]="{
-            'load-unit-step': step === 1,
-            'article-step': step === 2,
-            'quantity-step': step === 3
-        }"
-        type="text"
-        [placeholder]="currentPlaceholder"
-        #barcode
-        (keyup.enter)="onScan(barcode.value); barcode.value = ''">
+            class="scan-input"
+            [disabled]="isComparing || isSaving || comparisonComplete || showMismatchDialog || showCompletionDialog"
+            [ngClass]="{
+                'load-unit-step': step === 1,
+                'article-step': step === 2,
+                'quantity-step': step === 3
+            }"
+            type="text"
+            [placeholder]="currentPlaceholder"
+            #barcode
+            (keyup.enter)="onScan(barcode.value); barcode.value = ''">
     </div>
 
     <div class="bottom">
-
-        <button
-            class="cancel"
-            (click)="onCancel()">
-            Cancel
+        <button class="cancel" type="button" (click)="onCancel()">Cancel</button>
+        <button class="finish" type="button" (click)="onFinish()"
+            [disabled]="!loadUnit || step !== 2 || isComparing || isSaving || comparisonComplete || showMismatchDialog || showCompletionDialog">
+            Finish load unit
         </button>
-
-        <button
-            class="finish"
-            (click)="onFinish()"
-            [disabled]="!loadUnit || isComparing || comparisonComplete || showMismatchDialog || showCompletionDialog">
-            {{ isSaving ? 'Saving...' : isComparing ? 'Comparing...' : 'Finish' }}
+        <button class="finish-order" type="button" (click)="onFinishOrder()"
+            [disabled]="!completedLines.length || loadUnit || isComparing || isSaving || comparisonComplete || showMismatchDialog || showCompletionDialog">
+            {{ isSaving ? 'Saving order...' : 'Finish inventory order' }}
         </button>
-
     </div>
-
 </div>

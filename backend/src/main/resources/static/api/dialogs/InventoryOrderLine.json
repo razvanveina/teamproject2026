@@ -1,0 +1,19 @@
+{
+  "id": "iol001",
+  "title": "Inventory Order Lines",
+  "entity": "InventoryOrderLine",
+  "actions": [],
+  "columns": [
+    { "field": "ID", "label": "ID" },
+    {
+      "field": "INVENTORY_ORDER_ID",
+      "label": "Inventory order",
+      "lookup": { "entity": "InventoryOrder" },
+      "filterable": true
+    },
+    { "field": "LOAD_UNIT_BARCODE", "label": "Load unit", "filterable": true },
+    { "field": "LOAD_UNIT_TYPE", "label": "Type" },
+    { "field": "LOCATION_NAME", "label": "Location" },
+    { "field": "COMPLETED_AT", "label": "Completed at" }
+  ]
+}

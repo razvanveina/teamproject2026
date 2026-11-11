@@ -11,14 +11,21 @@ import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
+import ro.demo.usersbackend.dto.InventoryLoadUnitResponse;
 import ro.demo.usersbackend.dto.InventoryCheckRequest;
+import ro.demo.usersbackend.dto.InventoryOrderLineRequest;
+import ro.demo.usersbackend.dto.InventoryOrderRequest;
 import ro.demo.usersbackend.dto.ScannedInventoryItemRequest;
 import ro.demo.usersbackend.entity.Article;
 import ro.demo.usersbackend.entity.ArticlePackagingUnitType;
 import ro.demo.usersbackend.entity.InventoryCheck;
+import ro.demo.usersbackend.entity.InventoryOrder;
+import ro.demo.usersbackend.entity.InventoryOrderLine;
 import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.PackagingUnitType;
 import ro.demo.usersbackend.entity.Reservation;
@@ -29,9 +36,12 @@ import ro.demo.usersbackend.entity.RetrievalOrderStatus;
 import ro.demo.usersbackend.entity.StockAdjustment;
 import ro.demo.usersbackend.entity.StockAdjustmentReason;
 import ro.demo.usersbackend.entity.StockItem;
+import ro.demo.usersbackend.entity.TransitLocation;
 import ro.demo.usersbackend.repository.ArticlePackagingUnitTypeRepository;
 import ro.demo.usersbackend.repository.ArticleRepository;
 import ro.demo.usersbackend.repository.InventoryCheckRepository;
+import ro.demo.usersbackend.repository.InventoryOrderLineRepository;
+import ro.demo.usersbackend.repository.InventoryOrderRepository;
 import ro.demo.usersbackend.repository.LoadUnitRepository;
 import ro.demo.usersbackend.repository.PackagingUnitTypeRepository;
 import ro.demo.usersbackend.repository.ReservationRepository;
@@ -42,6 +52,8 @@ import ro.demo.usersbackend.repository.StockItemRepository;
 @Transactional
 public class InventoryCheckService {
 	private final InventoryCheckRepository inventoryCheckRepository;
+	private final InventoryOrderRepository inventoryOrderRepository;
+	private final InventoryOrderLineRepository inventoryOrderLineRepository;
 	private final StockAdjustmentRepository inventoryDifferenceRepository;
 	private final LoadUnitRepository loadUnitRepository;
 	private final StockItemRepository stockItemRepository;
@@ -52,11 +64,15 @@ public class InventoryCheckService {
 	private static final Logger log = LoggerFactory.getLogger(InventoryCheckService.class);
 
 	public InventoryCheckService(InventoryCheckRepository inventoryCheckRepository,
+			InventoryOrderRepository inventoryOrderRepository,
+			InventoryOrderLineRepository inventoryOrderLineRepository,
 			StockAdjustmentRepository inventoryDifferenceRepository, LoadUnitRepository loadUnitRepository,
 			StockItemRepository stockItemRepository, ReservationRepository reservationRepository,
 			ArticleRepository articleRepository, PackagingUnitTypeRepository packagingUnitTypeRepository,
 			ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository) {
 		this.inventoryCheckRepository = inventoryCheckRepository;
+		this.inventoryOrderRepository = inventoryOrderRepository;
+		this.inventoryOrderLineRepository = inventoryOrderLineRepository;
 		this.inventoryDifferenceRepository = inventoryDifferenceRepository;
 		this.loadUnitRepository = loadUnitRepository;
 		this.stockItemRepository = stockItemRepository;
@@ -64,6 +80,97 @@ public class InventoryCheckService {
 		this.articleRepository = articleRepository;
 		this.packagingUnitTypeRepository = packagingUnitTypeRepository;
 		this.articlePackagingUnitTypeRepository = articlePackagingUnitTypeRepository;
+	}
+
+	@Transactional(readOnly = true)
+	public InventoryLoadUnitResponse getEligibleLoadUnit(String barcode) {
+		LoadUnit loadUnit = findEligibleLoadUnit(barcode);
+		return new InventoryLoadUnitResponse(loadUnit.getId(), loadUnit.getBarcode(), loadUnit.getType().name(),
+				loadUnit.getLocation().getName());
+	}
+
+	public InventoryOrder saveInventoryOrder(InventoryOrderRequest request) {
+		LocalDateTime now = LocalDateTime.now();
+		InventoryOrder order = new InventoryOrder();
+		order.setCreatedAt(now);
+		order.setReasonMessage("INVENTORY");
+		InventoryOrder savedOrder = inventoryOrderRepository.save(order);
+
+		Set<String> seenLoadUnitBarcodes = new LinkedHashSet<>();
+		List<StockAdjustment> adjustments = new ArrayList<>();
+
+		for (InventoryOrderLineRequest lineRequest : request.lines()) {
+			LoadUnit loadUnit = findEligibleLoadUnit(lineRequest.loadUnitBarcode());
+			if (!seenLoadUnitBarcodes.add(loadUnit.getBarcode())) {
+				throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+						"Load unit appears more than once in the inventory order: " + loadUnit.getBarcode());
+			}
+
+			InventoryCheck check = new InventoryCheck();
+			check.setLoadUnit(loadUnit);
+			check.setLoadUnitBarcode(loadUnit.getBarcode());
+			check.setLoadUnitType(loadUnit.getType().name());
+			check.setScannedAt(now);
+			check.setReasonMessage("INVENTORY");
+			InventoryCheck savedCheck = inventoryCheckRepository.save(check);
+
+			InventoryOrderLine line = new InventoryOrderLine();
+			line.setInventoryOrder(savedOrder);
+			line.setLoadUnit(loadUnit);
+			line.setLoadUnitBarcode(loadUnit.getBarcode());
+			line.setLoadUnitType(loadUnit.getType().name());
+			line.setLocationName(loadUnit.getLocation().getName());
+			line.setCompletedAt(now);
+			line.setInventoryCheck(savedCheck);
+			InventoryOrderLine savedLine = inventoryOrderLineRepository.save(line);
+
+			List<StockItem> stockItems = stockItemRepository.findByLoadUnitOrderByIdAsc(loadUnit);
+			if (!stockItems.isEmpty()) {
+				for (Reservation reservation : reservationRepository.findByStockItemIn(stockItems)) {
+					reservation.getStockItem().setReservation(reservation);
+				}
+			}
+
+			Map<ItemKey, Integer> expectedQuantities = getExpectedQuantities(stockItems);
+			Map<ItemKey, ScannedInventoryItemRequest> scannedItems = getScannedItems(lineRequest.items());
+			Set<ItemKey> allItems = new LinkedHashSet<>();
+			allItems.addAll(expectedQuantities.keySet());
+			allItems.addAll(scannedItems.keySet());
+
+			for (ItemKey key : allItems) {
+				int expected = expectedQuantities.getOrDefault(key, 0);
+				ScannedInventoryItemRequest scanned = scannedItems.get(key);
+				int counted = scanned == null ? 0 : scanned.quantity();
+				int difference = counted - expected;
+
+				if (difference != 0) {
+					StockAdjustment adjustment = createDifference(savedCheck, key, scanned, expected, counted,
+							difference);
+					adjustment.setInventoryOrderLine(savedLine);
+					adjustments.add(adjustment);
+				}
+			}
+
+			updateExistingStockItems(loadUnit, stockItems, scannedItems);
+		}
+
+		inventoryDifferenceRepository.saveAll(adjustments);
+		return savedOrder;
+	}
+
+	private LoadUnit findEligibleLoadUnit(String barcode) {
+		LoadUnit loadUnit = loadUnitRepository.findByBarcode(barcode)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+						"Load unit was not found: " + barcode));
+		if (loadUnit.getLocation() == null) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+					"Load unit has no location: " + barcode);
+		}
+		if (loadUnit.getLocation() instanceof TransitLocation) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+					"Load units in transit cannot be added to an inventory order: " + barcode);
+		}
+		return loadUnit;
 	}
 
 	public InventoryCheck saveInventoryCheck(InventoryCheckRequest request) {

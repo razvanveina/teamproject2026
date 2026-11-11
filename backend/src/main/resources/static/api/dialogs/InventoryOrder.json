@@ -1,0 +1,11 @@
+{
+  "id": "io001",
+  "title": "Inventory Orders",
+  "entity": "InventoryOrder",
+  "actions": [],
+  "columns": [
+    { "field": "ID", "label": "ID" },
+    { "field": "CREATED_AT", "label": "Created at" },
+    { "field": "REASON_MESSAGE", "label": "Reason" }
+  ]
+}

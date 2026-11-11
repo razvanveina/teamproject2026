@@ -20,7 +20,7 @@ export class WorkerDialogList {
     {id: 2, routerLink:"/decanting", title:"Decanting"},
     {id: 4, routerLink:"/shipping", title:"Shipping"},
     {id: 5, routerLink:"/toteTransport", title:"Tote Transport"},
-    {id: 6, routerLink:"/inventory", title:"Inventory"},
+    {id: 6, routerLink:"/inventory", title:"Inventory Order"},
     {id: 7, routerLink:"/picking", title:"Picking"},
   ]);
   open = signal(false);
