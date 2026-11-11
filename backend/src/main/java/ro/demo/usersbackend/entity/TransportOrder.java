@@ -15,6 +15,9 @@ public class TransportOrder {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
+	
+	@Column(length =50)
+	private String assignedTo;
 
 	@ManyToOne
 	@JoinColumn(name = "source_id", nullable = false)
@@ -94,4 +97,12 @@ public class TransportOrder {
 	public void setId(Long id) {
 		this.id = id;
 	}
+	
+	public String getAssignedTo() {
+		return assignedTo;
+	}
+
+	public void setAssignedTo(String assignedTo) {
+		this.assignedTo = assignedTo;
+	} 
 }

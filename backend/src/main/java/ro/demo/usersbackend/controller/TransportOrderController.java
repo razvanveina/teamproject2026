@@ -6,6 +6,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,30 +28,69 @@ import ro.demo.usersbackend.service.TransportOrderService;
 public class TransportOrderController {
 	public static final Logger log = LogManager.getLogger("application");
 
+	private static final Object ASSIGN_LOCK = new Object();
+	
 	private final TransportOrderService transportOrderService;
-
+	
 	public TransportOrderController(TransportOrderService transportOrderService) {
 		this.transportOrderService = transportOrderService;
 	}
 
 	@GetMapping("/open")
-	public List<TransportOrderResponse> findOpenOrders() {
-		log.info("Transport: listed the open orders");
-		return transportOrderService.findOpenOrders();
+	public List<TransportOrderResponse> findOpenOrders(Authentication authentication) {
+		log.info("Transport: {} listed the open orders", authentication.getName());
+		return transportOrderService.findOpenOrders(authentication.getName());
+	}
+
+	@GetMapping("/openTote")
+	public List<TransportOrderResponse> findOpenToteOrders(Authentication authentication) {
+		log.info("Transport: {} listed the open tote orders", authentication.getName());
+		return transportOrderService.findOpenToteOrders(authentication.getName());
 	}
 
 	@GetMapping("/next")
-	public ResponseEntity<TransportOrderResponse> findNextOrder() {
-		log.info("Transport: asked for next order");
-		return transportOrderService.findNextOrder().map(ResponseEntity::ok)
-				.orElseGet(() -> ResponseEntity.noContent().build());
+	public ResponseEntity<TransportOrderResponse> findNextOrder(Authentication authentication) {
+		log.info("Transport: {} asked for next order", authentication.getName());
+		synchronized (ASSIGN_LOCK) {
+			return transportOrderService.findNextOrder(authentication.getName()).map(ResponseEntity::ok)
+					.orElseGet(() -> ResponseEntity.noContent().build());
+		}
+	}
+
+	@GetMapping("/nextTote")
+	public ResponseEntity<TransportOrderResponse> findNextToteTransport(Authentication authentication) {
+		log.info("Transport: {} asked for next tote order", authentication.getName());
+		synchronized (ASSIGN_LOCK) {
+			return transportOrderService.findNextToteOrder(authentication.getName()).map(ResponseEntity::ok)
+					.orElseGet(() -> ResponseEntity.noContent().build());
+		}
+	}
+
+	@PostMapping("/{id}/take")
+	public TransportOrderResponse take(@PathVariable Long id, Authentication authentication) {
+		log.info("Transport: {} takes order {}", authentication.getName(), id);
+		synchronized (ASSIGN_LOCK) {
+			return transportOrderService.take(id, authentication.getName());
+		}
+	}
+
+	@PostMapping("/{id}/release")
+	public void release(@PathVariable Long id, Authentication authentication) {
+		log.info("Transport: {} releases order {}", authentication.getName(), id);
+		synchronized (ASSIGN_LOCK) {
+			transportOrderService.release(id, authentication.getName());
+		}
 	}
 
 	@PostMapping("/{id}/scan")
-	public TransportOrderResponse scan(@PathVariable Long id, @Valid @RequestBody TransportOrderRequest request) {
-		log.info("Transport: order {} user scanned '{}'", id, request.barcode());
+	public TransportOrderResponse scan(@PathVariable Long id, @Valid @RequestBody TransportOrderRequest request,
+			Authentication authentication) {
+		log.info("Transport: order {} user {} scanned '{}'", id, authentication.getName(), request.barcode());
 		try {
-			TransportOrderResponse response = transportOrderService.scan(id, request.barcode());
+			TransportOrderResponse response;
+			synchronized (ASSIGN_LOCK) {
+				response = transportOrderService.scan(id, request.barcode(), authentication.getName());
+			}
 			log.info("Transport: order {} scan accepted, status is now {}", id, response.status());
 			return response;
 		} catch (ResponseStatusException e) {
@@ -64,10 +104,13 @@ public class TransportOrderController {
 
 	@PostMapping("/{id}/error")
 	public TransportOrderResponse reportError(@PathVariable Long id,
-			@Valid @RequestBody TransportOrderErrorRequest request) {
-		log.info("Transport: order {} user reported error {}", id, request.reason());
+			@Valid @RequestBody TransportOrderErrorRequest request, Authentication authentication) {
+		log.info("Transport: order {} user {} reported error {}", id, authentication.getName(), request.reason());
 		try {
-			TransportOrderResponse response = transportOrderService.reportError(id, request.reason());
+			TransportOrderResponse response;
+			synchronized (ASSIGN_LOCK) {
+				response = transportOrderService.reportError(id, request.reason(), authentication.getName());
+			}
 			log.info("Transport: order {} status is now {}", id, response.status());
 			return response;
 		} catch (ResponseStatusException e) {
@@ -77,13 +120,5 @@ public class TransportOrderController {
 			log.error("Transport: exception: " + e.getMessage());
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
 		}
-	}
-
-	@GetMapping("/nextTote")
-	public ResponseEntity<TransportOrderResponse> findNextToteTransport() {
-		log.info("Transport: asked for next tote order");
-
-		return transportOrderService.findNextToteOrder().map(ResponseEntity::ok)
-				.orElseGet(() -> ResponseEntity.noContent().build());
 	}
 }

@@ -2,6 +2,7 @@ package ro.demo.usersbackend.service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Comparator;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -42,36 +43,106 @@ public class TransportOrderService {
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
 						"Cannot find location with the name " + DECANTING));
 	}
+	
+	private static final List<TransportOrderStatus> OPEN = List.of(TransportOrderStatus.ACTIVE, TransportOrderStatus.NEW);
 
-	@Transactional(readOnly = true)
-	public Optional<TransportOrderResponse> findNextOrder() {
-		Location decanting = decanting();
-		return transportOrderRepository
-				.findFirstByStatusAndSourceNotOrderByIdAsc(TransportOrderStatus.ACTIVE, decanting)
-				.or(() -> transportOrderRepository.findFirstByStatusAndSourceNotOrderByIdAsc(TransportOrderStatus.NEW,
-						decanting))
-				.map(this::toResponse);
+	private static boolean isTote(TransportOrder order) {
+		return DECANTING.equals(order.getSource().getName());
 	}
 
-	@Transactional(readOnly = true)
-	public Optional<TransportOrderResponse> findNextToteOrder() {
-		Location decanting = decanting();
-
-		return transportOrderRepository.findFirstByStatusAndSourceOrderByIdAsc(TransportOrderStatus.ACTIVE, decanting)
-				.or(() -> transportOrderRepository.findFirstByStatusAndSourceOrderByIdAsc(TransportOrderStatus.NEW,
-						decanting))
-				.map(this::toResponse);
-	}
-
-	@Transactional(readOnly = true)
-	public List<TransportOrderResponse> findOpenOrders() {
-		return transportOrderRepository.findByStatusAndSourceNotOrderByIdAsc(TransportOrderStatus.NEW, decanting())
-				.stream().map(this::toResponse).toList();
-	}
-
-	public TransportOrderResponse scan(Long id, String barcode) {
-		TransportOrder order = transportOrderRepository.findById(id)
+	private TransportOrder find(Long id) {
+		return transportOrderRepository.findById(id)
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Transport order not found"));
+	}
+
+	private static Comparator<TransportOrder> activeFirst() {
+		return Comparator.comparing((TransportOrder o) -> o.getStatus() != TransportOrderStatus.ACTIVE);
+	}
+
+	public Optional<TransportOrderResponse> findNextOrder(String user) {
+		return nextFor(user, false);
+	}
+
+	public Optional<TransportOrderResponse> findNextToteOrder(String user) {
+		return nextFor(user, true);
+	}
+
+	private Optional<TransportOrderResponse> nextFor(String user, boolean tote) {
+		// 1. are deja un transport preluat? il continua
+		Optional<TransportOrder> mine = transportOrderRepository.findByAssignedToAndStatusInOrderByIdAsc(user, OPEN)
+				.stream().filter(o -> isTote(o) == tote).sorted(activeFirst()).findFirst();
+		if (mine.isPresent()) {
+			return mine.map(this::toResponse);
+		}
+
+		// 2. altfel il preia pe cel mai vechi liber
+		return transportOrderRepository.findByAssignedToIsNullAndStatusInOrderByIdAsc(OPEN)
+				.stream().filter(o -> isTote(o) == tote).sorted(activeFirst()).findFirst()
+				.map(order -> {
+					order.setAssignedTo(user);
+					return toResponse(order);
+				});
+	}
+
+	@Transactional(readOnly = true)
+	public List<TransportOrderResponse> findOpenOrders(String user) {
+		return transportOrderRepository.findByStatusAndSourceNotOrderByIdAsc(TransportOrderStatus.NEW, decanting())
+				.stream()
+				.filter(o -> o.getAssignedTo() == null || user.equals(o.getAssignedTo()))
+				.map(this::toResponse)
+				.toList();
+	}
+	
+	@Transactional(readOnly = true)
+	public List<TransportOrderResponse> findOpenToteOrders(String user) {
+		return transportOrderRepository.findByStatusAndSourceOrderByIdAsc(TransportOrderStatus.NEW, decanting())
+				.stream()
+				.filter(o -> o.getAssignedTo() == null || user.equals(o.getAssignedTo()))
+				.map(this::toResponse)
+				.toList();
+	}
+
+	public TransportOrderResponse take(Long id, String user) {
+		TransportOrder order = find(id);
+		if (!user.equals(order.getAssignedTo())) {
+			if (order.getAssignedTo() != null || order.getStatus() != TransportOrderStatus.NEW) {
+				throw new ResponseStatusException(HttpStatus.CONFLICT, "Transport order " + id + " is already taken"
+						+ (order.getAssignedTo() == null ? "" : " by " + order.getAssignedTo()));
+			}
+			order.setAssignedTo(user);
+		}
+
+		// eliberez celelalte transporturi NEW ale mele de acelasi tip
+		for (TransportOrder other : transportOrderRepository.findByAssignedToAndStatusInOrderByIdAsc(user,
+				List.of(TransportOrderStatus.NEW))) {
+			if (!other.getId().equals(id) && isTote(other) == isTote(order)) {
+				other.setAssignedTo(null);
+			}
+		}
+		return toResponse(order);
+	}
+
+	public void release(Long id, String user) {
+		TransportOrder order = find(id);
+		if (user.equals(order.getAssignedTo()) && order.getStatus() == TransportOrderStatus.NEW) {
+			order.setAssignedTo(null);
+		}
+	}
+
+	private TransportOrder ownedOrder(Long id, String user) {
+		TransportOrder order = find(id);
+		if (order.getAssignedTo() == null) {
+			order.setAssignedTo(user);   // transport vechi, fara user: il preia acum
+		}
+		if (!user.equals(order.getAssignedTo())) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT,
+					"Transport order " + id + " is taken by " + order.getAssignedTo());
+		}
+		return order;
+	}
+
+	public TransportOrderResponse scan(Long id, String barcode, String user) {
+		TransportOrder order = ownedOrder(id, user);
 		String scanned = barcode.trim();
 
 		if (order.getStatus() == TransportOrderStatus.NEW) {
@@ -91,9 +162,8 @@ public class TransportOrderService {
 		return toResponse(order);
 	}
 
-	public TransportOrderResponse reportError(Long id, TransportOrderErrorReason reason) {
-		TransportOrder order = transportOrderRepository.findById(id)
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Transport order not found"));
+	public TransportOrderResponse reportError(Long id, TransportOrderErrorReason reason, String user) {
+		TransportOrder order = ownedOrder(id, user);
 
 		boolean allowed = switch (reason) {
 		case LOCATION_EMPTY, WRONG_PALLET -> order.getStatus() == TransportOrderStatus.NEW;
