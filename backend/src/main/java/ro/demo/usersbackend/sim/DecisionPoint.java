@@ -71,6 +71,7 @@ public class DecisionPoint extends ServerPoint {
 					askedAt = System.currentTimeMillis();
 				}
 				announceLU(s);
+				System.out.println(s + " arrived at " + name);
 				put(MfsMessages.toJson(new AckGet("DECIDE", null, s)));
 				return;
 			}

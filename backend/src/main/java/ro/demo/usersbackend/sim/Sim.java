@@ -77,8 +77,8 @@ public class Sim {
 		dp3.getTarget().add(c10);
 		dp3.getTarget().add(c11);
 
-		dp1.getTarget().add(c2);
 		dp1.getTarget().add(c7);
+		dp1.getTarget().add(c2);
 		c2.getSource().add(dp1);
 		c7.getSource().add(dp1);
 
@@ -88,8 +88,8 @@ public class Sim {
 		c3.getSource().add(ip2);
 		dp2.getSource().add(c3);
 
-		dp2.getTarget().add(c4);
 		dp2.getTarget().add(c5);
+		dp2.getTarget().add(c4);
 		c4.getSource().add(dp2);
 		c5.getSource().add(dp2);
 
@@ -117,6 +117,6 @@ public class Sim {
 		for (int i = 0; i < entities.size(); i++) {
 			items.add(entities.get(i).toJSON(i));
 		}
-		return "[" + String.join(",", items) + "]";
+		return "[\n" + String.join(",\n", items) + "\n]";
 	}
 }

@@ -4,8 +4,6 @@ import jakarta.jms.JMSConsumer;
 import jakarta.jms.JMSContext;
 import jakarta.jms.JMSException;
 import jakarta.jms.Message;
-import ro.demo.usersbackend.packagemessaging.MfsMessages;
-import ro.demo.usersbackend.packagemessaging.MfsMessages.AckGet;
 
 public class StationPoint extends ServerPoint {
 
@@ -44,7 +42,7 @@ public class StationPoint extends ServerPoint {
 				barcode = s;
 				released = false;
 				System.out.println(s + " arrived at " + name);
-				put(MfsMessages.toJson(new AckGet("ACK_GET", null, s)));
+				announceLU(s);
 				return;
 			}
 		}
