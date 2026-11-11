@@ -52,7 +52,7 @@ public class Sim {
 		InfoPoint ip1 = add(new InfoPoint("IP1"));
 		InfoPoint ip2 = add(new InfoPoint("IP2"));
 		InfoPoint ip3 = add(new InfoPoint("IP3"));
-		InfoPoint e = add(new InfoPoint("E"));
+		InfoPoint e = add(new InfoPoint("EMPTY"));
 
 		DecisionPoint dp1 = add(new DecisionPoint("DP1"));
 		DecisionPoint dp2 = add(new DecisionPoint("DP2"));
@@ -74,11 +74,13 @@ public class Sim {
 		dp1.getSource().add(c10);
 		c10.getSource().add(dp3);
 
+		// DP3: 0 = C10 spre DP1 (default), 1 = C11 spre EMPTY
 		dp3.getTarget().add(c10);
 		dp3.getTarget().add(c11);
 
-		dp1.getTarget().add(c2);
+		// DP1: 0 = C7 spre PTTS1 (default), 1 = C2 spre IP2 (bucla)
 		dp1.getTarget().add(c7);
+		dp1.getTarget().add(c2);
 		c2.getSource().add(dp1);
 		c7.getSource().add(dp1);
 
@@ -88,8 +90,9 @@ public class Sim {
 		c3.getSource().add(ip2);
 		dp2.getSource().add(c3);
 
-		dp2.getTarget().add(c4);
+		// DP2: 0 = C5 spre TPT1 (default), 1 = C4 spre IP1 (bucla)
 		dp2.getTarget().add(c5);
+		dp2.getTarget().add(c4);
 		c4.getSource().add(dp2);
 		c5.getSource().add(dp2);
 

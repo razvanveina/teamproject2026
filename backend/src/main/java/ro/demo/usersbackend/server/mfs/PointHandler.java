@@ -35,7 +35,7 @@ public abstract class PointHandler implements TelegramHandler {
 			}
 			
 			loadUnit.setLocation(location);
-			log.info("{}: load unit arrived", point, loadUnit.getBarcode());
+			log.info("{}: load unit {} arrived", point, loadUnit.getBarcode());
 		});
 	}
 }

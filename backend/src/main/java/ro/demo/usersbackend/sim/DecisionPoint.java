@@ -10,7 +10,7 @@ import ro.demo.usersbackend.packagemessaging.MfsMessages.AckGet;
 
 public class DecisionPoint extends ServerPoint {
 
-	private static final long TIMEOUT = 5000;
+	private static final long TIMEOUT = 30000;
 
 	private Entity decision;
 	private long askedAt;
