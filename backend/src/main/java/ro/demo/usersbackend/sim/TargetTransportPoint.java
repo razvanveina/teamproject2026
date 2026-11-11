@@ -1,5 +1,8 @@
 package ro.demo.usersbackend.sim;
 
+import ro.demo.usersbackend.packagemessaging.MfsMessages;
+import ro.demo.usersbackend.packagemessaging.MfsMessages.AckGet;
+
 public class TargetTransportPoint extends ServerPoint {
 
 	public TargetTransportPoint(String name) {
@@ -15,7 +18,7 @@ public class TargetTransportPoint extends ServerPoint {
 		}
 
 		if (barcode != null) {
-			put("Ready" + barcode);
+			put(MfsMessages.toJson(new AckGet("READY", null, barcode)));
 			barcode = null;
 		}
 
@@ -25,18 +28,5 @@ public class TargetTransportPoint extends ServerPoint {
 	@Override
 	public String getAvailableLU() {
 		return null;
-	}
-
-	@Override
-	public String toJSON(int id) {
-		StringBuilder builder = new StringBuilder();
-
-		builder.append("{" + super.toJSON(id) + ",");
-		builder.append("\"barcodes\":[");
-
-		builder.append("\"" + super.barcode + "\"");
-
-		builder.append("]}");
-		return builder.toString();
 	}
 }

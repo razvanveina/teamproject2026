@@ -56,7 +56,7 @@ public class Test1 {
 
 	@AfterAll
 	static void end() {
-//		sessionFactory.inTransaction(Test1::cleanup);
+		sessionFactory.inTransaction(Test1::cleanup);
 		sessionFactory.close();
 	}
 

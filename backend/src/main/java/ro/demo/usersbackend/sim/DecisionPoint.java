@@ -5,27 +5,19 @@ import jakarta.jms.JMSContext;
 import jakarta.jms.JMSException;
 import jakarta.jms.Message;
 import jakarta.jms.TextMessage;
+import ro.demo.usersbackend.packagemessaging.MfsMessages;
+import ro.demo.usersbackend.packagemessaging.MfsMessages.AckGet;
 
 public class DecisionPoint extends ServerPoint {
 
 	private static final long TIMEOUT = 5000;
 
-	private volatile Entity yesTarget;
-	private volatile Entity noTarget;
 	private Entity decision;
 	private long askedAt;
 	private JMSConsumer consumer;
 
 	public DecisionPoint(String name) {
 		super(name);
-	}
-
-	public void setYesTarget(Entity yesTarget) {
-		this.yesTarget = yesTarget;
-	}
-
-	public void setNoTarget(Entity noTarget) {
-		this.noTarget = noTarget;
 	}
 
 	@Override
@@ -48,13 +40,25 @@ public class DecisionPoint extends ServerPoint {
 			}
 			if (message instanceof TextMessage text) {
 				String reply = text.getText().trim();
-				decision = "yes".equalsIgnoreCase(reply) ? yesTarget : noTarget;
+				decision = getTarget().get(toIndex(reply));
 				System.out.println(name + ": " + barcode + " reply " + reply + ", goes to " + decision.getName());
 			} else if (System.currentTimeMillis() - askedAt >= TIMEOUT) {
-				decision = noTarget;
+				decision = getTarget().get(0);
 				System.out.println(name + ": " + barcode + " no reply, goes to " + decision.getName());
 			}
 		}
+	}
+
+	private int toIndex(String reply) {
+		try {
+			int index = Integer.parseInt(reply);
+			if (index >= 0 && index < getTarget().size()) {
+				return index;
+			}
+		} catch (NumberFormatException e) {
+		}
+		System.out.println(name + ": invalid reply " + reply + ", using 0");
+		return 0;
 	}
 
 	private void pull() {
@@ -66,7 +70,7 @@ public class DecisionPoint extends ServerPoint {
 					decision = null;
 					askedAt = System.currentTimeMillis();
 				}
-				put(name + " " + s);
+				put(MfsMessages.toJson(new AckGet("DECIDE", null, s)));
 				return;
 			}
 		}
@@ -90,18 +94,5 @@ public class DecisionPoint extends ServerPoint {
 	@Override
 	public String getAvailableLU() {
 		return null;
-	}
-
-	@Override
-	public String toJSON(int id) {
-		StringBuilder builder = new StringBuilder();
-
-		builder.append("{" + super.toJSON(id) + ",");
-		builder.append("\"barcodes\":[");
-
-		builder.append("\"" + super.barcode + "\"");
-
-		builder.append("]}");
-		return builder.toString();
 	}
 }

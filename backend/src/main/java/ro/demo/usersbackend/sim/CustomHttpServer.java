@@ -2,6 +2,7 @@ package ro.demo.usersbackend.sim;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
@@ -20,14 +21,18 @@ public class CustomHttpServer {
 	}
 
 	private void sendVizualizationData(HttpExchange exchange) throws IOException {
-		if ("GET".equals(exchange.getRequestMethod())) {
-			String respose = sim.getJSON();
-
-			exchange.sendResponseHeaders(200, respose.length());
-
-			exchange.getResponseBody().write(respose.getBytes());
-			exchange.getResponseBody().close();
+		exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+		if (!"GET".equals(exchange.getRequestMethod())) {
+			exchange.sendResponseHeaders(405, -1);
+			exchange.close();
+			return;
 		}
+
+		byte[] response = sim.getJSON().getBytes(StandardCharsets.UTF_8);
+		exchange.getResponseHeaders().add("Content-Type", "application/json");
+		exchange.sendResponseHeaders(200, response.length);
+		exchange.getResponseBody().write(response);
+		exchange.close();
 	}
 
 //	private static void handleRequest(HttpExchange exchange) throws IOException {

@@ -10,11 +10,19 @@ public abstract class Entity implements Runnable {
 
 	public Entity(String name) {
 		this.setName(name);
-		new Thread(this).start();
+	}
+
+	public void start() {
+		new Thread(this, name).start();
 	}
 
 	public String toJSON(int id) {
-		return "\"id\": " + id + ", \"name\":\"" + name + "\"";
+		List<String> loadUnits = getLoadUnits().stream().map(lu -> "\"" + lu + "\"").toList();
+		return "{\"id\":" + id + ",\"name\":\"" + name + "\",\"loadUnits\":[" + String.join(",", loadUnits) + "]}";
+	}
+
+	public List<String> getLoadUnits() {
+		return List.of();
 	}
 
 	public String getName() {

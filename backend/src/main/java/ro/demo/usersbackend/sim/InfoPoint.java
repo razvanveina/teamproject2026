@@ -1,57 +1,44 @@
 package ro.demo.usersbackend.sim;
 
-public class InfoPoint extends Entity {
+import ro.demo.usersbackend.packagemessaging.MfsMessages;
+import ro.demo.usersbackend.packagemessaging.MfsMessages.AckGet;
 
-	private volatile String lu;
+public class InfoPoint extends ServerPoint {
 
 	public InfoPoint(String name) {
 		super(name);
 	}
 
 	@Override
-	public void run() {
-		while (true) {
+	protected void step() throws InterruptedException {
+		if (isEmpty()) {
+			pull();
+		}
+		Thread.sleep(100);
+	}
 
-			for (Entity e : getSource()) {
-				if (lu == null) {
-					String s = e.getAvailableLU(this);
-					if (s != null) {
-						lu = s;
-						announceLU(s);
-					}
+	private void pull() {
+		for (Entity e : getSource()) {
+			String s = e.getAvailableLU(this);
+			if (s != null) {
+				synchronized (this) {
+					barcode = s;
 				}
-			}
-
-			try {
-				Thread.sleep(1000);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				System.out.println(s + " arrived at " + name);
+				put(MfsMessages.toJson(new AckGet("INFO", null, s)));
+				return;
 			}
 		}
 	}
 
-	private void announceLU(String barcode) {
-		System.out.println(barcode + " arrived at " + name);
+	private synchronized boolean isEmpty() {
+		return barcode == null;
 	}
 
 	@Override
 	public synchronized String getAvailableLU() {
-		String s = lu;
-		lu = null;
+		String s = barcode;
+		barcode = null;
 		return s;
-	}
-
-	@Override
-	public String toJSON(int id) {
-		StringBuilder builder = new StringBuilder();
-
-		builder.append("{" + super.toJSON(id) + ",");
-		builder.append("\"barcodes\":[");
-
-		builder.append("\"" + lu + "\"");
-
-		builder.append("]}");
-		return builder.toString();
 	}
 }
