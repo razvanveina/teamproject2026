@@ -237,6 +237,13 @@ export class PickingApp implements OnInit, OnDestroy {
     return 'boxes of ' + this.line().steps[0].piecesPerBox;
   }
 
+  errorQuestion(): string {
+    if (this.errorReason() === 'DAMAGED') {
+      return 'How many ' + this.unitText() + ' are not damaged?';
+    }
+    return 'How many ' + this.unitText() + ' did you find?';
+  }
+
   openError(): void {
     this.errorReason.set('');
     this.foundQuantity.set('');

@@ -25,6 +25,7 @@ import ro.demo.usersbackend.entity.RetrievalOrderLine;
 import ro.demo.usersbackend.entity.RetrievalOrderLineStatus;
 import ro.demo.usersbackend.entity.RetrievalOrderStatus;
 import ro.demo.usersbackend.entity.StockAdjustment;
+import ro.demo.usersbackend.entity.StockAdjustmentReason;
 import ro.demo.usersbackend.entity.StockItem;
 import ro.demo.usersbackend.repository.InventoryCheckRepository;
 import ro.demo.usersbackend.repository.LoadUnitRepository;
@@ -119,6 +120,7 @@ public class PickingService {
 
 	// muncitorul a apasat confirm: stock itemul din pasul de pe ecran intra in cutie
 	// il luam dupa id, pentru ca acelasi barcode poate fi in mai multe locatii
+	// linia devine PICKED cand e toata in cutie, altfel STARTED (are doar o parte in cutie)
 	public void moveItemToBox(Long stockItemId, String boxBarcode) {
 		LoadUnit box = findBox(boxBarcode);
 		StockItem item = findStockItem(stockItemId);
@@ -128,6 +130,8 @@ public class PickingService {
 		RetrievalOrderLine line = item.getReservation().getRetrievalOrderLine();
 		if (isLineInBox(line)) {
 			line.setStatus(RetrievalOrderLineStatus.PICKED);
+		} else {
+			line.setStatus(RetrievalOrderLineStatus.STARTED);
 		}
 		log.info("Picking: stock item {} ({}) moved into box {}", stockItemId, line.getArticle().getDescription(), boxBarcode);
 
@@ -137,14 +141,15 @@ public class PickingService {
 	// muncitorul a apasat Error: a gasit mai putin decat scrie pe ecran (marfa stricata sau lipsa)
 	// intai salvam diferenta ca stock adjustment, la fel ca la inventar, apoi stocul scade
 	// ce a gasit intra in cutie, restul dispare din baza de date
-	// linia ramane deschisa, partea lipsa trebuie rezervata din nou
+	// linia ramane deschisa, iar orderul trece pe NEW ca rezervarea sa caute doar partea lipsa
 	public void reportError(Long stockItemId, String boxBarcode, String reason, int found) {
 		StockItem item = findStockItem(stockItemId);
 		if (found < 0 || found >= item.getQuantity()) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Found quantity must be less than " + item.getQuantity());
 		}
 		LoadUnit tote = item.getLoadUnit();
-		saveStockAdjustment(item, found);
+		RetrievalOrder order = item.getReservation().getRetrievalOrderLine().getOrder();
+		saveStockAdjustment(item, found, reason);
 		log.warn("Picking: error {} for stock item {} ({}) in {}: found {} of {}", reason, stockItemId,
 				item.getArticlePackagingUnitType().getArticle().getDescription(), tote.getBarcode(), found, item.getQuantity());
 
@@ -160,15 +165,20 @@ public class PickingService {
 			log.info("Picking: stock item {} deleted, nothing was found", stockItemId);
 			sendToteIfEmpty(tote);
 		}
+
+		order.setStatus(RetrievalOrderStatus.NEW);
+		log.info("Picking: order {} is NEW again, the missing part will be reserved", order.getOrderId());
 	}
 
 	// aceeasi inregistrare ca la inventar: o verificare pe tote si diferenta gasita
-	private void saveStockAdjustment(StockItem item, int found) {
+	// motivul vine de la ecran: DAMAGED sau MISSING
+	private void saveStockAdjustment(StockItem item, int found, String reason) {
 		InventoryCheck check = new InventoryCheck();
 		check.setLoadUnit(item.getLoadUnit());
 		check.setLoadUnitBarcode(item.getLoadUnit().getBarcode());
 		check.setLoadUnitType(item.getLoadUnit().getType().toString());
 		check.setScannedAt(LocalDateTime.now());
+		check.setReasonMessage(reason);
 		inventoryCheckRepository.save(check);
 
 		ArticlePackagingUnitType packaging = item.getArticlePackagingUnitType();
@@ -182,6 +192,7 @@ public class PickingService {
 		adjustment.setExpectedQuantity(item.getQuantity());
 		adjustment.setCountedQuantity(found);
 		adjustment.setDifferenceQuantity(found - item.getQuantity());
+		adjustment.setReasonMessage(StockAdjustmentReason.valueOf(reason));
 		stockAdjustmentRepository.save(adjustment);
 	}
 
