@@ -119,10 +119,16 @@ export class TransportApp implements OnInit, OnDestroy {
   }
 
   chooseOrder(order: TransportOrderResponse): void {
-    this.log.action(`CHOOSE TO ${order.id}`);
-    this.closeOrderPicker();
-    this.updateOrder(order);
-  }
+  this.log.action(`CHOOSE TO ${order.id}`);
+  this.closeOrderPicker();
+  this.transportOrderApi.take(order.id).subscribe({
+    next: (taken) => this.updateOrder(taken),
+    error: (err: HttpErrorResponse) => {
+      this.instructions.set(err.error?.detail ?? err.error?.message ?? 'This transport order is no longer available.');
+      this.hasError.set(true);
+    },
+  });
+}
 
   onReportError(reason: TransportOrderErrorReason): void {
     const order = this.order();
@@ -215,7 +221,15 @@ export class TransportApp implements OnInit, OnDestroy {
   }
 
   onCancel(): void {
-    this.log.action('CANCEL');
+  this.log.action('CANCEL');
+  const current = this.order();
+  if (current && current.status === 'NEW') {
+    this.transportOrderApi.release(current.id).subscribe({
+      next: () => history.back(),
+      error: () => history.back(),
+    });
+  } else {
     history.back();
   }
+}
 }

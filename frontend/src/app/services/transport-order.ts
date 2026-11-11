@@ -24,7 +24,19 @@ export class TransportOrderApi {
   }
 
   findOpenOrders(): Observable<TransportOrderResponse[]> {
-  return this.http.get<TransportOrderResponse[]>(`${this.url}/open`);
+    return this.http.get<TransportOrderResponse[]>(`${this.url}/open`);
+  }
+
+  findOpenToteOrders(): Observable<TransportOrderResponse[]> {
+    return this.http.get<TransportOrderResponse[]>(`${this.url}/openTote`);
+  }
+
+  take(id: number): Observable<TransportOrderResponse> {
+    return this.http.post<TransportOrderResponse>(`${this.url}/${id}/take`, {});
+  }
+
+  release(id: number): Observable<void> {
+    return this.http.post<void>(`${this.url}/${id}/release`, {});
   }
 
   scan(id: number, barcode: string): Observable<TransportOrderResponse> {
@@ -35,7 +47,7 @@ export class TransportOrderApi {
     return this.http.post<TransportOrderResponse>(`${this.url}/${id}/error`, { reason });
   }
 
-  findNextToteTransport(){
+  findNextToteTransport() {
     return this.http.get<TransportOrderResponse>(`${this.url}/nextTote`);
   }
 }
