@@ -39,7 +39,7 @@ public class AutomaticRetrievalService extends AbstractProcess {
 		super("automaticRetrievalService");
 	}
 
-	// @Override
+	@Override
 	protected void doAction() {
 		try {
 			SessionFactory sessionFactory = ServerSessionFactory.getInstance();
