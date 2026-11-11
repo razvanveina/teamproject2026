@@ -150,4 +150,22 @@ export class DialogPage implements OnInit {
     }
     return result;
   }
+
+  formatScannedAt(value: unknown): string {
+    if (typeof value !== 'string' && typeof value !== 'number' && !(value instanceof Date)) {
+      return String(value ?? '');
+    }
+
+    const date = value instanceof Date
+      ? value
+      : new Date(typeof value === 'string' ? value.replace(/^(\d{4}-\d{2}-\d{2}) /, '$1T') : value);
+    if (Number.isNaN(date.getTime())) {
+      return String(value);
+    }
+
+    return new Intl.DateTimeFormat('en-GB', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(date);
+  }
 }

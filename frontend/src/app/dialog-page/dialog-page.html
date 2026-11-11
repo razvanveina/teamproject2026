@@ -44,7 +44,9 @@
         <td
             [class.difference-negative]="config.entity === 'StockAdjustment' && column.field === 'DIFFERENCE_QUANTITY' && row[column.field] < 0"
             [class.difference-positive]="config.entity === 'StockAdjustment' && column.field === 'DIFFERENCE_QUANTITY' && row[column.field] > 0">
-            {{ row[column.field] }}
+            {{ config.entity === 'StockAdjustment' && column.field === 'INVENTORY_CHECK_ID__SCANNED_AT'
+                ? formatScannedAt(row[column.field])
+                : row[column.field] }}
         </td>
         }
         }
