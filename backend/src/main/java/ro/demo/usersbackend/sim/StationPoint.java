@@ -58,4 +58,15 @@ public class StationPoint extends ServerPoint {
 		released = false;
 		return s;
 	}
+
+	@Override
+	protected boolean isReady() {
+		return released;
+	}
+
+	@Override
+	public synchronized void restore(EntityState state) {
+		super.restore(state);
+		released = state.ready();
+	}
 }

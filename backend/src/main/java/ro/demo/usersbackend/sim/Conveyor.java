@@ -45,7 +45,12 @@ public class Conveyor extends Entity {
 			}
 
 			while (true) {
-				pull();
+				LOCK.readLock().lock();
+				try {
+					pull();
+				} finally {
+					LOCK.readLock().unlock();
+				}
 				Thread.sleep(100);
 			}
 		} catch (InterruptedException e) {
@@ -89,5 +94,10 @@ public class Conveyor extends Entity {
 	@Override
 	public synchronized List<String> getLoadUnits() {
 		return totes.stream().map(Tote::barcode).toList();
+	}
+
+	@Override
+	public synchronized void restore(EntityState state) {
+		state.loadUnits().forEach(this::add);
 	}
 }

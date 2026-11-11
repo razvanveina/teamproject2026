@@ -62,4 +62,16 @@ public class SourceTransportPoint extends ServerPoint {
 		barcode = null;
 		return s;
 	}
+
+	@Override
+	protected boolean isReady() {
+		return acknowledged;
+	}
+
+	@Override
+	public synchronized void restore(EntityState state) {
+		super.restore(state);
+		loadedAt = System.currentTimeMillis();
+		acknowledged = state.ready();
+	}
 }

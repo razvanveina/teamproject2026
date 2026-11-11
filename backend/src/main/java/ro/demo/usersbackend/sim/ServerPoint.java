@@ -1,5 +1,6 @@
 package ro.demo.usersbackend.sim;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
@@ -39,7 +40,12 @@ public abstract class ServerPoint extends Entity {
 			connected(context);
 
 			while (true) {
-				step();
+				LOCK.readLock().lock();
+				try {
+					step();
+				} finally {
+					LOCK.readLock().unlock();
+				}
 			}
 		} catch (Exception e) {
 			System.out.println("Exception " + e);
@@ -49,6 +55,21 @@ public abstract class ServerPoint extends Entity {
 	@Override
 	public synchronized List<String> getLoadUnits() {
 		return barcode == null ? List.of() : List.of(barcode);
+	}
+
+	protected boolean isReady() {
+		return false;
+	}
+
+	@Override
+	public synchronized EntityState snapshot() {
+		return new EntityState(name, new ArrayList<>(getLoadUnits()), transportOrderId, isReady());
+	}
+
+	@Override
+	public synchronized void restore(EntityState state) {
+		barcode = state.loadUnits().isEmpty() ? null : state.loadUnits().get(0);
+		transportOrderId = state.transportOrderId();
 	}
 
 	public Long getTransportOrderId() {

@@ -97,4 +97,11 @@ public class DecisionPoint extends ServerPoint {
 	public String getAvailableLU() {
 		return null;
 	}
+
+	@Override
+	public synchronized void restore(EntityState state) {
+		super.restore(state);
+		decision = null;
+		askedAt = System.currentTimeMillis();
+	}
 }
