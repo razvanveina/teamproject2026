@@ -12,6 +12,9 @@ export class SimVisualization {
   private simDataService = inject(SimDataService);
   private checker: ReturnType<typeof setInterval> | undefined;
 
+  errorMessage = ''
+
+  error = signal(false);
   points = signal<SimEntity[]>(
     [
       { id: 1, name: "test", loadUnits: ["lu1", "lu2"] },
@@ -28,9 +31,11 @@ export class SimVisualization {
     this.simDataService.getVizData().subscribe({
       next: (response: SimEntity[]) => {
         this.points.set(response);
+        this.error.set(false);
       },
       error: (err) => {
-        alert(err.error?.detail ?? 'Somethinig went wrong ¯\\_(ツ)_/¯');
+        this.error.set(true);
+        this.errorMessage = err.error?.detail ?? 'Somethinig went wrong';
       },
     });
   }

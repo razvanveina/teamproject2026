@@ -9,10 +9,11 @@ import com.sun.net.httpserver.HttpServer;
 
 public class CustomHttpServer {
 	Sim sim;
+	HttpServer server;
 
 	public CustomHttpServer(Sim sim) throws IOException {
 		this.sim = sim;
-		HttpServer server = HttpServer.create(new InetSocketAddress(8888), 0);
+		server = HttpServer.create(new InetSocketAddress(8888), 0);
 
 		server.createContext("/visualization", this::sendVizualizationData);
 
@@ -35,6 +36,9 @@ public class CustomHttpServer {
 		exchange.close();
 	}
 
+	public void closeServer() {
+		server.stop(0);
+	}
 //	private static void handleRequest(HttpExchange exchange) throws IOException {
 //		if ("POST".equals(exchange.getRequestMethod())) {
 //			String body = new String(exchange.getRequestBody().readAllBytes());
