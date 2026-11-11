@@ -6,6 +6,7 @@ import jakarta.jms.JMSContext;
 import jakarta.jms.Queue;
 import ro.demo.usersbackend.packagemessaging.Broker;
 import ro.demo.usersbackend.packagemessaging.MfsMessages;
+import ro.demo.usersbackend.packagemessaging.MfsMessages.Arrived;
 
 public abstract class ServerPoint extends Entity {
 
@@ -53,5 +54,9 @@ public abstract class ServerPoint extends Entity {
 	public void setTransportOrderId(Long transportOrderId) {
 		this.transportOrderId = transportOrderId;
 	}
-
+	
+	// anuntam serveru ca lu a ajuns intr o anumita locatie
+	protected void announceLU(String barcode) {
+		put(MfsMessages.toJson(new Arrived("ARRIVED", name, barcode)));
+	}
 }

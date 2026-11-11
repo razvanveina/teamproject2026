@@ -21,7 +21,9 @@ public class TelegramHandling {
 			Map.entry("DP3", new DP3Handler()),
 			Map.entry("EMPTY", new EMPTYHandler()));
 
-	public static void route(String point, String telegram) {
+	// ia ca parametrii punctul si telegrama lui
+	//gaseste handleru punctului si ii paseaza telegrama
+	public static void route(String point, String telegram) throws Exception {
 		TelegramHandler handler = HANDLERS.get(point);
 		if (handler == null) {
 			log.warn("TelegramHandling: no telegram for point {}", point);

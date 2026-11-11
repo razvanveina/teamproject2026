@@ -50,6 +50,7 @@ public class SourceTransportPoint extends ServerPoint {
 			if (barcode != null && !acknowledged && System.currentTimeMillis() - loadedAt >= 2000) {
 				acknowledged = true;
 				put(MfsMessages.toJson(new AckGet("ACK_GET", getTransportOrderId(), barcode)));
+				announceLU(barcode);
 			}
 		}
 	}

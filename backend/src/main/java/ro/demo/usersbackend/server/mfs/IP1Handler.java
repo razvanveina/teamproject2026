@@ -1,13 +1,7 @@
 package ro.demo.usersbackend.server.mfs;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-public class IP1Handler implements TelegramHandler{
-	public static final Logger log = LogManager.getLogger("application");
-	
-	@Override
-	public void handle(String telegram) {
-		//TODO
+public class IP1Handler extends PointHandler{
+	public IP1Handler() {
+		super("IP1");
 	}
 }

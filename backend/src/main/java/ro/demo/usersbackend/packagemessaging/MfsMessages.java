@@ -21,6 +21,10 @@ public final class MfsMessages {
 	// de ex {"type":"ACK_GET","transportOrderId":1,"loadUnit":"00001"}
 	public record AckGet(String type, Long transportOrderId, String loadUnit) {
 	}
+	
+	// de ex {"type":"ARRIVED","point":"IP1","loadUnit":"00001"}
+	public record Arrived(String type, String point, String loadUnit) {
+	}
 
 	public static String toJson(Object message) {
 		try {

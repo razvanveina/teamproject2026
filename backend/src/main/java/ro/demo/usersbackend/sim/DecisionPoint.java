@@ -66,7 +66,8 @@ public class DecisionPoint extends ServerPoint {
 					decision = null;
 					askedAt = System.currentTimeMillis();
 				}
-				put(name + " " + s);
+				//put(name + " " + s);
+				announceLU(s);
 				return;
 			}
 		}

@@ -8,6 +8,8 @@ import org.apache.logging.log4j.Logger;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import jakarta.jms.JMSConsumer;
 import jakarta.jms.JMSContext;
 import jakarta.jms.Queue;
@@ -23,6 +25,7 @@ import ro.demo.usersbackend.packagemessaging.Broker;
 import ro.demo.usersbackend.packagemessaging.MfsMessages;
 import ro.demo.usersbackend.packagemessaging.MfsMessages.AckGet;
 import ro.demo.usersbackend.packagemessaging.MfsMessages.Get;
+import ro.demo.usersbackend.server.mfs.TelegramHandling;
 import ro.demo.usersbackend.server.process.AbstractProcess;
 import ro.demo.usersbackend.server.session.ServerSessionFactory;
 
@@ -50,15 +53,20 @@ public class AutomaticRetrievalService extends AbstractProcess {
 		}
 	}
 
-	// rasp ACK_GET cand load unitu a ajuns pe conveyor si to e gata
+	// ACK_GET inchide to-ul, restul telegramelor (ARRIVED) merg la handlerul punctului
 	private void receiveReplies(SessionFactory sessionFactory, JMSContext context) throws JMSException {
 		JMSConsumer consumer = context.createConsumer(context.createQueue(MfsMessages.RESPONSE_QUEUE));
 		Message message;
 		while ((message = consumer.receive(1000)) != null) {
 			try {
 				String text = ((TextMessage) message).getText();
-				AckGet ack = MfsMessages.fromJson(text, AckGet.class);
-				sessionFactory.inTransaction(session -> finishTransportOrder(session, ack));
+				JsonNode node = MfsMessages.fromJson(text, JsonNode.class);
+				if ("ACK_GET".equals(node.path("type").asText())) {
+					AckGet ack = MfsMessages.fromJson(text, AckGet.class);
+					sessionFactory.inTransaction(session -> finishTransportOrder(session, ack));
+				} else {
+					TelegramHandling.route(node.path("point").asText(), text);
+				}
 			} catch (Exception e) {
 				log.error("Automatic retrieval: reply not processed {}", e.toString());
 			}
