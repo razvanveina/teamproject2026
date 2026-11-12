@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -17,7 +18,6 @@ import ro.demo.usersbackend.dto.ScannedPackage;
 import ro.demo.usersbackend.dto.StockItemResponse;
 import ro.demo.usersbackend.entity.Article;
 import ro.demo.usersbackend.entity.ArticlePackagingUnitType;
-import ro.demo.usersbackend.entity.Destination;
 import ro.demo.usersbackend.entity.DestinationToGate;
 import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.LoadUnitType;
@@ -45,12 +45,11 @@ public class LoadUnitService {
 	private final LocationRepository locationRepository;
 	private final DestinationToGateRepository destinationToGateRepository;
 	private final ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository;
-	
+	private final TransportOrderService transportOrderService;
+
 	private RetrievalOrder orderOf(LoadUnit loadUnit) {
-		return loadUnit.getStockItems().stream()
-				.filter(s -> s.getReservation() != null)
-				.map(s -> s.getReservation().getRetrievalOrderLine().getOrder())
-				.findFirst()
+		return loadUnit.getStockItems().stream().filter(s -> s.getReservation() != null)
+				.map(s -> s.getReservation().getRetrievalOrderLine().getOrder()).findFirst()
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
 						"Load unit " + loadUnit.getBarcode() + " does not belong to any order"));
 	}
@@ -64,7 +63,8 @@ public class LoadUnitService {
 	public LoadUnitService(EntityManager entityManager, StockItemRepository stockItemRepository,
 			LoadUnitRepository loadUnitRepository, LocationRepository locationRepository,
 			DestinationToGateRepository destinationToGateRepository,
-			ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository) {
+			ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository,
+			TransportOrderService transportOrderService) {
 		super();
 		this.entityManager = entityManager;
 		this.stockItemRepository = stockItemRepository;
@@ -72,6 +72,62 @@ public class LoadUnitService {
 		this.locationRepository = locationRepository;
 		this.destinationToGateRepository = destinationToGateRepository;
 		this.articlePackagingUnitTypeRepository = articlePackagingUnitTypeRepository;
+		this.transportOrderService = transportOrderService;
+	}
+
+	private void checkLocation(LoadUnit loadUnit, String targetLocation) {
+		String location = loadUnit.getLocation() == null ? "nowhere" : loadUnit.getLocation().getName();
+		if (!targetLocation.equals(location)) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+					"Load unit " + loadUnit.getBarcode() + " is at " + location + ". Bring it to OUT first");
+		}
+	}
+
+	private Location location(String name) {
+		return locationRepository.findByName(name)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+						"Location " + name + " is missing"));
+	}
+
+	private void checkShippable(LoadUnit loadUnit) {
+		if (loadUnit.getType() != LoadUnitType.CARTON && loadUnit.getType() != LoadUnitType.TOTE) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+					"Load unit " + loadUnit.getBarcode() + " is a " + loadUnit.getType() + ". Scan a carton or a tote");
+		}
+	}
+
+	private void checkOwner(RetrievalOrder order, String user, String barcode) {
+		if (!user.equals(order.getShippingUser())) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT,
+					order.getShippingUser() == null ? "Scan the load unit " + barcode + " first"
+							: "Load unit " + barcode + " is being shipped by " + order.getShippingUser());
+		}
+	}
+
+	private LoadUnit cartonFor(String cartonBarcode) {
+		String barcode = cartonBarcode.trim();
+		Optional<LoadUnit> existing = loadUnitRepository.findByBarcode(barcode);
+
+		if (existing.isPresent()) {
+			LoadUnit carton = existing.get();
+			if (carton.getType() != LoadUnitType.CARTON) {
+				throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+						barcode + " is a " + carton.getType() + ", not a carton");
+			}
+			if (!carton.getStockItems().isEmpty()) {
+				throw new ResponseStatusException(HttpStatus.CONFLICT,
+						"Carton " + barcode + " is already used. Take an empty carton");
+			}
+			carton.setLocation(location("OUT"));
+			return carton;
+		}
+
+		LoadUnit carton = new LoadUnit();
+		carton.setBarcode(barcode);
+		carton.setType(LoadUnitType.CARTON);
+		carton.setStockItems(new ArrayList<>());
+		carton.setLocation(location("OUT"));
+		return loadUnitRepository.save(carton);
 	}
 
 	public LoadUnit createLoadUnit(List<ScannedPackage> scannedPackages) {
@@ -104,13 +160,16 @@ public class LoadUnitService {
 		}
 		return loadUnit;
 	}
-	
+
 	public LoadUnitResponse findByBarcode(String barcode, String user) {
 		LoadUnit loadUnit = findLoadUnit(barcode);
+		checkShippable(loadUnit);
+		checkLocation(loadUnit, "OUT");
 		RetrievalOrder order = orderOf(loadUnit);
 
 		if (order.getStatus() == RetrievalOrderStatus.FINISHED) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The order for this load unit is already finished");
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+					"The order for this load unit is already finished");
 		}
 		if (order.getStatus() != RetrievalOrderStatus.PICKED) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Order status must be PICKED");
@@ -120,8 +179,9 @@ public class LoadUnitService {
 					"Load unit " + barcode + " is being shipped by " + order.getShippingUser());
 		}
 
-		List<RetrievalOrder> mine = entityManager.createQuery(
-				"from RetrievalOrder o where o.shippingUser = :user and o.status = :status", RetrievalOrder.class)
+		List<RetrievalOrder> mine = entityManager
+				.createQuery("from RetrievalOrder o where o.shippingUser = :user and o.status = :status",
+						RetrievalOrder.class)
 				.setParameter("user", user).setParameter("status", RetrievalOrderStatus.PICKED).getResultList();
 		for (RetrievalOrder other : mine) {
 			if (!other.getId().equals(order.getId())) {
@@ -134,17 +194,48 @@ public class LoadUnitService {
 				loadUnit.getLocation().getName(), createItems(loadUnit.getStockItems()));
 	}
 
-	public void finishLoadUnit(String barcode, String user) {
+	public LoadUnitResponse chooseCarton(String toteBarcode, String cartonBarcode, String user) {
+		LoadUnit tote = findLoadUnit(toteBarcode);
+		if (tote.getType() != LoadUnitType.TOTE) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only a tote needs a carton");
+		}
+		checkLocation(tote, "OUT");
+		RetrievalOrder order = orderOf(tote);
+		checkOwner(order, user, toteBarcode);
+
+		LoadUnit carton = cartonFor(cartonBarcode);
+		return new LoadUnitResponse(carton.getBarcode(), carton.getType().toString(), carton.getLocation().getName(),
+				createItems(carton.getStockItems()));
+	}
+
+	public void finishLoadUnit(String barcode, String user, String cartonBarcode) {
 		LoadUnit loadUnit = findLoadUnit(barcode);
+		checkShippable(loadUnit);
+		checkLocation(loadUnit, "OUT");
 		RetrievalOrder order = orderOf(loadUnit);
 
-		if (!user.equals(order.getShippingUser())) {
-			throw new ResponseStatusException(HttpStatus.CONFLICT, order.getShippingUser() == null
-					? "Scan the load unit " + barcode + " first"
-					: "Load unit " + barcode + " is being shipped by " + order.getShippingUser());
-		}
+		checkOwner(order, user, barcode);
+
 		if (order.getStatus() != RetrievalOrderStatus.PICKED) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Order status must be PICKED");
+		}
+
+		DestinationToGate destinationToGate = destinationToGateRepository
+				.findByDestinationName(order.getDestination().getName())
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+						"Could not find a DestinationToGate object from the name: "
+								+ order.getDestination().getName()));
+
+		LoadUnit carton = loadUnit;
+		if (loadUnit.getType() == LoadUnitType.TOTE) {
+			if (cartonBarcode == null || cartonBarcode.isBlank()) {
+				throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+						"Scan a carton for the items of tote " + barcode + " first");
+			}
+			carton = cartonFor(cartonBarcode);
+			for (StockItem item : new ArrayList<>(loadUnit.getStockItems())) {
+				item.setLoadUnit(carton);
+			}
 		}
 
 		int lineCount = 0;
@@ -157,7 +248,11 @@ public class LoadUnitService {
 		}
 
 		if (lineCount == 0) {
-			order.setStatus(RetrievalOrderStatus.FINISHED); 
+			order.setStatus(RetrievalOrderStatus.FINISHED);
+			carton.setLocation(destinationToGate.getGate());
+			if (loadUnit.getType() == LoadUnitType.TOTE) {
+				transportOrderService.createTransportOrder(loadUnit, location("EMPTY_TOTES"));
+			}
 		} else {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
 					"All lines status must be PICKED. There are " + lineCount + " lines with a different status");

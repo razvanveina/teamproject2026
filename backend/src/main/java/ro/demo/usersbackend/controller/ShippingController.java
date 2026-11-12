@@ -6,8 +6,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -45,11 +47,12 @@ public class ShippingController {
 	}
 
 	@PutMapping("/{barcode}/finish")
-	public void confirmLoadUnit(@PathVariable String barcode, Authentication authentication) {
+	public void confirmLoadUnit(@PathVariable String barcode, @RequestParam(required = false) String carton,
+			Authentication authentication) {
 		log.info("Shipping: {} confirmed load unit {}", authentication.getName(), barcode);
 		try {
 			synchronized (SHIPPING_LOCK) {
-				loadUnitService.finishLoadUnit(barcode, authentication.getName());
+				loadUnitService.finishLoadUnit(barcode, authentication.getName(), carton);
 			}
 		} catch (ResponseStatusException e) {
 			log.warn("Shipping: confirm rejected {}", e.getReason());
@@ -65,6 +68,20 @@ public class ShippingController {
 		log.info("Shipping: {} released load unit {}", authentication.getName(), barcode);
 		synchronized (SHIPPING_LOCK) {
 			loadUnitService.releaseLoadUnit(barcode, authentication.getName());
+		}
+	}
+
+	@PostMapping("/{tote}/carton/{carton}")
+	public LoadUnitResponse chooseCarton(@PathVariable String tote, @PathVariable String carton,
+			Authentication authentication) {
+		log.info("Shipping: {} chose carton {} for tote {}", authentication.getName(), carton, tote);
+		try {
+			synchronized (SHIPPING_LOCK) {
+				return loadUnitService.chooseCarton(tote, carton, authentication.getName());
+			}
+		} catch (ResponseStatusException e) {
+			log.warn("Shipping: carton rejected {}", e.getReason());
+			throw e;
 		}
 	}
 }

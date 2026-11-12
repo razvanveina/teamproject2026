@@ -4,6 +4,9 @@
             <p>Load Unit ID: <b>{{loadUnit().barcode}}</b></p>
             <br>
             <p>Load Unit Type: <b>{{loadUnit().loadUnitType}}</b></p>
+            @if (carton()) {
+            <p>Carton: <b>{{ carton() }}</b></p>
+            }
             <table>
                 <thead>
                     <tr>
@@ -11,8 +14,8 @@
                         <th>Quantity</th>
                         <th>Article Barcode</th>
                         <th>Article Description</th>
-                        <th>Packaging Unit Quantity</th>
                         <th>Packaging Unit Name</th>
+                        <th>Packaging Unit Quantity</th>
                     </tr>
                 </thead>
 

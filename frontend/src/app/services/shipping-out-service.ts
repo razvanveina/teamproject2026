@@ -14,11 +14,16 @@ export class ShippingService {
         return this.httpClient.get<LoadUnit>(`${this.url}/${loadUnitBarcode}`)
     }
 
-    finishOrder(loadUnitBarcode: string) {
-        return this.httpClient.put<any>(`${this.url}/${loadUnitBarcode}/finish`, {})
+    finishOrder(loadUnitBarcode: string, cartonBarcode?: string) {
+        const params = cartonBarcode ? `?carton=${encodeURIComponent(cartonBarcode)}` : ''
+        return this.httpClient.put<any>(`${this.url}/${loadUnitBarcode}/finish${params}`, {})
     }
 
     releaseLoadUnit(loadUnitBarcode: string) {
         return this.httpClient.put<void>(`${this.url}/${loadUnitBarcode}/release`, {})
+    }
+
+    chooseCarton(toteBarcode: string, cartonBarcode: string) {
+        return this.httpClient.post<LoadUnit>(`${this.url}/${toteBarcode}/carton/${encodeURIComponent(cartonBarcode)}`, {})
     }
 }
