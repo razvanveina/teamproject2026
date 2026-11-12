@@ -14,6 +14,7 @@
     { "field": "LOAD_UNIT_BARCODE", "label": "Load unit", "filterable": true },
     { "field": "LOAD_UNIT_TYPE", "label": "Type" },
     { "field": "LOCATION_NAME", "label": "Location" },
+    { "field": "STATUS", "label": "State" },
     { "field": "COMPLETED_AT", "label": "Completed at" }
   ]
 }

@@ -17,15 +17,17 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import ro.demo.usersbackend.dto.InventoryLoadUnitResponse;
-import ro.demo.usersbackend.dto.InventoryCheckRequest;
-import ro.demo.usersbackend.dto.InventoryOrderLineRequest;
-import ro.demo.usersbackend.dto.InventoryOrderRequest;
+import ro.demo.usersbackend.dto.InventoryOrderLineResponse;
+import ro.demo.usersbackend.dto.InventoryOrderLineStartRequest;
+import ro.demo.usersbackend.dto.InventoryOrderResponse;
 import ro.demo.usersbackend.dto.ScannedInventoryItemRequest;
 import ro.demo.usersbackend.entity.Article;
 import ro.demo.usersbackend.entity.ArticlePackagingUnitType;
-import ro.demo.usersbackend.entity.InventoryCheck;
 import ro.demo.usersbackend.entity.InventoryOrder;
 import ro.demo.usersbackend.entity.InventoryOrderLine;
+import ro.demo.usersbackend.entity.InventoryOrderLineItem;
+import ro.demo.usersbackend.entity.InventoryOrderLineStatus;
+import ro.demo.usersbackend.entity.InventoryOrderStatus;
 import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.PackagingUnitType;
 import ro.demo.usersbackend.entity.Reservation;
@@ -39,8 +41,8 @@ import ro.demo.usersbackend.entity.StockItem;
 import ro.demo.usersbackend.entity.TransitLocation;
 import ro.demo.usersbackend.repository.ArticlePackagingUnitTypeRepository;
 import ro.demo.usersbackend.repository.ArticleRepository;
-import ro.demo.usersbackend.repository.InventoryCheckRepository;
 import ro.demo.usersbackend.repository.InventoryOrderLineRepository;
+import ro.demo.usersbackend.repository.InventoryOrderLineItemRepository;
 import ro.demo.usersbackend.repository.InventoryOrderRepository;
 import ro.demo.usersbackend.repository.LoadUnitRepository;
 import ro.demo.usersbackend.repository.PackagingUnitTypeRepository;
@@ -50,10 +52,10 @@ import ro.demo.usersbackend.repository.StockItemRepository;
 
 @Service
 @Transactional
-public class InventoryCheckService {
-	private final InventoryCheckRepository inventoryCheckRepository;
+public class InventoryOrderService {
 	private final InventoryOrderRepository inventoryOrderRepository;
 	private final InventoryOrderLineRepository inventoryOrderLineRepository;
+	private final InventoryOrderLineItemRepository inventoryOrderLineItemRepository;
 	private final StockAdjustmentRepository inventoryDifferenceRepository;
 	private final LoadUnitRepository loadUnitRepository;
 	private final StockItemRepository stockItemRepository;
@@ -61,18 +63,18 @@ public class InventoryCheckService {
 	private final ArticleRepository articleRepository;
 	private final PackagingUnitTypeRepository packagingUnitTypeRepository;
 	private final ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository;
-	private static final Logger log = LoggerFactory.getLogger(InventoryCheckService.class);
+	private static final Logger log = LoggerFactory.getLogger(InventoryOrderService.class);
 
-	public InventoryCheckService(InventoryCheckRepository inventoryCheckRepository,
-			InventoryOrderRepository inventoryOrderRepository,
+	public InventoryOrderService(InventoryOrderRepository inventoryOrderRepository,
 			InventoryOrderLineRepository inventoryOrderLineRepository,
+			InventoryOrderLineItemRepository inventoryOrderLineItemRepository,
 			StockAdjustmentRepository inventoryDifferenceRepository, LoadUnitRepository loadUnitRepository,
 			StockItemRepository stockItemRepository, ReservationRepository reservationRepository,
 			ArticleRepository articleRepository, PackagingUnitTypeRepository packagingUnitTypeRepository,
 			ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository) {
-		this.inventoryCheckRepository = inventoryCheckRepository;
 		this.inventoryOrderRepository = inventoryOrderRepository;
 		this.inventoryOrderLineRepository = inventoryOrderLineRepository;
+		this.inventoryOrderLineItemRepository = inventoryOrderLineItemRepository;
 		this.inventoryDifferenceRepository = inventoryDifferenceRepository;
 		this.loadUnitRepository = loadUnitRepository;
 		this.stockItemRepository = stockItemRepository;
@@ -89,41 +91,124 @@ public class InventoryCheckService {
 				loadUnit.getLocation().getName());
 	}
 
-	public InventoryOrder saveInventoryOrder(InventoryOrderRequest request) {
-		LocalDateTime now = LocalDateTime.now();
+	@Transactional(readOnly = true)
+	public List<InventoryOrderResponse> getStartedInventoryOrders() {
+		return inventoryOrderRepository.findByStatusOrderByCreatedAtDesc(InventoryOrderStatus.STARTED).stream()
+				.map(this::toOrderResponse).toList();
+	}
+
+	public InventoryOrderResponse createInventoryOrder() {
 		InventoryOrder order = new InventoryOrder();
-		order.setCreatedAt(now);
+		order.setCreatedAt(LocalDateTime.now());
 		order.setReasonMessage("INVENTORY");
-		InventoryOrder savedOrder = inventoryOrderRepository.save(order);
+		order.setStatus(InventoryOrderStatus.STARTED);
+		return toOrderResponse(inventoryOrderRepository.save(order));
+	}
 
-		Set<String> seenLoadUnitBarcodes = new LinkedHashSet<>();
+	public InventoryOrderLineResponse startInventoryOrderLine(Long orderId, InventoryOrderLineStartRequest request) {
+		InventoryOrder order = findStartedOrder(orderId);
+		if (inventoryOrderLineRepository.existsByInventoryOrder_IdAndStatus(orderId,
+				InventoryOrderLineStatus.STARTED)) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT,
+					"Finish the started load-unit line before starting another.");
+		}
+		if (inventoryOrderLineRepository.findByInventoryOrder_IdOrderByIdAsc(orderId).stream()
+				.anyMatch(line -> line.getLoadUnitBarcode().equals(request.loadUnitBarcode()))) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT,
+					"Load unit is already in this inventory order: " + request.loadUnitBarcode());
+		}
+
+		LoadUnit loadUnit = findEligibleLoadUnit(request.loadUnitBarcode());
+		InventoryOrderLine line = new InventoryOrderLine();
+		line.setInventoryOrder(order);
+		line.setLoadUnit(loadUnit);
+		line.setLoadUnitBarcode(loadUnit.getBarcode());
+		line.setLoadUnitType(loadUnit.getType().name());
+		line.setLocationName(loadUnit.getLocation().getName());
+		line.setStatus(InventoryOrderLineStatus.STARTED);
+		line.setCompletedAt(null);
+		return toLineResponse(inventoryOrderLineRepository.save(line));
+	}
+
+	public InventoryOrderLineResponse saveInventoryOrderLineItems(Long orderId, Long lineId,
+			List<ScannedInventoryItemRequest> items) {
+		InventoryOrderLine line = findStartedLine(orderId, lineId);
+		inventoryOrderLineItemRepository.deleteByInventoryOrderLine_Id(lineId);
+		for (ScannedInventoryItemRequest request : items) {
+			InventoryOrderLineItem item = new InventoryOrderLineItem();
+			item.setInventoryOrderLine(line);
+			item.setArticleBarcode(request.articleBarcode());
+			item.setArticleDescription(request.articleDescription());
+			item.setPackagingUnitName(request.packagingUnitName());
+			item.setQuantity(request.quantity());
+			inventoryOrderLineItemRepository.save(item);
+		}
+		return toLineResponse(line);
+	}
+
+	public InventoryOrderLineResponse finishInventoryOrderLine(Long orderId, Long lineId) {
+		InventoryOrderLine line = findStartedLine(orderId, lineId);
+		line.setStatus(InventoryOrderLineStatus.FINISHED);
+		line.setCompletedAt(LocalDateTime.now());
+		line = inventoryOrderLineRepository.save(line);
+		createInventoryAdjustments(line);
+		line.setStockAdjustmentsCalculated(true);
+		return toLineResponse(inventoryOrderLineRepository.save(line));
+	}
+
+	private void createInventoryAdjustments(InventoryOrderLine line) {
+		LoadUnit loadUnit = findEligibleLoadUnit(line.getLoadUnitBarcode());
+		List<ScannedInventoryItemRequest> requestItems = inventoryOrderLineItemRepository
+				.findByInventoryOrderLine_IdOrderByIdAsc(line.getId()).stream()
+				.map(item -> new ScannedInventoryItemRequest(item.getArticleBarcode(),
+						item.getArticleDescription(), item.getPackagingUnitName(), item.getQuantity()))
+				.toList();
+		Map<ItemKey, ScannedInventoryItemRequest> scannedItems = getScannedItems(requestItems);
+		List<StockItem> stockItems = stockItemRepository.findByLoadUnitOrderByIdAsc(loadUnit);
+		Map<ItemKey, Integer> expectedQuantities = getExpectedQuantities(stockItems);
+		Set<ItemKey> allItems = new LinkedHashSet<>();
+		allItems.addAll(expectedQuantities.keySet());
+		allItems.addAll(scannedItems.keySet());
+
 		List<StockAdjustment> adjustments = new ArrayList<>();
-
-		for (InventoryOrderLineRequest lineRequest : request.lines()) {
-			LoadUnit loadUnit = findEligibleLoadUnit(lineRequest.loadUnitBarcode());
-			if (!seenLoadUnitBarcodes.add(loadUnit.getBarcode())) {
-				throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-						"Load unit appears more than once in the inventory order: " + loadUnit.getBarcode());
+		for (ItemKey key : allItems) {
+			int expected = expectedQuantities.getOrDefault(key, 0);
+			ScannedInventoryItemRequest scanned = scannedItems.get(key);
+			int counted = scanned == null ? 0 : scanned.quantity();
+			int difference = counted - expected;
+			if (difference != 0) {
+				adjustments.add(createDifference(line, key, scanned, expected, counted, difference));
 			}
+		}
+		inventoryDifferenceRepository.saveAll(adjustments);
+	}
 
-			InventoryCheck check = new InventoryCheck();
-			check.setLoadUnit(loadUnit);
-			check.setLoadUnitBarcode(loadUnit.getBarcode());
-			check.setLoadUnitType(loadUnit.getType().name());
-			check.setScannedAt(now);
-			check.setReasonMessage("INVENTORY");
-			InventoryCheck savedCheck = inventoryCheckRepository.save(check);
+	public void finishInventoryOrder(Long orderId) {
+		InventoryOrder order = findStartedOrder(orderId);
+		List<InventoryOrderLine> lines = inventoryOrderLineRepository.findByInventoryOrder_IdOrderByIdAsc(orderId);
+		if (lines.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+					"An inventory order must contain at least one completed load-unit line.");
+		}
+		if (lines.stream().anyMatch(line -> line.getStatus() != InventoryOrderLineStatus.FINISHED)) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT,
+					"Finish every load-unit line before finishing the inventory order.");
+		}
 
-			InventoryOrderLine line = new InventoryOrderLine();
-			line.setInventoryOrder(savedOrder);
-			line.setLoadUnit(loadUnit);
-			line.setLoadUnitBarcode(loadUnit.getBarcode());
-			line.setLoadUnitType(loadUnit.getType().name());
-			line.setLocationName(loadUnit.getLocation().getName());
-			line.setCompletedAt(now);
-			line.setInventoryCheck(savedCheck);
-			InventoryOrderLine savedLine = inventoryOrderLineRepository.save(line);
-
+		LocalDateTime now = LocalDateTime.now();
+		for (InventoryOrderLine line : lines) {
+			if (!line.isStockAdjustmentsCalculated()) {
+				createInventoryAdjustments(line);
+				line.setStockAdjustmentsCalculated(true);
+				inventoryOrderLineRepository.save(line);
+			}
+			LoadUnit loadUnit = findEligibleLoadUnit(line.getLoadUnitBarcode());
+			List<ScannedInventoryItemRequest> requestItems = inventoryOrderLineItemRepository
+					.findByInventoryOrderLine_IdOrderByIdAsc(line.getId()).stream()
+					.map(item -> new ScannedInventoryItemRequest(item.getArticleBarcode(),
+							item.getArticleDescription(), item.getPackagingUnitName(), item.getQuantity()))
+					.toList();
+			Map<ItemKey, ScannedInventoryItemRequest> scannedItems = getScannedItems(requestItems);
 			List<StockItem> stockItems = stockItemRepository.findByLoadUnitOrderByIdAsc(loadUnit);
 			if (!stockItems.isEmpty()) {
 				for (Reservation reservation : reservationRepository.findByStockItemIn(stockItems)) {
@@ -131,31 +216,56 @@ public class InventoryCheckService {
 				}
 			}
 
-			Map<ItemKey, Integer> expectedQuantities = getExpectedQuantities(stockItems);
-			Map<ItemKey, ScannedInventoryItemRequest> scannedItems = getScannedItems(lineRequest.items());
-			Set<ItemKey> allItems = new LinkedHashSet<>();
-			allItems.addAll(expectedQuantities.keySet());
-			allItems.addAll(scannedItems.keySet());
-
-			for (ItemKey key : allItems) {
-				int expected = expectedQuantities.getOrDefault(key, 0);
-				ScannedInventoryItemRequest scanned = scannedItems.get(key);
-				int counted = scanned == null ? 0 : scanned.quantity();
-				int difference = counted - expected;
-
-				if (difference != 0) {
-					StockAdjustment adjustment = createDifference(savedCheck, key, scanned, expected, counted,
-							difference);
-					adjustment.setInventoryOrderLine(savedLine);
-					adjustments.add(adjustment);
-				}
-			}
-
 			updateExistingStockItems(loadUnit, stockItems, scannedItems);
 		}
 
-		inventoryDifferenceRepository.saveAll(adjustments);
-		return savedOrder;
+		order.setStatus(InventoryOrderStatus.FINISHED);
+		order.setFinishedAt(now);
+		inventoryOrderRepository.save(order);
+	}
+
+	private InventoryOrder findStartedOrder(Long orderId) {
+		InventoryOrder order = inventoryOrderRepository.findById(orderId)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+						"Inventory order was not found: " + orderId));
+		if (order.getStatus() != InventoryOrderStatus.STARTED) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "Inventory order is already finished.");
+		}
+		return order;
+	}
+
+	private InventoryOrderLine findStartedLine(Long orderId, Long lineId) {
+		findStartedOrder(orderId);
+		InventoryOrderLine line = inventoryOrderLineRepository.findById(lineId)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+						"Inventory order line was not found: " + lineId));
+		if (!line.getInventoryOrder().getId().equals(orderId)) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+					"Inventory order line does not belong to this order.");
+		}
+		if (line.getStatus() != InventoryOrderLineStatus.STARTED) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "Inventory order line is already finished.");
+		}
+		return line;
+	}
+
+	private InventoryOrderResponse toOrderResponse(InventoryOrder order) {
+		List<InventoryOrderLineResponse> lines = inventoryOrderLineRepository
+				.findByInventoryOrder_IdOrderByIdAsc(order.getId()).stream()
+				.map(this::toLineResponse).toList();
+		return new InventoryOrderResponse(order.getId(), order.getCreatedAt(), order.getFinishedAt(),
+				order.getStatus().name(), lines);
+	}
+
+	private InventoryOrderLineResponse toLineResponse(InventoryOrderLine line) {
+		List<ScannedInventoryItemRequest> items = inventoryOrderLineItemRepository
+				.findByInventoryOrderLine_IdOrderByIdAsc(line.getId()).stream()
+				.map(item -> new ScannedInventoryItemRequest(item.getArticleBarcode(), item.getArticleDescription(),
+						item.getPackagingUnitName(), item.getQuantity()))
+				.toList();
+		Long loadUnitId = line.getLoadUnit() == null ? null : line.getLoadUnit().getId();
+		return new InventoryOrderLineResponse(line.getId(), loadUnitId, line.getLoadUnitBarcode(),
+				line.getLoadUnitType(), line.getLocationName(), line.getStatus().name(), items);
 	}
 
 	private LoadUnit findEligibleLoadUnit(String barcode) {
@@ -171,53 +281,6 @@ public class InventoryCheckService {
 					"Load units in transit cannot be added to an inventory order: " + barcode);
 		}
 		return loadUnit;
-	}
-
-	public InventoryCheck saveInventoryCheck(InventoryCheckRequest request) {
-		LoadUnit loadUnit = loadUnitRepository.findByBarcode(request.loadUnitBarcode()).orElse(null);
-
-		InventoryCheck check = new InventoryCheck();
-		check.setLoadUnit(loadUnit);
-		check.setLoadUnitBarcode(request.loadUnitBarcode());
-		check.setLoadUnitType(request.loadUnitType());
-		check.setScannedAt(LocalDateTime.now());
-		check.setReasonMessage("INVENTORY");
-
-		InventoryCheck savedCheck = inventoryCheckRepository.save(check);
-
-		List<StockItem> stockItems = loadUnit == null ? new ArrayList<>()
-				: stockItemRepository.findByLoadUnitOrderByIdAsc(loadUnit);
-		if (!stockItems.isEmpty()) {
-			for (Reservation reservation : reservationRepository.findByStockItemIn(stockItems)) {
-				reservation.getStockItem().setReservation(reservation);
-			}
-		}
-
-		Map<ItemKey, Integer> expectedQuantities = getExpectedQuantities(stockItems);
-		Map<ItemKey, ScannedInventoryItemRequest> scannedItems = getScannedItems(request.items());
-
-		Set<ItemKey> allItems = new LinkedHashSet<>();
-		allItems.addAll(expectedQuantities.keySet());
-		allItems.addAll(scannedItems.keySet());
-
-		List<StockAdjustment> differences = new ArrayList<>();
-
-		for (ItemKey key : allItems) {
-			int expected = expectedQuantities.getOrDefault(key, 0);
-			ScannedInventoryItemRequest scanned = scannedItems.get(key);
-			int counted = scanned == null ? 0 : scanned.quantity();
-			int difference = counted - expected;
-
-			if (difference != 0) {
-				differences.add(createDifference(savedCheck, key, scanned, expected, counted, difference));
-			}
-		}
-
-		inventoryDifferenceRepository.saveAll(differences);
-
-		updateExistingStockItems(loadUnit, stockItems, scannedItems);
-
-		return savedCheck;
 	}
 
 	private Map<ItemKey, Integer> getExpectedQuantities(List<StockItem> stockItems) {
@@ -357,25 +420,6 @@ public class InventoryCheckService {
 				articlePackaging.getPackagingUnitType().getName());
 	}
 
-	private Map<ItemKey, Integer> getExpectedQuantities(LoadUnit loadUnit) {
-		Map<ItemKey, Integer> quantities = new LinkedHashMap<>();
-
-		if (loadUnit == null) {
-			return quantities;
-		}
-
-		for (StockItem stockItem : stockItemRepository.findByLoadUnitOrderByIdAsc(loadUnit)) {
-			ArticlePackagingUnitType articlePackaging = stockItem.getArticlePackagingUnitType();
-
-			ItemKey key = new ItemKey(articlePackaging.getArticle().getBarcode(),
-					articlePackaging.getPackagingUnitType().getName());
-
-			quantities.merge(key, stockItem.getQuantity(), Integer::sum);
-		}
-
-		return quantities;
-	}
-
 	private Map<ItemKey, ScannedInventoryItemRequest> getScannedItems(List<ScannedInventoryItemRequest> items) {
 		Map<ItemKey, ScannedInventoryItemRequest> scannedItems = new LinkedHashMap<>();
 
@@ -397,7 +441,7 @@ public class InventoryCheckService {
 		return scannedItems;
 	}
 
-	private StockAdjustment createDifference(InventoryCheck check, ItemKey key, ScannedInventoryItemRequest scanned,
+	private StockAdjustment createDifference(InventoryOrderLine line, ItemKey key, ScannedInventoryItemRequest scanned,
 			int expected, int counted, int difference) {
 		Article article = articleRepository.findByBarcode(key.articleBarcode()).orElse(null);
 		PackagingUnitType packagingUnitType = packagingUnitTypeRepository.findByName(key.packagingUnitName())
@@ -405,7 +449,7 @@ public class InventoryCheckService {
 		ArticlePackagingUnitType articlePackagingUnitType = findArticlePackagingUnitType(article, packagingUnitType);
 
 		StockAdjustment inventoryDifference = new StockAdjustment();
-		inventoryDifference.setInventoryCheck(check);
+		inventoryDifference.setInventoryOrderLine(line);
 		inventoryDifference.setArticle(article);
 		inventoryDifference.setArticleBarcode(key.articleBarcode());
 		inventoryDifference.setArticleDescription(

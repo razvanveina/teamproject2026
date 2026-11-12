@@ -6,15 +6,9 @@
   "columns": [
     { "field": "ID", "label": "ID" },
     {
-      "field": "INVENTORY_CHECK_ID",
-      "label": "Inventory record",
-      "lookup": { "entity": "InventoryCheck" },
-      "filterable": true
-    },
-    {
-      "field": "INVENTORY_ORDER_LINE_ID",
-      "label": "Order load unit",
-      "lookup": { "entity": "InventoryOrderLine" },
+	  "field": "INVENTORY_ORDER_LINE_ID",
+	  "label": "Inventory order line",
+	  "lookup": { "entity": "InventoryOrderLine" },
       "filterable": true
     },
     { "field": "ARTICLE_BARCODE", "label": "Article barcode", "filterable" : true },

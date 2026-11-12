@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { API_BASE_URL } from '../api.config';
@@ -42,10 +42,20 @@ interface InventoryOrderItem {
 }
 
 interface InventoryOrderLine {
+    id: number;
+    loadUnitId: number | null;
     loadUnitBarcode: string;
     loadUnitType: string;
     locationName: string;
+    status: 'STARTED' | 'FINISHED';
     items: InventoryOrderItem[];
+}
+
+interface InventoryOrder {
+    id: number;
+    createdAt: string;
+    status: 'STARTED' | 'FINISHED';
+    lines: InventoryOrderLine[];
 }
 
 interface ArticleRow extends BarcodeRow {
@@ -89,7 +99,7 @@ interface SavedStockItem {
     styleUrl: './inventory-app.css'
 })
 
-export class InventoryApp {
+export class InventoryApp implements OnInit {
 
     private readonly http = inject(HttpClient);
     private readonly cdr = inject(ChangeDetectorRef);
@@ -99,6 +109,11 @@ export class InventoryApp {
     loadUnitType = '';
     locationName = '';
     private loadUnitId: number | null = null;
+    private activeOrderId: number | null = null;
+    private activeLineId: number | null = null;
+    startedOrders: InventoryOrder[] = [];
+    orderLines: InventoryOrderLine[] = [];
+    showOrderChooser = true;
     article = '';
     quantity = 0;
 
@@ -107,7 +122,6 @@ export class InventoryApp {
     currentQuantityPerUnit = 1;
 
     lines: ScanLine[] = [];
-    completedLines: InventoryOrderLine[] = [];
     quantityDifferences: QuantityDifference[] = [];
     comparisonComplete = false;
     showMismatchDialog = false;
@@ -117,6 +131,14 @@ export class InventoryApp {
     isSaving = false;
 
     step = 1;
+
+    ngOnInit(): void {
+        this.loadStartedOrders();
+    }
+
+    get finishedLineCount(): number {
+        return this.orderLines.filter(line => line.status === 'FINISHED').length;
+    }
 
     get currentInstruction(): string {
         switch (this.step) {
@@ -134,6 +156,151 @@ export class InventoryApp {
         }
     }
 
+    private loadStartedOrders(): void {
+        this.isComparing = true;
+        this.comparisonError = '';
+        this.http.get<InventoryOrder[]>(`${API_BASE_URL}/inventory-orders/started`).subscribe({
+            next: orders => {
+                this.startedOrders = orders;
+                this.showOrderChooser = this.activeOrderId === null;
+                this.isComparing = false;
+                this.cdr.markForCheck();
+            },
+            error: error => {
+                this.isComparing = false;
+                this.comparisonError =
+                    error.error?.message ?? 'Could not load started inventory orders.';
+                this.cdr.markForCheck();
+            }
+        });
+    }
+
+    startNewOrder(): void {
+        if (this.isSaving || this.isComparing) {
+            return;
+        }
+        this.isSaving = true;
+        this.comparisonError = '';
+        this.http.post<InventoryOrder>(`${API_BASE_URL}/inventory-orders`, {}).subscribe({
+            next: order => {
+                this.isSaving = false;
+                this.openOrder(order);
+                this.cdr.markForCheck();
+            },
+            error: error => {
+                this.isSaving = false;
+                this.comparisonError =
+                    error.error?.message ?? 'Could not start a new inventory order.';
+                this.cdr.markForCheck();
+            }
+        });
+    }
+
+    resumeOrder(order: InventoryOrder): void {
+        this.openOrder(order);
+    }
+
+    returnToOrderList(): void {
+        if (this.isComparing || this.isSaving) {
+            return;
+        }
+        this.activeOrderId = null;
+        this.activeLineId = null;
+        this.loadUnit = '';
+        this.loadUnitType = '';
+        this.locationName = '';
+        this.loadUnitId = null;
+        this.article = '';
+        this.quantity = 0;
+        this.currentArticleDescription = '';
+        this.currentQuantityUnit = '';
+        this.currentQuantityPerUnit = 1;
+        this.lines = [];
+        this.orderLines = [];
+        this.step = 1;
+        this.showOrderChooser = true;
+        this.loadStartedOrders();
+    }
+
+    private openOrder(order: InventoryOrder): void {
+        this.activeOrderId = order.id;
+        this.orderLines = [...order.lines];
+        this.showOrderChooser = false;
+        this.comparisonComplete = false;
+        this.comparisonError = '';
+        this.step = 1;
+        this.activeLineId = null;
+        this.lines = [];
+        this.loadUnit = '';
+        this.loadUnitType = '';
+        this.locationName = '';
+        this.loadUnitId = null;
+        this.article = '';
+        this.quantity = 0;
+        this.currentArticleDescription = '';
+        this.currentQuantityUnit = '';
+        this.currentQuantityPerUnit = 1;
+
+        const startedLine = this.orderLines.find(line => line.status === 'STARTED');
+        if (startedLine) {
+            this.activeLineId = startedLine.id;
+            this.loadUnit = startedLine.loadUnitBarcode;
+            this.loadUnitType = startedLine.loadUnitType;
+            this.locationName = startedLine.locationName;
+            this.loadUnitId = startedLine.loadUnitId;
+            if (this.loadUnitId === null) {
+                this.comparisonError = 'The started load-unit line no longer references a load unit.';
+            }
+            this.lines = startedLine.items.map(item => ({
+                article: item.articleBarcode,
+                description: item.articleDescription,
+                quantity: item.quantity,
+                quantityUnit: item.packagingUnitName,
+                quantityPerUnit: 1
+            }));
+            this.step = 2;
+        }
+        this.cdr.markForCheck();
+    }
+
+    private persistCurrentLineItems(onSuccess: () => void, onError: () => void): void {
+        if (this.activeOrderId === null || this.activeLineId === null) {
+            onError();
+            this.comparisonError = 'There is no started inventory order line to save.';
+            this.cdr.markForCheck();
+            return;
+        }
+
+        this.isSaving = true;
+        this.comparisonError = '';
+        const items: InventoryOrderItem[] = this.lines.map(line => ({
+            articleBarcode: line.article,
+            articleDescription: line.description,
+            packagingUnitName: line.quantityUnit,
+            quantity: line.quantity
+        }));
+        this.http.put<InventoryOrderLine>(
+            `${API_BASE_URL}/inventory-orders/${this.activeOrderId}/lines/${this.activeLineId}/items`,
+            items
+        ).subscribe({
+            next: savedLine => {
+                this.isSaving = false;
+                this.orderLines = this.orderLines.map(line =>
+                    line.id === savedLine.id ? savedLine : line
+                );
+                onSuccess();
+                this.cdr.markForCheck();
+            },
+            error: error => {
+                this.isSaving = false;
+                this.comparisonError =
+                    error.error?.message ?? 'Could not save this inventory order line.';
+                onError();
+                this.cdr.markForCheck();
+            }
+        });
+    }
+
     onScan(value: string): void {
         const barcode = value.trim();
         if (!barcode) {
@@ -142,6 +309,10 @@ export class InventoryApp {
         switch (this.step) {
 
             case 1:
+                if (this.activeOrderId === null) {
+                    this.comparisonError = 'Start or resume an inventory order before scanning a load unit.';
+                    return;
+                }
                 this.isComparing = true;
                 this.comparisonError = '';
                 this.http
@@ -150,20 +321,36 @@ export class InventoryApp {
                     )
                     .subscribe({
                         next: loadUnit => {
-                            this.isComparing = false;
-                            if (this.completedLines.some(line => line.loadUnitBarcode === loadUnit.barcode)) {
+                            if (this.orderLines.some(line => line.loadUnitBarcode === loadUnit.barcode)) {
+                                this.isComparing = false;
                                 this.comparisonError = 'This load unit is already in the inventory order.';
                                 this.cdr.markForCheck();
                                 return;
                             }
-                            this.loadUnit = loadUnit.barcode;
-                            this.loadUnitType = loadUnit.loadUnitType;
-                            this.locationName = loadUnit.locationName;
-                            this.loadUnitId = loadUnit.id;
-                            this.lines = [];
-                            this.comparisonError = '';
-                            this.step = 2;
-                            this.cdr.markForCheck();
+                            this.http.post<InventoryOrderLine>(
+                                `${API_BASE_URL}/inventory-orders/${this.activeOrderId}/lines`,
+                                { loadUnitBarcode: loadUnit.barcode }
+                            ).subscribe({
+                                next: line => {
+                                    this.isComparing = false;
+                                    this.loadUnit = loadUnit.barcode;
+                                    this.loadUnitType = loadUnit.loadUnitType;
+                                    this.locationName = loadUnit.locationName;
+                                    this.loadUnitId = loadUnit.id;
+                                    this.activeLineId = line.id;
+                                    this.lines = [];
+                                    this.orderLines = [...this.orderLines, line];
+                                    this.comparisonError = '';
+                                    this.step = 2;
+                                    this.cdr.markForCheck();
+                                },
+                                error: error => {
+                                    this.isComparing = false;
+                                    this.comparisonError =
+                                        error.error?.message ?? 'Could not start this inventory order line.';
+                                    this.cdr.markForCheck();
+                                }
+                            });
                         },
                         error: error => {
                             this.isComparing = false;
@@ -212,24 +399,29 @@ export class InventoryApp {
                     return;
                 }
 
-                this.lines.push({
+                const scannedLine: ScanLine = {
                     article: this.article,
                     description: this.currentArticleDescription,
                     quantity,
                     quantityUnit: this.currentQuantityUnit,
                     quantityPerUnit: this.currentQuantityPerUnit
-                });
-
-                this.quantityDifferences = [];
-                this.comparisonError = '';
-                this.article = '';
-                this.quantity = 0;
-                this.currentArticleDescription = '';
-                this.currentQuantityUnit = '';
-                this.currentQuantityPerUnit = 1;
-                this.comparisonError = '';
-
-                this.step = 2;
+                };
+                this.lines = [...this.lines, scannedLine];
+                this.persistCurrentLineItems(
+                    () => {
+                        this.quantityDifferences = [];
+                        this.comparisonError = '';
+                        this.article = '';
+                        this.quantity = 0;
+                        this.currentArticleDescription = '';
+                        this.currentQuantityUnit = '';
+                        this.currentQuantityPerUnit = 1;
+                        this.step = 2;
+                    },
+                    () => {
+                        this.lines = this.lines.filter(line => line !== scannedLine);
+                    }
+                );
 
                 break;
         }
@@ -240,23 +432,22 @@ export class InventoryApp {
     }
 
     removeLine(index: number): void {
-        if (index < 0 || index >= this.lines.length) {
+        if (index < 0 || index >= this.lines.length || this.isSaving || this.activeLineId === null) {
             return;
         }
 
+        const removedLine = this.lines[index];
         this.lines = this.lines.filter((_, lineIndex) => lineIndex !== index);
-        this.quantityDifferences = [];
-        this.comparisonComplete = false;
-        this.showMismatchDialog = false;
-        this.showCompletionDialog = false;
-        this.comparisonError = '';
-    }
-
-    removeOrderLine(index: number): void {
-        if (index < 0 || index >= this.completedLines.length) {
-            return;
-        }
-        this.completedLines = this.completedLines.filter((_, lineIndex) => lineIndex !== index);
+        this.persistCurrentLineItems(() => {
+            this.quantityDifferences = [];
+            this.comparisonError = '';
+        }, () => {
+            this.lines = [
+                ...this.lines.slice(0, index),
+                removedLine,
+                ...this.lines.slice(index)
+            ];
+        });
     }
 
     private loadArticleBarcode(barcode: string): void {
@@ -366,7 +557,8 @@ export class InventoryApp {
     }
 
     onFinish(): void {
-        if (!this.loadUnit || this.loadUnitId === null || this.isComparing || this.isSaving) {
+        if (!this.loadUnit || this.loadUnitId === null || this.activeOrderId === null
+            || this.activeLineId === null || this.step !== 2 || this.isComparing || this.isSaving) {
             return;
         }
         this.isComparing = true;
@@ -379,7 +571,7 @@ export class InventoryApp {
                     this.compareQuantities(stockItems);
                     this.isComparing = false;
                     if (this.quantityDifferences.length === 0) {
-                        this.completeCurrentLine();
+                        this.finishCurrentLine();
                     }
                     this.cdr.markForCheck();
                 },
@@ -489,44 +681,53 @@ export class InventoryApp {
         }
     }
 
-    private completeCurrentLine(): void {
-        this.completedLines.push({
-            loadUnitBarcode: this.loadUnit,
-            loadUnitType: this.loadUnitType,
-            locationName: this.locationName,
-            items: this.lines.map(line => ({
-                articleBarcode: line.article,
-                articleDescription: line.description,
-                packagingUnitName: line.quantityUnit,
-                quantity: line.quantity
-            }))
+    private finishCurrentLine(): void {
+        if (this.activeOrderId === null || this.activeLineId === null) {
+            return;
+        }
+
+        this.isSaving = true;
+        this.http.post<InventoryOrderLine>(
+            `${API_BASE_URL}/inventory-orders/${this.activeOrderId}/lines/${this.activeLineId}/finish`,
+            {}
+        ).subscribe({
+            next: finishedLine => {
+                this.orderLines = this.orderLines.map(line =>
+                    line.id === finishedLine.id ? finishedLine : line
+                );
+                this.isSaving = false;
+                this.activeLineId = null;
+                this.loadUnit = '';
+                this.loadUnitType = '';
+                this.locationName = '';
+                this.loadUnitId = null;
+                this.lines = [];
+                this.quantityDifferences = [];
+                this.comparisonError = '';
+                this.step = 1;
+                this.cdr.markForCheck();
+            },
+            error: error => {
+                this.isSaving = false;
+                this.comparisonError =
+                    error.error?.message ?? 'Could not finish this inventory order line.';
+                this.cdr.markForCheck();
+            }
         });
-        this.loadUnit = '';
-        this.loadUnitType = '';
-        this.locationName = '';
-        this.loadUnitId = null;
-        this.lines = [];
-        this.quantityDifferences = [];
-        this.comparisonError = '';
-        this.step = 1;
-        this.cdr.markForCheck();
     }
 
     onFinishOrder(): void {
-        if (!this.completedLines.length || this.loadUnit || this.isComparing || this.isSaving) {
+        if (!this.orderLines.length || this.orderLines.some(line => line.status !== 'FINISHED')
+            || this.activeOrderId === null || this.isComparing || this.isSaving) {
             return;
         }
 
         this.isSaving = true;
         this.comparisonError = '';
-
-        const request = {
-            lines: this.completedLines.map(line => ({
-                loadUnitBarcode: line.loadUnitBarcode,
-                items: line.items
-            }))
-        };
-        this.http.post<void>(`${API_BASE_URL}/inventory-orders`, request).subscribe({
+        this.http.post<void>(
+            `${API_BASE_URL}/inventory-orders/${this.activeOrderId}/finish`,
+            {}
+        ).subscribe({
             next: () => {
                 this.isSaving = false;
                 this.comparisonComplete = true;
@@ -544,7 +745,7 @@ export class InventoryApp {
 
     confirmMismatch(): void {
         this.showMismatchDialog = false;
-        this.completeCurrentLine();
+        this.finishCurrentLine();
     }
 
     cancelMismatch(): void {
@@ -557,13 +758,17 @@ export class InventoryApp {
         this.loadUnitType = '';
         this.locationName = '';
         this.loadUnitId = null;
+        this.activeOrderId = null;
+        this.activeLineId = null;
         this.article = '';
         this.quantity = 0;
         this.currentArticleDescription = '';
         this.currentQuantityUnit = '';
         this.currentQuantityPerUnit = 1;
         this.lines = [];
-        this.completedLines = [];
+        this.orderLines = [];
+        this.startedOrders = [];
+        this.showOrderChooser = true;
         this.quantityDifferences = [];
         this.comparisonComplete = false;
         this.showMismatchDialog = false;
@@ -572,7 +777,7 @@ export class InventoryApp {
         this.isComparing = false;
         this.isSaving = false;
         this.step = 1;
-        localStorage.removeItem('scanData');
+        this.loadStartedOrders();
     }
 
     get currentPlaceholder(): string {

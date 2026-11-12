@@ -8,5 +8,5 @@ import ro.demo.usersbackend.entity.StockAdjustment;
 
 public interface StockAdjustmentRepository extends JpaRepository<StockAdjustment, Long> {
 
-	List<StockAdjustment> findByInventoryCheck_IdOrderByIdAsc(Long inventoryCheckId);
+	List<StockAdjustment> findByInventoryOrderLine_IdOrderByIdAsc(Long inventoryOrderLineId);
 }

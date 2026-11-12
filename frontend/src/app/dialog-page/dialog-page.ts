@@ -153,21 +153,28 @@ export class DialogPage implements OnInit {
     return result;
   }
 
-  formatScannedAt(value: unknown): string {
-    if (typeof value !== 'string' && typeof value !== 'number' && !(value instanceof Date)) {
-      return String(value ?? '');
+  isDateColumn(field: string): boolean {
+    return field === 'CREATED_AT'
+      || field === 'FINISHED_AT'
+      || field === 'INVENTORY_ORDER_LINE_ID__INVENTORY_ORDER_ID';
+  }
+
+  formatDateTime(value: unknown): string {
+    if (value == null || value === '') {
+      return '—';
     }
 
-    const date = value instanceof Date
-      ? value
-      : new Date(typeof value === 'string' ? value.replace(/^(\d{4}-\d{2}-\d{2}) /, '$1T') : value);
+    const date = value instanceof Date ? value : new Date(String(value).replace(' ', 'T'));
     if (Number.isNaN(date.getTime())) {
       return String(value);
     }
 
     return new Intl.DateTimeFormat('en-GB', {
-      dateStyle: 'medium',
-      timeStyle: 'short',
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     }).format(date);
   }
 

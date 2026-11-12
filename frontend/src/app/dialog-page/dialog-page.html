@@ -49,8 +49,8 @@
         } @else {
         <td [class.difference-negative]="config.entity === 'StockAdjustment' && column.field === 'DIFFERENCE_QUANTITY' && row[column.field] < 0"
             [class.difference-positive]="config.entity === 'StockAdjustment' && column.field === 'DIFFERENCE_QUANTITY' && row[column.field] > 0">
-            {{ config.entity === 'StockAdjustment' && column.field === 'INVENTORY_CHECK_ID__SCANNED_AT'
-            ? formatScannedAt(row[column.field])
+            {{ isDateColumn(column.field)
+            ? formatDateTime(row[column.field])
             : config.entity === 'StockAdjustment' && column.field === 'INVENTORY_ORDER_LINE_ID__LOAD_UNIT_BARCODE'
             ? row[column.field] ?? '—'
             : row[column.field] }}

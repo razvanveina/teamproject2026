@@ -6,6 +6,8 @@
   "columns": [
     { "field": "ID", "label": "ID" },
     { "field": "CREATED_AT", "label": "Created at" },
+    { "field": "FINISHED_AT", "label": "Finished at" },
+    { "field": "STATUS", "label": "State" },
     { "field": "REASON_MESSAGE", "label": "Reason" }
   ]
 }

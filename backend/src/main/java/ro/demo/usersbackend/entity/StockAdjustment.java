@@ -18,11 +18,7 @@ public class StockAdjustment {
 	private Long id;
 
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "inventory_check_id", nullable = false)
-	private InventoryCheck inventoryCheck;
-
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "inventory_order_line_id")
+	@JoinColumn(name = "inventory_order_line_id", nullable = false)
 	private InventoryOrderLine inventoryOrderLine;
 
 	@ManyToOne(fetch = FetchType.LAZY)
@@ -55,14 +51,6 @@ public class StockAdjustment {
 	@Enumerated(EnumType.STRING)
 	@Column(name = "reason_message", nullable = false, length = 20)
 	private StockAdjustmentReason reasonMessage;
-
-	public InventoryCheck getInventoryCheck() {
-		return inventoryCheck;
-	}
-
-	public void setInventoryCheck(InventoryCheck inventoryCheck) {
-		this.inventoryCheck = inventoryCheck;
-	}
 
 	public InventoryOrderLine getInventoryOrderLine() {
 		return inventoryOrderLine;

@@ -28,8 +28,7 @@
 	{ "name": "StockItem","show": [{"field": "LOAD_UNIT_ID","label": "Load unit","from": "LoadUnit","column": "BARCODE"},{ "field": "QUANTITY", "label": "Quantity" }]},
 	{ "name": "RetrievalOrderLine", "show": [{ "field": "ID", "label": "ID" },{"field": "ARTICLE_ID","label": "Article","from": "Article","column": "BARCODE"},{ "field": "QUANTITY", "label": "Quantity" },{ "field": "STATUS", "label": "Status" }]},
 	{ "name": "InventoryOrder", "show": [{ "field": "CREATED_AT", "label": "Created at" }]},
-	{ "name": "InventoryOrderLine", "show": [{ "field": "LOAD_UNIT_BARCODE", "label": "Load unit" },{ "field": "LOCATION_NAME", "label": "Location" }]},
-	{ "name": "InventoryCheck","show": [{ "field": "LOAD_UNIT_BARCODE", "label": "" },{ "field": "SCANNED_AT", "label": "Scanned at" }]},
+	{ "name": "InventoryOrderLine", "show": [{ "field": "LOAD_UNIT_BARCODE", "label": "Load unit" },{ "field": "LOCATION_NAME", "label": "Location" },{ "field": "INVENTORY_ORDER_ID", "label": "Finished at", "from": "InventoryOrder", "column": "FINISHED_AT" }]},
 	{ "name": "StockAdjustment","show": [{ "field": "ARTICLE_BARCODE", "label": "Article" }]}
 	]
 }

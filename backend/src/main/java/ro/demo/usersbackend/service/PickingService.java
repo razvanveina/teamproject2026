@@ -15,7 +15,10 @@ import ro.demo.usersbackend.dto.PickingLineResponse;
 import ro.demo.usersbackend.dto.PickingOrderResponse;
 import ro.demo.usersbackend.dto.PickingStepResponse;
 import ro.demo.usersbackend.entity.ArticlePackagingUnitType;
-import ro.demo.usersbackend.entity.InventoryCheck;
+import ro.demo.usersbackend.entity.InventoryOrder;
+import ro.demo.usersbackend.entity.InventoryOrderLine;
+import ro.demo.usersbackend.entity.InventoryOrderLineStatus;
+import ro.demo.usersbackend.entity.InventoryOrderStatus;
 import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.LoadUnitType;
 import ro.demo.usersbackend.entity.Location;
@@ -27,7 +30,8 @@ import ro.demo.usersbackend.entity.RetrievalOrderStatus;
 import ro.demo.usersbackend.entity.StockAdjustment;
 import ro.demo.usersbackend.entity.StockAdjustmentReason;
 import ro.demo.usersbackend.entity.StockItem;
-import ro.demo.usersbackend.repository.InventoryCheckRepository;
+import ro.demo.usersbackend.repository.InventoryOrderLineRepository;
+import ro.demo.usersbackend.repository.InventoryOrderRepository;
 import ro.demo.usersbackend.repository.LoadUnitRepository;
 import ro.demo.usersbackend.repository.LocationRepository;
 import ro.demo.usersbackend.repository.ReservationRepository;
@@ -49,14 +53,17 @@ public class PickingService {
 	private final TransportOrderService transportOrderService;
 	private final StockItemRepository stockItemRepository;
 	private final ReservationRepository reservationRepository;
-	private final InventoryCheckRepository inventoryCheckRepository;
+	private final InventoryOrderRepository inventoryOrderRepository;
+	private final InventoryOrderLineRepository inventoryOrderLineRepository;
 	private final StockAdjustmentRepository stockAdjustmentRepository;
 
 	public PickingService(RetrievalOrderRepository retrievalOrderRepository,
 			RetrievalOrderLineRepository retrievalOrderLineRepository, LoadUnitRepository loadUnitRepository,
 			LocationRepository locationRepository, TransportOrderService transportOrderService,
 			StockItemRepository stockItemRepository, ReservationRepository reservationRepository,
-			InventoryCheckRepository inventoryCheckRepository, StockAdjustmentRepository stockAdjustmentRepository) {
+			InventoryOrderRepository inventoryOrderRepository,
+			InventoryOrderLineRepository inventoryOrderLineRepository,
+			StockAdjustmentRepository stockAdjustmentRepository) {
 		this.retrievalOrderRepository = retrievalOrderRepository;
 		this.retrievalOrderLineRepository = retrievalOrderLineRepository;
 		this.loadUnitRepository = loadUnitRepository;
@@ -64,7 +71,8 @@ public class PickingService {
 		this.transportOrderService = transportOrderService;
 		this.stockItemRepository = stockItemRepository;
 		this.reservationRepository = reservationRepository;
-		this.inventoryCheckRepository = inventoryCheckRepository;
+		this.inventoryOrderRepository = inventoryOrderRepository;
+		this.inventoryOrderLineRepository = inventoryOrderLineRepository;
 		this.stockAdjustmentRepository = stockAdjustmentRepository;
 	}
 
@@ -173,17 +181,27 @@ public class PickingService {
 	// aceeasi inregistrare ca la inventar: o verificare pe tote si diferenta gasita
 	// motivul vine de la ecran: DAMAGED sau MISSING
 	private void saveStockAdjustment(StockItem item, int found, String reason) {
-		InventoryCheck check = new InventoryCheck();
-		check.setLoadUnit(item.getLoadUnit());
-		check.setLoadUnitBarcode(item.getLoadUnit().getBarcode());
-		check.setLoadUnitType(item.getLoadUnit().getType().toString());
-		check.setScannedAt(LocalDateTime.now());
-		check.setReasonMessage(reason);
-		inventoryCheckRepository.save(check);
+		LocalDateTime now = LocalDateTime.now();
+		InventoryOrder inventoryOrder = new InventoryOrder();
+		inventoryOrder.setCreatedAt(now);
+		inventoryOrder.setReasonMessage(reason);
+		inventoryOrder.setStatus(InventoryOrderStatus.FINISHED);
+		inventoryOrder.setFinishedAt(now);
+		inventoryOrder = inventoryOrderRepository.save(inventoryOrder);
+
+		InventoryOrderLine inventoryOrderLine = new InventoryOrderLine();
+		inventoryOrderLine.setInventoryOrder(inventoryOrder);
+		inventoryOrderLine.setLoadUnit(item.getLoadUnit());
+		inventoryOrderLine.setLoadUnitBarcode(item.getLoadUnit().getBarcode());
+		inventoryOrderLine.setLoadUnitType(item.getLoadUnit().getType().toString());
+		inventoryOrderLine.setLocationName(item.getLoadUnit().getLocation() == null ? null : item.getLoadUnit().getLocation().getName());
+		inventoryOrderLine.setStatus(InventoryOrderLineStatus.FINISHED);
+		inventoryOrderLine.setCompletedAt(now);
+		inventoryOrderLine = inventoryOrderLineRepository.save(inventoryOrderLine);
 
 		ArticlePackagingUnitType packaging = item.getArticlePackagingUnitType();
 		StockAdjustment adjustment = new StockAdjustment();
-		adjustment.setInventoryCheck(check);
+		adjustment.setInventoryOrderLine(inventoryOrderLine);
 		adjustment.setArticle(packaging.getArticle());
 		adjustment.setArticleBarcode(packaging.getArticle().getBarcode());
 		adjustment.setArticleDescription(packaging.getArticle().getDescription());

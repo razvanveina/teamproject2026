@@ -1,16 +1,21 @@
 package ro.demo.usersbackend.entity;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.OneToMany;
 
 @Entity
 public class InventoryOrderLine {
@@ -35,12 +40,18 @@ public class InventoryOrderLine {
 	@Column(name = "location_name", length = 255)
 	private String locationName;
 
-	@Column(name = "completed_at", nullable = false)
+	@Enumerated(EnumType.STRING)
+	@Column(name = "status", nullable = false, length = 20)
+	private InventoryOrderLineStatus status;
+
+	@Column(name = "completed_at")
 	private LocalDateTime completedAt;
 
-	@OneToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "inventory_check_id", unique = true)
-	private InventoryCheck inventoryCheck;
+	@Column(name = "stock_adjustments_calculated", nullable = false)
+	private boolean stockAdjustmentsCalculated;
+
+	@OneToMany(mappedBy = "inventoryOrderLine", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<InventoryOrderLineItem> items = new ArrayList<>();
 
 	public Long getId() {
 		return id;
@@ -86,6 +97,14 @@ public class InventoryOrderLine {
 		this.locationName = locationName;
 	}
 
+	public InventoryOrderLineStatus getStatus() {
+		return status;
+	}
+
+	public void setStatus(InventoryOrderLineStatus status) {
+		this.status = status;
+	}
+
 	public LocalDateTime getCompletedAt() {
 		return completedAt;
 	}
@@ -94,11 +113,19 @@ public class InventoryOrderLine {
 		this.completedAt = completedAt;
 	}
 
-	public InventoryCheck getInventoryCheck() {
-		return inventoryCheck;
+	public boolean isStockAdjustmentsCalculated() {
+		return stockAdjustmentsCalculated;
 	}
 
-	public void setInventoryCheck(InventoryCheck inventoryCheck) {
-		this.inventoryCheck = inventoryCheck;
+	public void setStockAdjustmentsCalculated(boolean stockAdjustmentsCalculated) {
+		this.stockAdjustmentsCalculated = stockAdjustmentsCalculated;
+	}
+
+	public List<InventoryOrderLineItem> getItems() {
+		return items;
+	}
+
+	public void setItems(List<InventoryOrderLineItem> items) {
+		this.items = items;
 	}
 }

@@ -7,6 +7,8 @@ import java.util.List;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -21,8 +23,15 @@ public class InventoryOrder {
 	@Column(name = "created_at", nullable = false)
 	private LocalDateTime createdAt;
 
+	@Column(name = "finished_at")
+	private LocalDateTime finishedAt;
+
 	@Column(name = "reason_message", nullable = false, length = 20)
 	private String reasonMessage;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "status", nullable = false, length = 20)
+	private InventoryOrderStatus status;
 
 	@OneToMany(mappedBy = "inventoryOrder", cascade = CascadeType.ALL)
 	private List<InventoryOrderLine> lines = new ArrayList<>();
@@ -39,12 +48,28 @@ public class InventoryOrder {
 		this.createdAt = createdAt;
 	}
 
+	public LocalDateTime getFinishedAt() {
+		return finishedAt;
+	}
+
+	public void setFinishedAt(LocalDateTime finishedAt) {
+		this.finishedAt = finishedAt;
+	}
+
 	public String getReasonMessage() {
 		return reasonMessage;
 	}
 
 	public void setReasonMessage(String reasonMessage) {
 		this.reasonMessage = reasonMessage;
+	}
+
+	public InventoryOrderStatus getStatus() {
+		return status;
+	}
+
+	public void setStatus(InventoryOrderStatus status) {
+		this.status = status;
 	}
 
 	public List<InventoryOrderLine> getLines() {
