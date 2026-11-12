@@ -34,6 +34,7 @@ export class PickingApp implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     clearInterval(this.checker);
+    this.api.releaseOrders().subscribe();
   }
 
   show(text: string, level: string): void {
@@ -227,7 +228,14 @@ export class PickingApp implements OnInit, OnDestroy {
   chooseOrder(order: any): void {
     this.log.action('PICKING choose order ' + order.orderId);
     this.closeOrders();
-    this.showOrder(order);
+    this.api.takeOrder(order.orderId).subscribe({
+      next: () => {
+        this.showOrder(order);
+      },
+      error: (err) => {
+        this.show(err.error.message + '. Choose another order', 'warning');
+      },
+    });
   }
 
   unitText(): string {

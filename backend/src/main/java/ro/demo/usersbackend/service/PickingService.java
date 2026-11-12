@@ -76,31 +76,81 @@ public class PickingService {
 		this.stockAdjustmentRepository = stockAdjustmentRepository;
 	}
 
-	// intai comenzile incepute (STARTED, cutia e deja scanata), apoi cele rezervate (ACTIVE), cea mai veche prima
-	// se ia prima care are toata marfa in zona de picking, sau null daca nu e niciuna
-	// doar orderele manuale, cele automate merg pe conveyor
-	@Transactional(readOnly = true)
-	public PickingOrderResponse findNextOrder() {
-		List<PickingOrderResponse> orders = findReadyOrders();
+	// intai orderul deja luat de user; altfel il luam pe primul liber si il blocam pentru el (pickedBy)
+	// ordinea: STARTED apoi ACTIVE, cel mai vechi primul; doar manuale si cu toata marfa in picking
+	public PickingOrderResponse findNextOrder(String user) {
+		List<RetrievalOrder> orders = findReady(user);
 		if (orders.isEmpty()) {
 			return null;
 		}
-		return orders.get(0);
+		for (RetrievalOrder order : orders) {
+			if (user.equals(order.getPickedBy())) {
+				return toResponse(order);
+			}
+		}
+		RetrievalOrder order = orders.get(0);
+		order.setPickedBy(user);
+		log.info("Picking: order {} is now taken by {}", order.getOrderId(), user);
+		return toResponse(order);
 	}
 
 	// toate orderele gata de picking, pentru lista din butonul Select order
 	@Transactional(readOnly = true)
-	public List<PickingOrderResponse> findReadyOrders() {
+	public List<PickingOrderResponse> findReadyOrders(String user) {
+		List<PickingOrderResponse> ready = new ArrayList<>();
+		for (RetrievalOrder order : findReady(user)) {
+			ready.add(toResponse(order));
+		}
+		return ready;
+	}
+
+	// orderele gata de picking, fara cele luate de alt user
+	private List<RetrievalOrder> findReady(String user) {
 		List<RetrievalOrder> orders = new ArrayList<>(retrievalOrderRepository.findByStatusAndAutomaticFalseOrderByIdAsc(RetrievalOrderStatus.STARTED));
 		orders.addAll(retrievalOrderRepository.findByStatusAndAutomaticFalseOrderByIdAsc(RetrievalOrderStatus.ACTIVE));
 
-		List<PickingOrderResponse> ready = new ArrayList<>();
+		List<RetrievalOrder> ready = new ArrayList<>();
 		for (RetrievalOrder order : orders) {
-			if (isInPicking(order)) {
-				ready.add(toResponse(order));
+			boolean takenByOther = order.getPickedBy() != null && !order.getPickedBy().equals(user);
+			if (!takenByOther && isInPicking(order)) {
+				ready.add(order);
 			}
 		}
 		return ready;
+	}
+
+	// userul a ales un order din Select order: devine al lui
+	// orderele lui neincepute se elibereaza, ca sa le poata lua altcineva
+	public void takeOrder(String orderId, String user) {
+		RetrievalOrder order = findOrder(orderId);
+		if (order.getPickedBy() != null && !order.getPickedBy().equals(user)) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Order " + orderId + " is already taken by " + order.getPickedBy());
+		}
+		releaseOrders(user);
+		order.setPickedBy(user);
+		log.info("Picking: order {} is now taken by {}", orderId, user);
+	}
+
+	// elibereaza orderele userului la care n-a scanat inca cutia (le-a vazut doar pe ecran)
+	public void releaseOrders(String user) {
+		for (RetrievalOrder order : retrievalOrderRepository.findByPickedBy(user)) {
+			if (!hasBox(order) && order.getStatus() != RetrievalOrderStatus.PICKED) {
+				order.setPickedBy(null);
+				log.info("Picking: order {} is free again", order.getOrderId());
+			}
+		}
+	}
+
+	// orderul are deja o cutie daca macar un stock item rezervat e intr-un CARTON
+	private boolean hasBox(RetrievalOrder order) {
+		for (RetrievalOrderLine line : order.getLines()) {
+			for (Reservation reservation : line.getReservations()) {
+				if (reservation.getStockItem().getLoadUnit().getType() == LoadUnitType.CARTON) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	@Transactional(readOnly = true)
@@ -109,11 +159,16 @@ public class PickingService {
 	}
 
 	// muncitorul a scanat cutia: o cream ca load unit CARTON in zona PICKING
-	public String createBox(String orderId, String barcode) {
+	// tot acum orderul devine al lui (pickedBy), daca nu l-a luat deja altcineva
+	public String createBox(String orderId, String barcode, String user) {
 		if (loadUnitRepository.findByBarcode(barcode).isPresent()) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Box " + barcode + " already exists");
 		}
 		RetrievalOrder order = findOrder(orderId);
+		if (order.getPickedBy() != null && !order.getPickedBy().equals(user)) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Order " + orderId + " is already taken by " + order.getPickedBy());
+		}
+		order.setPickedBy(user);
 
 		LoadUnit box = new LoadUnit();
 		box.setBarcode(barcode);

@@ -6,6 +6,7 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,16 +32,17 @@ public class PickingController {
 		this.pickingService = pickingService;
 	}
 
+	// authentication.getName() = userul logat, ca sa nu vada orderele luate de altii
 	@GetMapping("/next-order")
-	public PickingOrderResponse findNextOrder() {
-		log.info("Picking: asked for next order");
-		return pickingService.findNextOrder();
+	public PickingOrderResponse findNextOrder(Authentication authentication) {
+		log.info("Picking: {} asked for next order", authentication.getName());
+		return pickingService.findNextOrder(authentication.getName());
 	}
 
 	@GetMapping("/orders")
-	public List<PickingOrderResponse> findReadyOrders() {
-		log.info("Picking: asked for the list of ready orders");
-		return pickingService.findReadyOrders();
+	public List<PickingOrderResponse> findReadyOrders(Authentication authentication) {
+		log.info("Picking: {} asked for the list of ready orders", authentication.getName());
+		return pickingService.findReadyOrders(authentication.getName());
 	}
 
 	@GetMapping("/order/{orderId}")
@@ -50,13 +52,30 @@ public class PickingController {
 	}
 
 	@PostMapping("/create-box")
-	public ResponseEntity<Map<String, String>> createBox(@RequestBody PickingRequest request) {
-		log.info("Picking: created box {} for order {}", request.box(), request.orderId());
+	public ResponseEntity<Map<String, String>> createBox(@RequestBody PickingRequest request, Authentication authentication) {
+		log.info("Picking: {} created box {} for order {}", authentication.getName(), request.box(), request.orderId());
 		try {
-			return ResponseEntity.ok(Map.of("message", pickingService.createBox(request.orderId(), request.box())));
+			return ResponseEntity.ok(Map.of("message", pickingService.createBox(request.orderId(), request.box(), authentication.getName())));
 		} catch (ResponseStatusException e) {
 			return error(e);
 		}
+	}
+
+	@PostMapping("/take")
+	public ResponseEntity<Map<String, String>> takeOrder(@RequestBody PickingRequest request, Authentication authentication) {
+		log.info("Picking: {} chose order {}", authentication.getName(), request.orderId());
+		try {
+			pickingService.takeOrder(request.orderId(), authentication.getName());
+			return ResponseEntity.ok(Map.of("message", "Order " + request.orderId() + " taken"));
+		} catch (ResponseStatusException e) {
+			return error(e);
+		}
+	}
+
+	@PostMapping("/release")
+	public void releaseOrders(Authentication authentication) {
+		log.info("Picking: {} left the picking screen", authentication.getName());
+		pickingService.releaseOrders(authentication.getName());
 	}
 
 	@PostMapping("/move-to-box")

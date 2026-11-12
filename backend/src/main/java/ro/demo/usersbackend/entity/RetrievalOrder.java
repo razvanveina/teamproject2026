@@ -42,6 +42,9 @@ public class RetrievalOrder {
 	@Column(length = 50)
 	private String shippingUser;
 
+	@Column(length = 50)
+	private String pickedBy;
+
 	public RetrievalOrder() {
 		super();
 	}
@@ -85,7 +88,7 @@ public class RetrievalOrder {
 	public void setAutomatic(boolean automatic) {
 		this.automatic = automatic;
 	}
-	
+
 	public String getShippingUser() {
 		return shippingUser;
 	}
@@ -93,8 +96,16 @@ public class RetrievalOrder {
 	public void setShippingUser(String shippingUser) {
 		this.shippingUser = shippingUser;
 	}
-	
+
 	public Long getId() {
 		return id;
+	}
+
+	public String getPickedBy() {
+		return pickedBy;
+	}
+
+	public void setPickedBy(String pickedBy) {
+		this.pickedBy = pickedBy;
 	}
 }

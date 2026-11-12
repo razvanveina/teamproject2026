@@ -15,4 +15,5 @@ public interface RetrievalOrderRepository extends JpaRepository<RetrievalOrder, 
 	List<RetrievalOrder> findByStatusOrderByIdAsc(RetrievalOrderStatus status);
 
 	List<RetrievalOrder> findByStatusAndAutomaticFalseOrderByIdAsc(RetrievalOrderStatus status);
+	List<RetrievalOrder> findByPickedBy(String pickedBy);
 }
