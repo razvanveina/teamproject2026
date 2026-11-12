@@ -34,27 +34,31 @@ public class ToteTransportService extends AbstractProcess {
 		}
 	}
 
-	// tote-urile din locatiile de decanting; cele fara rezervari raman unde sunt
 	private void moveTotes(Session session) {
 		List<LoadUnit> totes = session
-				.createQuery("from LoadUnit u where u.type = :type and u.location.name like 'DECANTING'", LoadUnit.class)
+				.createQuery("from LoadUnit u where u.type = :type and u.location.name in ('DECANTING', 'TPT1')",
+						LoadUnit.class)
 				.setParameter("type", LoadUnitType.TOTE).getResultList();
 
 		for (LoadUnit tote : totes) {
-			if (hasReservation(tote) && !hasOpenTransport(session, tote)) {
+			boolean atDecanting = "DECANTING".equals(tote.getLocation().getName());
+			boolean needsPicking = atDecanting ? hasReservation(tote) : !tote.getStockItems().isEmpty();
+			if (needsPicking && !hasOpenTransport(session, tote)) {
 				sendToPicking(session, tote);
 			}
 		}
 	}
 
-	// un tote are un singur articol, deci locatia de picking vine din articolul primului stock item
+	// un tote are un singur articol, deci locatia de picking vine din articolul
+	// primului stock item
 	private void sendToPicking(Session session, LoadUnit tote) {
 		Article article = tote.getStockItems().get(0).getArticlePackagingUnitType().getArticle();
 		List<ArticlePickingLocation> places = session
 				.createQuery("from ArticlePickingLocation a where a.article = :article", ArticlePickingLocation.class)
 				.setParameter("article", article).getResultList();
 
-		// daca articolul nu are inca niciun loc de picking, ii dam cel mai apropiat loc liber de inceputul zonei
+		// daca articolul nu are inca niciun loc de picking, ii dam cel mai apropiat loc
+		// liber de inceputul zonei
 		StorageLocation target = null;
 		StorageLocation from = null;
 		if (!places.isEmpty()) {
@@ -74,7 +78,8 @@ public class ToteTransportService extends AbstractProcess {
 		log.info("Tote transport: tote {} goes to {}", tote.getBarcode(), target.getName());
 	}
 
-	// prima locatie a articolului pe care nu e niciun tote si spre care nu vine niciunul
+	// prima locatie a articolului pe care nu e niciun tote si spre care nu vine
+	// niciunul
 	private StorageLocation findFreePlace(Session session, List<ArticlePickingLocation> places) {
 		for (ArticlePickingLocation place : places) {
 			StorageLocation location = place.getLocation();
@@ -85,11 +90,14 @@ public class ToteTransportService extends AbstractProcess {
 		return null;
 	}
 
-	// cea mai apropiata locatie de picking libera care nu apartine deja altui articol
+	// cea mai apropiata locatie de picking libera care nu apartine deja altui
+	// articol
 	private StorageLocation findNearestFreePlace(Session session, StorageLocation from) {
 		List<StorageLocation> free = session
-				.createQuery("from StorageLocation l where l.name like 'PICK%' and l.loadUnit is null "
-						+ "and l.id not in (select a.location.id from ArticlePickingLocation a)", StorageLocation.class)
+				.createQuery(
+						"from StorageLocation l where l.name like 'PICK%' and l.loadUnit is null "
+								+ "and l.id not in (select a.location.id from ArticlePickingLocation a)",
+						StorageLocation.class)
 				.getResultList();
 
 		StorageLocation nearest = null;
@@ -111,27 +119,28 @@ public class ToteTransportService extends AbstractProcess {
 	}
 
 	private boolean hasTransportTo(Session session, StorageLocation location) {
-		Long open = session
-				.createQuery("select count(t) from TransportOrder t where t.target = :location and t.status in (:new, :active)", Long.class)
-				.setParameter("location", location).setParameter("new", TransportOrderStatus.NEW)
+		Long open = session.createQuery(
+				"select count(t) from TransportOrder t where t.target = :location and t.status in (:new, :active)",
+				Long.class).setParameter("location", location).setParameter("new", TransportOrderStatus.NEW)
 				.setParameter("active", TransportOrderStatus.ACTIVE).getSingleResult();
 		return open > 0;
 	}
 
 	private boolean hasReservation(LoadUnit tote) {
 		for (StockItem item : tote.getStockItems()) {
-			if (item.getReservation() != null){
+			if (item.getReservation() != null) {
 				return true;
 			}
 		}
 		return false;
 	}
 
-	// nu facem al doilea transport order pentru un tote care are deja unul NEW sau ACTIVE
+	// nu facem al doilea transport order pentru un tote care are deja unul NEW sau
+	// ACTIVE
 	private boolean hasOpenTransport(Session session, LoadUnit tote) {
-		Long open = session
-				.createQuery("select count(t) from TransportOrder t where t.loadUnit = :tote and t.status in (:new, :active)", Long.class)
-				.setParameter("tote", tote).setParameter("new", TransportOrderStatus.NEW)
+		Long open = session.createQuery(
+				"select count(t) from TransportOrder t where t.loadUnit = :tote and t.status in (:new, :active)",
+				Long.class).setParameter("tote", tote).setParameter("new", TransportOrderStatus.NEW)
 				.setParameter("active", TransportOrderStatus.ACTIVE).getSingleResult();
 		return open > 0;
 	}

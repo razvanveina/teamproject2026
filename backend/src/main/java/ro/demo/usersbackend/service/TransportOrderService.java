@@ -1,8 +1,8 @@
 package ro.demo.usersbackend.service;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.Comparator;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -43,13 +43,15 @@ public class TransportOrderService {
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
 						"Cannot find location with the name " + DECANTING));
 	}
-	
-	private static final List<TransportOrderStatus> OPEN = List.of(TransportOrderStatus.ACTIVE, TransportOrderStatus.NEW);
+
+	private static final List<TransportOrderStatus> OPEN = List.of(TransportOrderStatus.ACTIVE,
+			TransportOrderStatus.NEW);
 
 	private static boolean isTote(TransportOrder order) {
-		return DECANTING.equals(order.getSource().getName());
+		String source = order.getSource().getName();
+		return DECANTING.equals(source) || "TPT1".equals(source);
 	}
-	
+
 	private static boolean isAutomatic(TransportOrder order) {
 		return CONVEYOR.equals(order.getTarget().getName());
 	}
@@ -80,8 +82,8 @@ public class TransportOrderService {
 		}
 
 		// 2. altfel il preia pe cel mai vechi liber
-		return transportOrderRepository.findByAssignedToIsNullAndStatusInOrderByIdAsc(OPEN)
-				.stream().filter(o -> !isAutomatic(o)).filter(o -> isTote(o) == tote).sorted(activeFirst()).findFirst()
+		return transportOrderRepository.findByAssignedToIsNullAndStatusInOrderByIdAsc(OPEN).stream()
+				.filter(o -> !isAutomatic(o)).filter(o -> isTote(o) == tote).sorted(activeFirst()).findFirst()
 				.map(order -> {
 					order.setAssignedTo(user);
 					return toResponse(order);
@@ -91,20 +93,16 @@ public class TransportOrderService {
 	@Transactional(readOnly = true)
 	public List<TransportOrderResponse> findOpenOrders(String user) {
 		return transportOrderRepository.findByStatusAndSourceNotOrderByIdAsc(TransportOrderStatus.NEW, decanting())
-				.stream()
-				.filter(o -> !isAutomatic(o))
-				.filter(o -> o.getAssignedTo() == null || user.equals(o.getAssignedTo()))
-				.map(this::toResponse)
+				.stream().filter(o -> !isAutomatic(o))
+				.filter(o -> o.getAssignedTo() == null || user.equals(o.getAssignedTo())).map(this::toResponse)
 				.toList();
 	}
-	
+
 	@Transactional(readOnly = true)
 	public List<TransportOrderResponse> findOpenToteOrders(String user) {
 		return transportOrderRepository.findByStatusAndSourceOrderByIdAsc(TransportOrderStatus.NEW, decanting())
-				.stream()
-				.filter(o -> !isAutomatic(o))
-				.filter(o -> o.getAssignedTo() == null || user.equals(o.getAssignedTo()))
-				.map(this::toResponse)
+				.stream().filter(o -> !isAutomatic(o))
+				.filter(o -> o.getAssignedTo() == null || user.equals(o.getAssignedTo())).map(this::toResponse)
 				.toList();
 	}
 
@@ -138,7 +136,7 @@ public class TransportOrderService {
 	private TransportOrder ownedOrder(Long id, String user) {
 		TransportOrder order = find(id);
 		if (order.getAssignedTo() == null) {
-			order.setAssignedTo(user);   // transport vechi, fara user: il preia acum
+			order.setAssignedTo(user); // transport vechi, fara user: il preia acum
 		}
 		if (!user.equals(order.getAssignedTo())) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT,
