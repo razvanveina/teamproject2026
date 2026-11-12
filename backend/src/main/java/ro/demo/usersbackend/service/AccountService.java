@@ -1,5 +1,8 @@
 package ro.demo.usersbackend.service;
 
+import java.time.Duration;
+import java.time.Instant;
+
 import java.util.List;
 
 import org.springframework.data.domain.Sort;
@@ -18,16 +21,24 @@ import ro.demo.usersbackend.repository.AccountRepository;
 public class AccountService {
 	private final AccountRepository accounts;
 	private final PasswordEncoder encoder;
+	
+	private static final Duration ONLINE_WINDOW = Duration.ofMinutes(1);
 
 	public AccountService(AccountRepository accounts, PasswordEncoder encoder) {
 		this.accounts = accounts;
 		this.encoder = encoder;
 	}
+	
+	private AccountResponse toResponse(Account a) {
+		boolean online = a.getLastSeen() != null && a.getLastSeen().isAfter(Instant.now().minus(ONLINE_WINDOW));
+		return new AccountResponse(a.getId(), a.getUsername(), online);
+	}
+	
 
 	@Transactional(readOnly = true)
 	public List<AccountResponse> findAll() {
 		return accounts.findAll(Sort.by("username")).stream()
-				.map(a -> new AccountResponse(a.getId(), a.getUsername()))
+				.map(this::toResponse)
 				.toList();
 	}
 
@@ -39,7 +50,7 @@ public class AccountService {
 		}
 
 		Account account = accounts.save(new Account(username, encoder.encode(request.password())));
-		return new AccountResponse(account.getId(), account.getUsername());
+		return toResponse(account);
 	}
 	
 	@Transactional
@@ -52,5 +63,15 @@ public class AccountService {
 		}
 
 		accounts.delete(account);
+	}
+	
+	@Transactional
+	public void heartbeat(String username) {
+		accounts.findByUsername(username).ifPresent(a -> a.setLastSeen(Instant.now()));
+	}
+
+	@Transactional
+	public void logout(String username) {
+		accounts.findByUsername(username).ifPresent(a -> a.setLastSeen(null));
 	}
 }

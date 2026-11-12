@@ -48,4 +48,15 @@ public class AccountController {
 		log.info("Accounts: {} deletes account {}", authentication.getName(), id);
 		accountService.delete(id, authentication.getName());
 	}
+	
+	@PostMapping("/heartbeat")
+	public void heartbeat(Authentication authentication) {
+		accountService.heartbeat(authentication.getName());
+	}
+
+	@PostMapping("/logout")
+	public void logout(Authentication authentication) {
+		log.info("Accounts: {} logged out", authentication.getName());
+		accountService.logout(authentication.getName());
+	}
 }

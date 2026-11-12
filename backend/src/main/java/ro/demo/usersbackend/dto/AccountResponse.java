@@ -1,4 +1,4 @@
 package ro.demo.usersbackend.dto;
 
-public record AccountResponse(Long id, String username) {
+public record AccountResponse(Long id, String username, boolean online) {
 }

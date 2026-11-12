@@ -6,6 +6,7 @@ import { API_BASE_URL } from '../api.config';
 export interface Account {
     id: number;
     username: string;
+    online: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
