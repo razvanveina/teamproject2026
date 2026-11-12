@@ -45,6 +45,21 @@ public class LoadUnitService {
 	private final LocationRepository locationRepository;
 	private final DestinationToGateRepository destinationToGateRepository;
 	private final ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository;
+	
+	private RetrievalOrder orderOf(LoadUnit loadUnit) {
+		return loadUnit.getStockItems().stream()
+				.filter(s -> s.getReservation() != null)
+				.map(s -> s.getReservation().getRetrievalOrderLine().getOrder())
+				.findFirst()
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+						"Load unit " + loadUnit.getBarcode() + " does not belong to any order"));
+	}
+
+	private LoadUnit findLoadUnit(String barcode) {
+		return loadUnitRepository.findByBarcode(barcode)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+						"Cannot find load unit with the barcode: " + barcode));
+	}
 
 	public LoadUnitService(EntityManager entityManager, StockItemRepository stockItemRepository,
 			LoadUnitRepository loadUnitRepository, LocationRepository locationRepository,
@@ -57,20 +72,6 @@ public class LoadUnitService {
 		this.locationRepository = locationRepository;
 		this.destinationToGateRepository = destinationToGateRepository;
 		this.articlePackagingUnitTypeRepository = articlePackagingUnitTypeRepository;
-	}
-
-	public LoadUnitResponse findByBarcode(String barcode) {
-		LoadUnit loadUnit = loadUnitRepository.findByBarcode(barcode)
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
-						"Cannot find load unit with the barcode: " + barcode));
-
-		if (loadUnit.getStockItems().get(0).getReservation().getRetrievalOrderLine().getOrder()
-				.getStatus() == RetrievalOrderStatus.FINISHED) {
-			new ResponseStatusException(HttpStatus.BAD_REQUEST, "The order for this load unit is already finished");
-		}
-
-		return new LoadUnitResponse(loadUnit.getBarcode(), loadUnit.getType().toString(),
-				loadUnit.getLocation().getName(), createItems(loadUnit.getStockItems()));
 	}
 
 	public LoadUnit createLoadUnit(List<ScannedPackage> scannedPackages) {
@@ -103,42 +104,72 @@ public class LoadUnitService {
 		}
 		return loadUnit;
 	}
+	
+	public LoadUnitResponse findByBarcode(String barcode, String user) {
+		LoadUnit loadUnit = findLoadUnit(barcode);
+		RetrievalOrder order = orderOf(loadUnit);
 
-	@Transactional
-	public void finishLoadUnit(String barcode) {
-		LoadUnit loadUnit = loadUnitRepository.findByBarcode(barcode)
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
-						"Cannot find load unit with the barcode: " + barcode));
-
-		RetrievalOrder order = loadUnit.getStockItems().get(0).getReservation().getRetrievalOrderLine().getOrder();
-
+		if (order.getStatus() == RetrievalOrderStatus.FINISHED) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The order for this load unit is already finished");
+		}
 		if (order.getStatus() != RetrievalOrderStatus.PICKED) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Order status must be PICKED");
-		} else {
-			int lineCount = 0;
-			for (RetrievalOrderLine line : order.getLines()) {
-				if (line.getStatus() == RetrievalOrderLineStatus.PICKED) {
-					line.setStatus(RetrievalOrderLineStatus.FINISHED);
-				} else {
-					lineCount++;
-				}
-			}
+		}
+		if (order.getShippingUser() != null && !order.getShippingUser().equals(user)) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT,
+					"Load unit " + barcode + " is being shipped by " + order.getShippingUser());
+		}
 
-			if (lineCount == 0) {
-				order.setStatus(RetrievalOrderStatus.FINISHED);
-			} else {
-				throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-						"All lines status must be PICKED. There are " + lineCount + " lines with a different status");
+		List<RetrievalOrder> mine = entityManager.createQuery(
+				"from RetrievalOrder o where o.shippingUser = :user and o.status = :status", RetrievalOrder.class)
+				.setParameter("user", user).setParameter("status", RetrievalOrderStatus.PICKED).getResultList();
+		for (RetrievalOrder other : mine) {
+			if (!other.getId().equals(order.getId())) {
+				other.setShippingUser(null);
 			}
 		}
 
-		Destination dest = order.getDestination();
+		order.setShippingUser(user);
+		return new LoadUnitResponse(loadUnit.getBarcode(), loadUnit.getType().toString(),
+				loadUnit.getLocation().getName(), createItems(loadUnit.getStockItems()));
+	}
 
-		DestinationToGate destinationToGate = destinationToGateRepository.findByDestinationName(dest.getName())
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-						"Could not find a DestinationToGate object from the name: " + dest.getName()));
+	public void finishLoadUnit(String barcode, String user) {
+		LoadUnit loadUnit = findLoadUnit(barcode);
+		RetrievalOrder order = orderOf(loadUnit);
 
-		loadUnit.setLocation(destinationToGate.getGate());
+		if (!user.equals(order.getShippingUser())) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, order.getShippingUser() == null
+					? "Scan the load unit " + barcode + " first"
+					: "Load unit " + barcode + " is being shipped by " + order.getShippingUser());
+		}
+		if (order.getStatus() != RetrievalOrderStatus.PICKED) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Order status must be PICKED");
+		}
+
+		int lineCount = 0;
+		for (RetrievalOrderLine line : order.getLines()) {
+			if (line.getStatus() == RetrievalOrderLineStatus.PICKED) {
+				line.setStatus(RetrievalOrderLineStatus.FINISHED);
+			} else {
+				lineCount++;
+			}
+		}
+
+		if (lineCount == 0) {
+			order.setStatus(RetrievalOrderStatus.FINISHED); 
+		} else {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+					"All lines status must be PICKED. There are " + lineCount + " lines with a different status");
+		}
+	}
+
+	public void releaseLoadUnit(String barcode, String user) {
+		LoadUnit loadUnit = findLoadUnit(barcode);
+		RetrievalOrder order = orderOf(loadUnit);
+		if (user.equals(order.getShippingUser()) && order.getStatus() == RetrievalOrderStatus.PICKED) {
+			order.setShippingUser(null);
+		}
 	}
 
 	private String generateLoadUnitBarcode() {

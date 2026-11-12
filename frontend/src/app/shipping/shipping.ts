@@ -44,8 +44,8 @@ export class Shipping {
       },
       error: (err: HttpErrorResponse) => {
         this.error.set(true)
-        this.instructions = err.error.detail
-        if (this.displayTable()){
+        this.instructions = err.error?.detail ?? err.error?.message ?? 'Something went wrong. Please try again.'
+        if (this.displayTable()) {
           this.displayTable.set(false)
         }
         this.confirmDisabled.set(true)
@@ -58,6 +58,8 @@ export class Shipping {
       next: (loadUnit: LoadUnit) => {
         this.error.set(false)
         this.instructions = "Scan packaging barcode to start"
+        this.confirmDisabled.set(true)
+        this.loadUnit.set({ barcode: '', loadUnitType: '', location: '', items: [] })
         if (this.displayTable()) {
           this.displayTable.set(false)
         }
@@ -66,12 +68,20 @@ export class Shipping {
         this.error.set(true)
         if (!this.displayTable())
           this.displayTable.set(true)
-        this.instructions = err.error.detail
+        this.instructions = err.error?.detail ?? err.error?.message ?? 'Something went wrong. Please try again.'
       }
     })
   }
 
   onCancel() {
-    history.back();
+    const barcode = this.loadUnit().barcode
+    if (barcode) {
+      this.shippingService.releaseLoadUnit(barcode).subscribe({
+        next: () => history.back(),
+        error: () => history.back(),
+      })
+    } else {
+      history.back()
+    }
   }
 }

@@ -38,6 +38,9 @@ public class RetrievalOrder {
 	
 	@Column(nullable = false)
 	private boolean automatic;
+	
+	@Column(length = 50)
+	private String shippingUser;
 
 	public RetrievalOrder() {
 		super();
@@ -81,5 +84,17 @@ public class RetrievalOrder {
 
 	public void setAutomatic(boolean automatic) {
 		this.automatic = automatic;
+	}
+	
+	public String getShippingUser() {
+		return shippingUser;
+	}
+
+	public void setShippingUser(String shippingUser) {
+		this.shippingUser = shippingUser;
+	}
+	
+	public Long getId() {
+		return id;
 	}
 }

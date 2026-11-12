@@ -11,10 +11,14 @@ export class ShippingService {
     private url = API_BASE_URL + '/shipping';
 
     getLoadUnit(loadUnitBarcode: string) {
-        return this.httpClient.get<LoadUnit>( `${this.url}/${loadUnitBarcode}`)
+        return this.httpClient.get<LoadUnit>(`${this.url}/${loadUnitBarcode}`)
     }
 
-    finishOrder(loadUnitBarcode: string){
-        return this.httpClient.put<any>( `${this.url}/${loadUnitBarcode}/finish`, {})
+    finishOrder(loadUnitBarcode: string) {
+        return this.httpClient.put<any>(`${this.url}/${loadUnitBarcode}/finish`, {})
+    }
+
+    releaseLoadUnit(loadUnitBarcode: string) {
+        return this.httpClient.put<void>(`${this.url}/${loadUnitBarcode}/release`, {})
     }
 }

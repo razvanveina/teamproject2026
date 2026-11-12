@@ -3,6 +3,7 @@ package ro.demo.usersbackend.controller;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -18,6 +19,8 @@ import ro.demo.usersbackend.service.LoadUnitService;
 public class ShippingController {
 	public static final Logger log = LogManager.getLogger("application");
 
+	private static final Object SHIPPING_LOCK = new Object();
+
 	private final LoadUnitService loadUnitService;
 
 	public ShippingController(LoadUnitService loadUnitService) {
@@ -26,15 +29,14 @@ public class ShippingController {
 	}
 
 	@GetMapping("/{barcode}")
-	public LoadUnitResponse findByOrderId(@PathVariable String barcode) {
-		log.info("Shipping: scaned load unit barcode {}", barcode);
-
-		try { // TODO check if order FINISHED
-			LoadUnitResponse response = loadUnitService.findByBarcode(barcode);
-			System.out.println(response);
-			return response;
+	public LoadUnitResponse findByOrderId(@PathVariable String barcode, Authentication authentication) {
+		log.info("Shipping: {} scanned load unit {}", authentication.getName(), barcode);
+		try {
+			synchronized (SHIPPING_LOCK) {
+				return loadUnitService.findByBarcode(barcode, authentication.getName());
+			}
 		} catch (ResponseStatusException e) {
-			log.error("Shipping: scan error: ", e.getMessage());
+			log.warn("Shipping: scan rejected {}", e.getReason());
 			throw e;
 		} catch (Exception e) {
 			log.error("Shipping: exception: {}", e.getMessage());
@@ -43,17 +45,26 @@ public class ShippingController {
 	}
 
 	@PutMapping("/{barcode}/finish")
-	public void confirmLoadUnit(@PathVariable String barcode) {
-		log.info("Shipping: confirmed load unit barcode {}", barcode);
-
+	public void confirmLoadUnit(@PathVariable String barcode, Authentication authentication) {
+		log.info("Shipping: {} confirmed load unit {}", authentication.getName(), barcode);
 		try {
-			loadUnitService.finishLoadUnit(barcode);
+			synchronized (SHIPPING_LOCK) {
+				loadUnitService.finishLoadUnit(barcode, authentication.getName());
+			}
 		} catch (ResponseStatusException e) {
-			log.error("Shipping: scan error: {}", e.getMessage());
+			log.warn("Shipping: confirm rejected {}", e.getReason());
 			throw e;
 		} catch (Exception e) {
 			log.error("Shipping: exception: {}", e.getMessage());
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+		}
+	}
+
+	@PutMapping("/{barcode}/release")
+	public void releaseLoadUnit(@PathVariable String barcode, Authentication authentication) {
+		log.info("Shipping: {} released load unit {}", authentication.getName(), barcode);
+		synchronized (SHIPPING_LOCK) {
+			loadUnitService.releaseLoadUnit(barcode, authentication.getName());
 		}
 	}
 }

@@ -8,6 +8,7 @@
     { "field": "ORDER_ID", "label": "Order ID", "addable": true, "filterable": true },
     { "field": "STATUS", "label": "Status", "addable": true, "options": ["NEW", "STARTED", "ACTIVE", "PICKED", "FINISHED"], "filterable": true, "editable": true },
     { "field": "DESTINATION_ID", "label": "Destination", "addable": true, "lookup": { "entity": "Destination" }, "filterable": true, "editable": true },
-    { "field": "AUTOMATIC", "label": "Automatic", "addable": true, "options": ["0", "1"], "filterable": true, "editable": true }
+    { "field": "AUTOMATIC", "label": "Automatic", "addable": true, "options": ["0", "1"], "filterable": true, "editable": true },
+	{ "field": "SHIPPING_USER", "label": "Shipped by", "filterable": true }
   ]
 }
