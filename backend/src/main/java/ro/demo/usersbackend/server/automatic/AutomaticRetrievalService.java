@@ -116,16 +116,16 @@ public class AutomaticRetrievalService extends AbstractProcess {
 		}
 	}
 
-	// totes din DECANTING cu stoc rezervat pentru ro automat, fara to deschis
+	// totes din PICKING cu stoc rezervat pentru ro automat, fara to deschis
 	private void createTransportOrders(SessionFactory sessionFactory) {
 		List<Long> loadUnitIds = sessionFactory.fromTransaction(session -> session.createQuery("""
 				select distinct u.id from LoadUnit u
 				join u.stockItems s
-				where u.type = :tote and u.location.name = :decanting
+				where u.type = :tote and u.location.name like 'PICK%'
 				and s.reservation.retrievalOrderLine.order.automatic = true
 				and not exists (select t.id from TransportOrder t where t.loadUnit = u and t.status in :open)
-				""", Long.class).setParameter("tote", LoadUnitType.TOTE).setParameter("decanting", DECANTING)
-				.setParameterList("open", OPEN).getResultList());
+				""", Long.class).setParameter("tote", LoadUnitType.TOTE).setParameterList("open", OPEN)
+				.getResultList());
 
 		for (Long loadUnitId : loadUnitIds) {
 			try {
