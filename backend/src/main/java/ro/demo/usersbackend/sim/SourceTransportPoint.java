@@ -37,11 +37,15 @@ public class SourceTransportPoint extends ServerPoint {
 	}
 
 	@Override
-	protected void step() throws JMSException {
-		Message message = consumer.receive(100);
-		if (message instanceof TextMessage text) {
-			Get request = MfsMessages.fromJson(text.getText(), Get.class);
-			get(request.loadUnit(), request.transportOrderId());
+	protected void step() throws JMSException, InterruptedException {
+		if (isEmpty()) {
+			Message message = consumer.receive(100);
+			if (message instanceof TextMessage text) {
+				Get request = MfsMessages.fromJson(text.getText(), Get.class);
+				get(request.loadUnit(), request.transportOrderId());
+			}
+		} else {
+			Thread.sleep(100);
 		}
 
 		synchronized (this) {
@@ -51,6 +55,10 @@ public class SourceTransportPoint extends ServerPoint {
 				announceLU(barcode);
 			}
 		}
+	}
+
+	private synchronized boolean isEmpty() {
+		return barcode == null;
 	}
 
 	@Override

@@ -1,6 +1,8 @@
 package ro.demo.usersbackend.server.mfs;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import jakarta.jms.JMSContext;
 import ro.demo.usersbackend.packagemessaging.Broker;
@@ -8,6 +10,7 @@ import ro.demo.usersbackend.packagemessaging.MfsMessages;
 import ro.demo.usersbackend.packagemessaging.MfsMessages.Arrived;
 
 public abstract class DecisionPointHandler extends PointHandler {
+	private static final Logger mfsLog = LogManager.getLogger("mfsMessages");
 
 	private final String point;
 
@@ -28,6 +31,7 @@ public abstract class DecisionPointHandler extends PointHandler {
 
 		try (JMSContext context = new ActiveMQConnectionFactory(Broker.URL).createContext()) {
 			context.createProducer().send(context.createQueue(point), reply);
+			mfsLog.info("SERVER -> SIM [{}] {}", point, reply);
 		}
 		log.info("{}: load unit {} reply {}", point, arrived.loadUnit(), reply);
 	}

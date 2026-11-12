@@ -32,6 +32,7 @@ import ro.demo.usersbackend.server.session.ServerSessionFactory;
 
 public class AutomaticRetrievalService extends AbstractProcess {
 	public static final Logger log = LogManager.getLogger("automaticRetrieval");
+	private static final Logger mfsLog = LogManager.getLogger("mfsMessages");
 	private static final String CONVEYOR = "CONVEYOR";
 	private static final String DECANTING = "DECANTING";
 	private static final List<TransportOrderStatus> OPEN = List.of(TransportOrderStatus.NEW,
@@ -63,6 +64,7 @@ public class AutomaticRetrievalService extends AbstractProcess {
 		while ((message = consumer.receive(1000)) != null) {
 			try {
 				String text = ((TextMessage) message).getText();
+				mfsLog.info("SIM -> SERVER [{}] {}", MfsMessages.RESPONSE_QUEUE, text);
 				JsonNode node = MfsMessages.fromJson(text, JsonNode.class);
 				if ("ACK_GET".equals(node.path("type").asText())) {
 					AckGet ack = MfsMessages.fromJson(text, AckGet.class);
@@ -107,6 +109,7 @@ public class AutomaticRetrievalService extends AbstractProcess {
 					Get message = new Get("GET", orderId, order.getLoadUnit().getBarcode(),
 							order.getSource().getName());
 					context.createProducer().send(requests, MfsMessages.toJson(message));
+					mfsLog.info("SERVER -> SIM [{}] {}", MfsMessages.REQUEST_QUEUE, MfsMessages.toJson(message));
 					order.setStatus(TransportOrderStatus.ACTIVE);
 					log.info("Automatic retrieval: sent {}", MfsMessages.toJson(message));
 				});
