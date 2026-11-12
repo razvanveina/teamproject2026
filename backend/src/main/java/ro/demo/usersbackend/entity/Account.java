@@ -1,5 +1,7 @@
 package ro.demo.usersbackend.entity;
 
+import java.time.Instant;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -17,6 +19,8 @@ public class Account {
 
 	@Column(nullable = false, length = 100)
 	private String passwordHash;
+	
+	private Instant lastSeen;
 
 	public Account() {
 		super();
@@ -49,6 +53,14 @@ public class Account {
 
 	public void setPasswordHash(String passwordHash) {
 		this.passwordHash = passwordHash;
+	}
+	
+	public Instant getLastSeen() {
+		return lastSeen;
+	}
+
+	public void setLastSeen(Instant lastSeen) {
+		this.lastSeen = lastSeen;
 	}
 
 }

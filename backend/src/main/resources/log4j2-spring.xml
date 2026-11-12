@@ -32,6 +32,10 @@
         <File name="ToteTransportFile" fileName="log/toteTransport.log" append="true">
             <PatternLayout pattern="${pattern}" />
         </File>
+
+        <File name="MfsMessagesFile" fileName="log/mfsMessages.log" append="true">
+            <PatternLayout pattern="${pattern}" />
+        </File>
     </Appenders>
 
     <Loggers>
@@ -63,6 +67,11 @@
         <Logger name="toteTransport" level="info" additivity="false">
             <AppenderRef ref="Console" />
             <AppenderRef ref="ToteTransportFile" />
+        </Logger>
+
+        <Logger name="mfsMessages" level="info" additivity="false">
+            <AppenderRef ref="Console" />
+            <AppenderRef ref="MfsMessagesFile" />
         </Logger>
 
         <Root level="info">

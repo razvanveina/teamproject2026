@@ -12,6 +12,7 @@ export class AuthService {
 
   private tokenSignal = signal<string | null>(localStorage.getItem('token'));
   private timer?: ReturnType<typeof setTimeout>;
+  private heartbeat?: ReturnType<typeof setInterval>;
 
   readonly isLoggedIn = computed(() => this.tokenSignal() !== null);
   private readPayload(token: string): any {
@@ -25,6 +26,7 @@ export class AuthService {
 
   constructor() {
     this.scheduleExpiry();
+    this.startHeartbeat();
   }
 
   get token(): string | null {
@@ -38,15 +40,30 @@ export class AuthService {
         this.tokenSignal.set(res.token);
         this.expired.set(false);
         this.scheduleExpiry();
+        this.startHeartbeat();
       })
     );
   }
 
   logout(): void {
+    if (this.tokenSignal()) {
+      this.http.post(`${SERVER_URL}/api/accounts/logout`, {}).subscribe({ error: () => { } });
+    }
     clearTimeout(this.timer);
+    clearInterval(this.heartbeat);
     localStorage.removeItem('token');
     this.tokenSignal.set(null);
     this.expired.set(false);
+  }
+
+  private startHeartbeat(): void {
+    clearInterval(this.heartbeat);
+    if (!this.tokenSignal()) {
+      return;
+    }
+    const beat = () => this.http.post(`${SERVER_URL}/api/accounts/heartbeat`, {}).subscribe({ error: () => { } });
+    beat();                                   
+    this.heartbeat = setInterval(beat, 30_000)
   }
 
   private scheduleExpiry(): void {

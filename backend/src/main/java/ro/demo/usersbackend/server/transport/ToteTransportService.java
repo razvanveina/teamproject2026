@@ -54,14 +54,15 @@ public class ToteTransportService extends AbstractProcess {
 				.createQuery("from ArticlePickingLocation a where a.article = :article", ArticlePickingLocation.class)
 				.setParameter("article", article).getResultList();
 
-		if (places.isEmpty()) {
-			log.warn("Tote transport: no picking location for article {}, tote {} stays", article.getBarcode(), tote.getBarcode());
-			return;
+		// daca articolul nu are inca niciun loc de picking, ii dam cel mai apropiat loc liber de inceputul zonei
+		StorageLocation target = null;
+		StorageLocation from = null;
+		if (!places.isEmpty()) {
+			target = findFreePlace(session, places);
+			from = places.get(0).getLocation();
 		}
-
-		StorageLocation target = findFreePlace(session, places);
 		if (target == null) {
-			target = findNearestFreePlace(session, places.get(0).getLocation());
+			target = findNearestFreePlace(session, from);
 			if (target == null) {
 				log.warn("Tote transport: no free picking location, tote {} stays", tote.getBarcode());
 				return;
@@ -101,7 +102,11 @@ public class ToteTransportService extends AbstractProcess {
 		return nearest;
 	}
 
+	// fara loc de plecare masuram de la inceputul zonei (x = 0, y = 0)
 	private int distance(StorageLocation a, StorageLocation b) {
+		if (a == null) {
+			return b.getX() + b.getY() + b.getZ();
+		}
 		return Math.abs(a.getX() - b.getX()) + Math.abs(a.getY() - b.getY()) + Math.abs(a.getZ() - b.getZ());
 	}
 

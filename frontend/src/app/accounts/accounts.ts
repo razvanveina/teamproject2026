@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Account, AccountApi } from '../services/account';
 
@@ -8,7 +8,8 @@ import { Account, AccountApi } from '../services/account';
   templateUrl: './accounts.html',
   styleUrl: '../dialog-page/dialog-page.css',
 })
-export class Accounts implements OnInit {
+export class Accounts implements OnInit, OnDestroy {
+  private poll?: ReturnType<typeof setInterval>;
   private readonly api = inject(AccountApi);
 
   accounts = signal<Account[]>([]);
@@ -16,6 +17,10 @@ export class Accounts implements OnInit {
 
   ngOnInit(): void {
     this.refresh();
+  }
+
+  ngOnDestroy(): void {
+    clearInterval(this.poll);
   }
 
   refresh(): void {

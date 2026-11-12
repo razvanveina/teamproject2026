@@ -1,9 +1,12 @@
 package ro.demo.usersbackend.service;
 
+import java.time.Instant;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.transaction.annotation.Transactional;
 
 import ro.demo.usersbackend.dto.AuthResponse;
 import ro.demo.usersbackend.dto.LoginRequest;
@@ -33,10 +36,12 @@ public class AuthService {
 		accounts.save(new Account(request.username(), encoder.encode(request.password())));
 	}*/
 
+	@Transactional
 	public AuthResponse login(LoginRequest request) {
 		Account account = accounts.findByUsername(request.username())
 				.filter(a -> encoder.matches(request.password(), a.getPasswordHash()))
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "invalid credentials"));
+		account.setLastSeen(Instant.now());
 		return new AuthResponse(jwtService.createToken(account.getUsername()), account.getUsername());
 	}
 
