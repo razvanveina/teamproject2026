@@ -25,7 +25,7 @@ import ro.demo.usersbackend.repository.TransportOrderRepository;
 public class TransportOrderService {
 
 	private static final String DECANTING = "DECANTING";
-
+	private static final String CONVEYOR = "CONVEYOR";
 	private final TransportOrderRepository transportOrderRepository;
 	private final LocationRepository locationRepository;
 	private final StorageLocationRepository storageLocationRepository;
@@ -49,6 +49,10 @@ public class TransportOrderService {
 	private static boolean isTote(TransportOrder order) {
 		return DECANTING.equals(order.getSource().getName());
 	}
+	
+	private static boolean isAutomatic(TransportOrder order) {
+		return CONVEYOR.equals(order.getSource().getName());
+	}
 
 	private TransportOrder find(Long id) {
 		return transportOrderRepository.findById(id)
@@ -70,14 +74,14 @@ public class TransportOrderService {
 	private Optional<TransportOrderResponse> nextFor(String user, boolean tote) {
 		// 1. are deja un transport preluat? il continua
 		Optional<TransportOrder> mine = transportOrderRepository.findByAssignedToAndStatusInOrderByIdAsc(user, OPEN)
-				.stream().filter(o -> isTote(o) == tote).sorted(activeFirst()).findFirst();
+				.stream().filter(o -> !isAutomatic(o)).filter(o -> isTote(o) == tote).sorted(activeFirst()).findFirst();
 		if (mine.isPresent()) {
 			return mine.map(this::toResponse);
 		}
 
 		// 2. altfel il preia pe cel mai vechi liber
 		return transportOrderRepository.findByAssignedToIsNullAndStatusInOrderByIdAsc(OPEN)
-				.stream().filter(o -> isTote(o) == tote).sorted(activeFirst()).findFirst()
+				.stream().filter(o -> !isAutomatic(o)).filter(o -> isTote(o) == tote).sorted(activeFirst()).findFirst()
 				.map(order -> {
 					order.setAssignedTo(user);
 					return toResponse(order);
@@ -88,6 +92,7 @@ public class TransportOrderService {
 	public List<TransportOrderResponse> findOpenOrders(String user) {
 		return transportOrderRepository.findByStatusAndSourceNotOrderByIdAsc(TransportOrderStatus.NEW, decanting())
 				.stream()
+				.filter(o -> !isAutomatic(o))
 				.filter(o -> o.getAssignedTo() == null || user.equals(o.getAssignedTo()))
 				.map(this::toResponse)
 				.toList();
@@ -97,6 +102,7 @@ public class TransportOrderService {
 	public List<TransportOrderResponse> findOpenToteOrders(String user) {
 		return transportOrderRepository.findByStatusAndSourceOrderByIdAsc(TransportOrderStatus.NEW, decanting())
 				.stream()
+				.filter(o -> !isAutomatic(o))
 				.filter(o -> o.getAssignedTo() == null || user.equals(o.getAssignedTo()))
 				.map(this::toResponse)
 				.toList();
