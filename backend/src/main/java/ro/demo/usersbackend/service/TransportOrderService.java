@@ -51,7 +51,7 @@ public class TransportOrderService {
 	}
 	
 	private static boolean isAutomatic(TransportOrder order) {
-		return CONVEYOR.equals(order.getSource().getName());
+		return CONVEYOR.equals(order.getTarget().getName());
 	}
 
 	private TransportOrder find(Long id) {
