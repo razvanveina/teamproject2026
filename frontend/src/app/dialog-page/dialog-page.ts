@@ -161,6 +161,8 @@ export class DialogPage implements OnInit {
   isDateColumn(field: string): boolean {
     return field === 'CREATED_AT'
       || field === 'FINISHED_AT'
+      || field === 'COMPLETED_AT'
+      || field === 'INVENTORY_ORDER_LINE_ID__COMPLETED_AT'
       || field === 'INVENTORY_ORDER_LINE_ID__INVENTORY_ORDER_ID';
   }
 

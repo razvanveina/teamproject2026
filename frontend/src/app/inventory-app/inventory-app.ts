@@ -431,25 +431,6 @@ export class InventoryApp implements OnInit {
         history.back();
     }
 
-    removeLine(index: number): void {
-        if (index < 0 || index >= this.lines.length || this.isSaving || this.activeLineId === null) {
-            return;
-        }
-
-        const removedLine = this.lines[index];
-        this.lines = this.lines.filter((_, lineIndex) => lineIndex !== index);
-        this.persistCurrentLineItems(() => {
-            this.quantityDifferences = [];
-            this.comparisonError = '';
-        }, () => {
-            this.lines = [
-                ...this.lines.slice(0, index),
-                removedLine,
-                ...this.lines.slice(index)
-            ];
-        });
-    }
-
     private loadArticleBarcode(barcode: string): void {
         this.http
             .get<ArticleRow[]>(`${this.dataUrl}/Article`, { params: { BARCODE: barcode } })

@@ -7,7 +7,7 @@
     { "field": "ID", "label": "ID" },
     {
 	  "field": "INVENTORY_ORDER_LINE_ID",
-	  "label": "Inventory order line",
+	  "label": "",
 	  "lookup": { "entity": "InventoryOrderLine" },
       "filterable": true
     },

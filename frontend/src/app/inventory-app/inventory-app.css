@@ -191,8 +191,7 @@ input {
 
 .resume-order,
 .new-order,
-.secondary,
-.remove-line {
+.secondary {
     height: auto;
     margin: 0;
     padding: 8px 12px;
@@ -204,8 +203,7 @@ input {
 .finish,
 .finish-order { background: linear-gradient(110deg, #172b4d, #203b5e); }
 .new-order { background: linear-gradient(110deg, #172b4d, #203b5e); }
-.cancel,
-.remove-line { background: red; }
+.cancel { background: red; }
 
 .comparison-error {
     padding: 0 16px;

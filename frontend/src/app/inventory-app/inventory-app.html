@@ -94,7 +94,6 @@
                         <th>Article barcode</th>
                         <th>Description</th>
                         <th>Quantity</th>
-                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -103,12 +102,6 @@
                         <td>{{ line.article }}</td>
                         <td>{{ line.description }}</td>
                         <td>{{ line.quantity }} {{ line.quantityUnit }}</td>
-                        <td>
-                            <button type="button" class="remove-line" (click)="removeLine($index)"
-                                [disabled]="isSaving || isComparing" [attr.aria-label]="'Remove ' + line.article">
-                                Remove
-                            </button>
-                        </td>
                     </tr>
                     }
                 </tbody>
@@ -154,14 +147,6 @@
             <p id="mismatch-description">
                 This load unit's counted quantities differ from saved stock. Finish this load-unit line anyway?
             </p>
-            <div class="difference-list">
-                @for (difference of quantityDifferences; track difference.article + difference.packagingUnit) {
-                <p>
-                    {{ difference.article }} — {{ difference.packagingUnit }}:
-                    expected {{ difference.sqlQuantity }}, counted {{ difference.scannedQuantity }}
-                </p>
-                }
-            </div>
             <div class="dialog-actions">
                 <button type="button" class="dialog-confirm" (click)="confirmMismatch()">Finish line</button>
                 <button type="button" class="dialog-cancel" (click)="cancelMismatch()">Cancel and rescan</button>

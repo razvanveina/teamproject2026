@@ -151,8 +151,14 @@ public class InventoryOrderService {
 		line.setStatus(InventoryOrderLineStatus.FINISHED);
 		line.setCompletedAt(LocalDateTime.now());
 		line = inventoryOrderLineRepository.save(line);
-		createInventoryAdjustments(line);
-		line.setStockAdjustmentsCalculated(true);
+		if (!line.isStockAdjustmentsCalculated()) {
+			createInventoryAdjustments(line);
+			line.setStockAdjustmentsCalculated(true);
+		}
+		if (!line.isStockUpdated()) {
+			updateInventoryOrderLineStock(line);
+			line.setStockUpdated(true);
+		}
 		return toLineResponse(inventoryOrderLineRepository.save(line));
 	}
 
@@ -183,6 +189,23 @@ public class InventoryOrderService {
 		inventoryDifferenceRepository.saveAll(adjustments);
 	}
 
+	private void updateInventoryOrderLineStock(InventoryOrderLine line) {
+		LoadUnit loadUnit = findEligibleLoadUnit(line.getLoadUnitBarcode());
+		List<ScannedInventoryItemRequest> requestItems = inventoryOrderLineItemRepository
+				.findByInventoryOrderLine_IdOrderByIdAsc(line.getId()).stream()
+				.map(item -> new ScannedInventoryItemRequest(item.getArticleBarcode(),
+						item.getArticleDescription(), item.getPackagingUnitName(), item.getQuantity()))
+				.toList();
+		Map<ItemKey, ScannedInventoryItemRequest> scannedItems = getScannedItems(requestItems);
+		List<StockItem> stockItems = stockItemRepository.findByLoadUnitOrderByIdAsc(loadUnit);
+		if (!stockItems.isEmpty()) {
+			for (Reservation reservation : reservationRepository.findByStockItemIn(stockItems)) {
+				reservation.getStockItem().setReservation(reservation);
+			}
+		}
+		updateExistingStockItems(loadUnit, stockItems, scannedItems);
+	}
+
 	public void finishInventoryOrder(Long orderId) {
 		InventoryOrder order = findStartedOrder(orderId);
 		List<InventoryOrderLine> lines = inventoryOrderLineRepository.findByInventoryOrder_IdOrderByIdAsc(orderId);
@@ -200,23 +223,13 @@ public class InventoryOrderService {
 			if (!line.isStockAdjustmentsCalculated()) {
 				createInventoryAdjustments(line);
 				line.setStockAdjustmentsCalculated(true);
-				inventoryOrderLineRepository.save(line);
 			}
-			LoadUnit loadUnit = findEligibleLoadUnit(line.getLoadUnitBarcode());
-			List<ScannedInventoryItemRequest> requestItems = inventoryOrderLineItemRepository
-					.findByInventoryOrderLine_IdOrderByIdAsc(line.getId()).stream()
-					.map(item -> new ScannedInventoryItemRequest(item.getArticleBarcode(),
-							item.getArticleDescription(), item.getPackagingUnitName(), item.getQuantity()))
-					.toList();
-			Map<ItemKey, ScannedInventoryItemRequest> scannedItems = getScannedItems(requestItems);
-			List<StockItem> stockItems = stockItemRepository.findByLoadUnitOrderByIdAsc(loadUnit);
-			if (!stockItems.isEmpty()) {
-				for (Reservation reservation : reservationRepository.findByStockItemIn(stockItems)) {
-					reservation.getStockItem().setReservation(reservation);
-				}
+			if (!line.isStockUpdated()) {
+				updateInventoryOrderLineStock(line);
+				line.setStockUpdated(true);
 			}
+			inventoryOrderLineRepository.save(line);
 
-			updateExistingStockItems(loadUnit, stockItems, scannedItems);
 		}
 
 		order.setStatus(InventoryOrderStatus.FINISHED);

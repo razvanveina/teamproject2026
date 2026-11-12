@@ -50,6 +50,9 @@ public class InventoryOrderLine {
 	@Column(name = "stock_adjustments_calculated", nullable = false)
 	private boolean stockAdjustmentsCalculated;
 
+	@Column(name = "stock_updated", nullable = false)
+	private boolean stockUpdated;
+
 	@OneToMany(mappedBy = "inventoryOrderLine", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<InventoryOrderLineItem> items = new ArrayList<>();
 
@@ -119,6 +122,14 @@ public class InventoryOrderLine {
 
 	public void setStockAdjustmentsCalculated(boolean stockAdjustmentsCalculated) {
 		this.stockAdjustmentsCalculated = stockAdjustmentsCalculated;
+	}
+
+	public boolean isStockUpdated() {
+		return stockUpdated;
+	}
+
+	public void setStockUpdated(boolean stockUpdated) {
+		this.stockUpdated = stockUpdated;
 	}
 
 	public List<InventoryOrderLineItem> getItems() {
