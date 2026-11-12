@@ -102,10 +102,19 @@ public class DataController {
 		}
 		
 		String paging = "";
+		String sortField = names.get(filters.get("sort"));
+		if (sortField == null) {
+			sortField = "t.ID";
+		}
+		String direction = "desc".equalsIgnoreCase(filters.get("direction")) ? "DESC" : "ASC";
+		String tieBreaker = "t.ID".equals(sortField) ? "" : ", t.ID ASC";
 		if (filters.containsKey("page")) {
 			select = select + ", COUNT(*) OVER () AS TOTAL_ROWS";
-			paging = " ORDER BY t.ID OFFSET ? ROWS FETCH NEXT 20 ROWS ONLY";
+			paging = " ORDER BY " + sortField + " " + direction + tieBreaker
+					+ " OFFSET ? ROWS FETCH NEXT 20 ROWS ONLY";
 			params.add(Integer.parseInt(filters.get("page")) * 20);
+		} else {
+			paging = " ORDER BY " + sortField + " " + direction + tieBreaker;
 		}
 
 		return jdbcTemplate.queryForList(select + " FROM " + tableNameOf(entity) + " t" + joins + where + paging, params.toArray());

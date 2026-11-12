@@ -116,8 +116,13 @@ export class DialogPage implements OnInit {
   loadRows(): void {
     const config = this.dialog();
     if (config !== null) {
-      this.filters['page'] = this.page();
-      this.service.getRows(config.entity, this.filters).subscribe((rows: any[]) => {
+      const params = {
+        ...this.filters,
+        page: this.page(),
+        sort: this.sortColumn,
+        direction: this.sortDirection,
+      };
+      this.service.getRows(config.entity, params).subscribe((rows: any[]) => {
         this.rows.set(rows);
         if (rows.length > 0) {
           this.pages.set(Math.ceil(rows[0]['TOTAL_ROWS'] / 20));
@@ -180,23 +185,13 @@ export class DialogPage implements OnInit {
 
   sort(column: string) {
     if (this.sortColumn === column) {
-    // same column -> flip direction
-    this.sortDirection =
-      this.sortDirection === 'asc' ? 'desc' : 'asc';
-  } else {
-    // new column -> start with ascending
-    this.sortColumn = column;
-    this.sortDirection = 'asc';
-  }
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
+    }
 
-  this.rows.update(rows =>
-    [...rows].sort((a, b) => {
-      const result = String(a[column]).localeCompare(String(b[column]));
-
-      return this.sortDirection === 'asc'
-        ? result
-        : -result;
-    })
-  );
+    this.page.set(0);
+    this.loadRows();
   }
 }
