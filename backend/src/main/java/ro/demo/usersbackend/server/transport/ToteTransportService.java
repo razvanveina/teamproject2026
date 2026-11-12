@@ -115,7 +115,7 @@ public class ToteTransportService extends AbstractProcess {
 
 	private boolean hasReservation(LoadUnit tote) {
 		for (StockItem item : tote.getStockItems()) {
-			if (item.getReservation() != null) {
+			if (item.getReservation() != null && !item.getReservation().getRetrievalOrderLine().getOrder().isAutomatic()){
 				return true;
 			}
 		}
