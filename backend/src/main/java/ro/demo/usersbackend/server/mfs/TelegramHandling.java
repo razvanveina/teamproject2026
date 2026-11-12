@@ -17,7 +17,7 @@ public class TelegramHandling {
 			Map.entry("PTTT1", new PTTT1Handler()), 
 			Map.entry("DP2", new DP2Handler()),
 			Map.entry("IP2", new IP2Handler()), 
-			Map.entry("IP3", new IP3Handler()), 
+			Map.entry("O", new OHandler()),
 			Map.entry("DP3", new DP3Handler()),
 			Map.entry("EMPTY", new EMPTYHandler()));
 

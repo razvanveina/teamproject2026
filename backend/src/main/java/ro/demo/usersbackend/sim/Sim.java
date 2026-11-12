@@ -96,7 +96,6 @@ public class Sim {
 
 		InfoPoint ip1 = add(new InfoPoint("IP1"));
 		InfoPoint ip2 = add(new InfoPoint("IP2"));
-		InfoPoint ip3 = add(new InfoPoint("IP3"));
 		InfoPoint e = add(new InfoPoint("EMPTY"));
 
 		DecisionPoint dp1 = add(new DecisionPoint("DP1"));
@@ -109,6 +108,7 @@ public class Sim {
 
 		StationPoint ptts1 = add(new StationPoint("PTTS1"));
 		StationPoint pttt1 = add(new StationPoint("PTTT1"));
+		StationPoint o = add(new StationPoint("O"));
 
 		c6.getSource().add(tps1);
 		ip1.getSource().add(c6);
@@ -145,8 +145,8 @@ public class Sim {
 
 		tpt1.getSource().add(c5);
 
-		ip3.getSource().add(c9);
-		c13.getSource().add(ip3);
+		o.getSource().add(c9);
+		c13.getSource().add(o);
 
 		c11.getSource().add(dp3);
 		e.getSource().add(c11);
