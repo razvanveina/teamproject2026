@@ -19,6 +19,7 @@ import ro.demo.usersbackend.entity.TransportOrderStatus;
 import ro.demo.usersbackend.repository.LocationRepository;
 import ro.demo.usersbackend.repository.StorageLocationRepository;
 import ro.demo.usersbackend.repository.TransportOrderRepository;
+import ro.demo.usersbackend.server.mfs.StationControl;
 
 @Service
 @Transactional
@@ -162,8 +163,20 @@ public class TransportOrderService {
 			}
 			moveLoadUnit(order.getLoadUnit(), order.getTarget());
 			order.setStatus(TransportOrderStatus.FINISHED);
+			if ("TPT1".equals(order.getSource().getName())) {
+				releaseTPT1();
+			}
 		}
 		return toResponse(order);
+	}
+
+	private void releaseTPT1() {
+		try {
+			StationControl.release("TPT1");
+		} catch (Exception e) {
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+					"cannot release TPT1: " + e.getMessage());
+		}
 	}
 
 	public TransportOrderResponse reportError(Long id, TransportOrderErrorReason reason, String user) {
