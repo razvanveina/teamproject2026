@@ -3,19 +3,23 @@
   "title": "Inventory Order Lines",
   "entity": "InventoryOrderLine",
   "actions": ["add"],
+  "create": {
+    "endpoint": "/inventory-orders/{INVENTORY_ORDER_ID}/planned-lines",
+    "body": { "locationId": "LOCATION_ID" }
+  },
   "columns": [
     { "field": "ID", "label": "ID" },
     {
       "field": "INVENTORY_ORDER_ID",
       "label": "Inventory order",
-      "lookup": { "entity": "InventoryOrder" },
+      "lookup": { "entity": "InventoryOrder", "filter": { "STATUS": "STARTED" } },
       "addable": true,
       "filterable": true
     },
     {
       "field": "LOCATION_ID",
       "label": "Inventory location",
-      "lookup": { "entity": "Location" },
+      "lookup": { "entity": "Location", "filter": { "DTYPE": "STORAGE" } },
       "addable": true,
       "filterable": true
     },

@@ -29,6 +29,10 @@ export class DialogConfigService {
     return this.http.post<any>(API_BASE_URL + '/data/' + entity, data);
   }
 
+  addConfiguredRow(endpoint: string, data: any): Observable<any> {
+    return this.http.post<any>(API_BASE_URL + endpoint, data);
+  }
+
   // The rows of an entity, e.g. "users" -> /api/data/users
   getRows(entity: string, filters: any = {}): Observable<any[]> {
     return this.http.get<any[]>(API_BASE_URL + '/data/' + entity, { params: filters }); //coloanele si datele din tabel, e.g. /api/users

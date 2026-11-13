@@ -11,4 +11,5 @@ import ro.demo.usersbackend.entity.InventoryOrderStatus;
 public interface InventoryOrderRepository extends JpaRepository<InventoryOrder, Long> {
 	List<InventoryOrder> findByStatusOrderByCreatedAtDesc(InventoryOrderStatus status);
 	Optional<InventoryOrder> findByCodeAndStatus(String code, InventoryOrderStatus status);
+	boolean existsByCode(String code);
 }

@@ -292,6 +292,21 @@ export class DialogForm implements OnInit {
     let request = this.service.addRow(this.entity, data);
     if (this.id !== '') {
       request = this.service.updateRow(this.entity, this.id, data);
+    } else if (this.dialog()?.create) {
+      const create = this.dialog()!.create!;
+      let endpoint = create.endpoint;
+      endpoint = endpoint.replace(/\{([A-Z0-9_]+)\}/g, (placeholder, field: string) => {
+        const value = data[field];
+        if (value === undefined || value === null || value === '') {
+          return placeholder;
+        }
+        return encodeURIComponent(String(value));
+      });
+      const body: Record<string, any> = {};
+      for (const [targetField, sourceField] of Object.entries(create.body)) {
+        body[targetField] = data[sourceField];
+      }
+      request = this.service.addConfiguredRow(endpoint, body);
     }
 
     request.subscribe({

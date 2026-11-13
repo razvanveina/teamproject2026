@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,6 +47,7 @@ import ro.demo.usersbackend.repository.ArticleRepository;
 import ro.demo.usersbackend.repository.InventoryOrderLineItemRepository;
 import ro.demo.usersbackend.repository.InventoryOrderLineRepository;
 import ro.demo.usersbackend.repository.InventoryOrderRepository;
+import ro.demo.usersbackend.repository.LocationRepository;
 import ro.demo.usersbackend.repository.LoadUnitRepository;
 import ro.demo.usersbackend.repository.PackagingUnitTypeRepository;
 import ro.demo.usersbackend.repository.ReservationRepository;
@@ -69,6 +69,7 @@ public class InventoryOrderService {
 	private final PackagingUnitTypeRepository packagingUnitTypeRepository;
 	private final ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository;
 	private final StorageLocationRepository storageLocationRepository;
+	private final LocationRepository locationRepository;
 	private static final Logger log = LoggerFactory.getLogger(InventoryOrderService.class);
 
 	public InventoryOrderService(InventoryOrderRepository inventoryOrderRepository,
@@ -78,7 +79,7 @@ public class InventoryOrderService {
 			StockItemRepository stockItemRepository, ReservationRepository reservationRepository,
 			ArticleRepository articleRepository, PackagingUnitTypeRepository packagingUnitTypeRepository,
 			ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository,
-			StorageLocationRepository storageLocationRepository) {
+			StorageLocationRepository storageLocationRepository, LocationRepository locationRepository) {
 		this.inventoryOrderRepository = inventoryOrderRepository;
 		this.inventoryOrderLineRepository = inventoryOrderLineRepository;
 		this.inventoryOrderLineItemRepository = inventoryOrderLineItemRepository;
@@ -90,6 +91,7 @@ public class InventoryOrderService {
 		this.packagingUnitTypeRepository = packagingUnitTypeRepository;
 		this.articlePackagingUnitTypeRepository = articlePackagingUnitTypeRepository;
 		this.storageLocationRepository = storageLocationRepository;
+		this.locationRepository = locationRepository;
 	}
 
 	@Transactional(readOnly = true)
@@ -105,13 +107,40 @@ public class InventoryOrderService {
 				.map(this::toOrderResponse).toList();
 	}
 
-	public InventoryOrderResponse createInventoryOrder() {
+	public InventoryOrderResponse createInventoryOrder(String requestedCode) {
+		String code = requestedCode.trim();
+		if (inventoryOrderRepository.existsByCode(code)) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "Inventory order code already exists: " + code);
+		}
 		InventoryOrder order = new InventoryOrder();
-		order.setCode("IO-" + UUID.randomUUID());
+		order.setCode(code);
 		order.setCreatedAt(LocalDateTime.now());
 		order.setReasonMessage("INVENTORY");
 		order.setStatus(InventoryOrderStatus.STARTED);
 		return toOrderResponse(inventoryOrderRepository.save(order));
+	}
+
+	public InventoryOrderLineResponse createPlannedInventoryOrderLine(Long orderId, Integer locationId) {
+		InventoryOrder order = findStartedOrder(orderId);
+		Location location = locationRepository.findById(locationId).orElseThrow(
+				() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Location was not found: " + locationId));
+		if (!(location instanceof StorageLocation)) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+					"Inventory order lines require a storage location.");
+		}
+		if (inventoryOrderLineRepository.existsByInventoryOrder_IdAndLocation_Id(orderId, locationId)) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT,
+					"This location already has a line in the inventory order.");
+		}
+
+		InventoryOrderLine line = new InventoryOrderLine();
+		line.setInventoryOrder(order);
+		line.setLocation(location);
+		line.setLocationName(location.getName());
+		line.setStatus(InventoryOrderLineStatus.NEW);
+		line.setStockAdjustmentsCalculated(false);
+		line.setStockUpdated(false);
+		return toLineResponse(inventoryOrderLineRepository.save(line));
 	}
 
 	@Transactional(readOnly = true)

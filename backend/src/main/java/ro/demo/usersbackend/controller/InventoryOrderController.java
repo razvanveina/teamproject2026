@@ -16,7 +16,9 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import ro.demo.usersbackend.dto.InventoryLoadUnitResponse;
+import ro.demo.usersbackend.dto.CreateInventoryOrderRequest;
 import ro.demo.usersbackend.dto.InventoryOrderLineResponse;
+import ro.demo.usersbackend.dto.InventoryOrderLineCreateRequest;
 import ro.demo.usersbackend.dto.InventoryOrderLineStartRequest;
 import ro.demo.usersbackend.dto.InventoryOrderResponse;
 import ro.demo.usersbackend.dto.ScannedInventoryItemRequest;
@@ -48,8 +50,16 @@ public class InventoryOrderController {
 	}
 
 	@PostMapping
-	public ResponseEntity<InventoryOrderResponse> create() {
-		return ResponseEntity.status(HttpStatus.CREATED).body(inventoryOrderService.createInventoryOrder());
+	public ResponseEntity<InventoryOrderResponse> create(@Valid @RequestBody CreateInventoryOrderRequest request) {
+		return ResponseEntity.status(HttpStatus.CREATED)
+				.body(inventoryOrderService.createInventoryOrder(request.code()));
+	}
+
+	@PostMapping("/{orderId}/planned-lines")
+	public ResponseEntity<InventoryOrderLineResponse> createPlannedLine(@PathVariable Long orderId,
+			@Valid @RequestBody InventoryOrderLineCreateRequest request) {
+		return ResponseEntity.status(HttpStatus.CREATED)
+				.body(inventoryOrderService.createPlannedInventoryOrderLine(orderId, request.locationId()));
 	}
 
 	@PostMapping("/{orderId}/lines")

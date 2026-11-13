@@ -24,6 +24,10 @@ export interface DialogConfig {
   entity: string; // the rows come from /api/<entity>
   actions: string[]; // what the user may do: "add", "edit", "delete"
   columns: DialogColumn[];
+  create?: {
+    endpoint: string;
+    body: Record<string, string>;
+  };
 }
 
 // dialogs.json = the main list

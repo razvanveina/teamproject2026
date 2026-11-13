@@ -3,6 +3,10 @@
   "title": "Inventory Orders",
   "entity": "InventoryOrder",
   "actions": ["add"],
+  "create": {
+    "endpoint": "/inventory-orders",
+    "body": { "code": "CODE" }
+  },
   "columns": [
     { "field": "ID", "label": "ID" },
     { "field": "CODE", "label": "Unique scan code", "addable": true },

@@ -9,4 +9,6 @@ public interface InventoryOrderLineRepository extends JpaRepository<InventoryOrd
 	java.util.List<InventoryOrderLine> findByInventoryOrder_IdOrderByIdAsc(Long inventoryOrderId);
 
 	boolean existsByInventoryOrder_IdAndStatus(Long inventoryOrderId, InventoryOrderLineStatus status);
+
+	boolean existsByInventoryOrder_IdAndLocation_Id(Long inventoryOrderId, Integer locationId);
 }
