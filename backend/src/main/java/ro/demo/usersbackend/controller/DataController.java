@@ -1,6 +1,7 @@
 package ro.demo.usersbackend.controller;
 
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -132,6 +133,9 @@ public class DataController {
 	@PostMapping("/{entity}")
 	public ResponseEntity<Map<String, String>> add(@PathVariable String entity, @RequestBody Map<String, Object> values) {
 		log.info("Data: added a row to {} with columns {}", entity, values.keySet());
+		if ("InventoryOrder".equals(entity) && values.get("CREATED_AT") == null) {
+			values.put("CREATED_AT", Timestamp.valueOf(java.time.LocalDateTime.now()));
+		}
 		List<String> names = new ArrayList<>();
 		List<String> marks = new ArrayList<>();
 		List<Object> params = new ArrayList<>();
