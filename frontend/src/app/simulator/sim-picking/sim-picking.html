@@ -1,34 +1,73 @@
 <div class="container">
     <div class="top">
-        <div [hidden]="!displayTable()">
-            <div class="totes">
-                <div class="upper">
-                    <div class="orderDetails">
-                        <p>Order ID: <b>{{order().orderId}}</b></p>
-                    </div>
-                </div>
-                <div class="lower">
-                    <div class="orderDetails">
-                        <p>Order ID: <b>{{order().orderId}}</b></p>
-                    </div>
-                </div>
-            </div>
+        <div class="tote">
+            <h3>Source tote (PTTS1)</h3>
+            @if (source(); as tote) {
+            <p class="barcode">{{ tote.barcode }}</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Article</th>
+                        <th>Barcode</th>
+                        <th>Quantity</th>
+                        <th>Order</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (item of tote.items; track $index) {
+                    <tr [class.move]="item.orderId !== null">
+                        <td>{{ item.article }}</td>
+                        <td>{{ item.packaging }}</td>
+                        <td>{{ amountText(item) }}</td>
+                        <td>{{ item.orderId ?? 'free' }}</td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+            } @else {
+            <p class="empty">No tote, waiting for the next one</p>
+            }
+        </div>
+
+        <div class="arrow">➜</div>
+
+        <div class="tote">
+            <h3>Target tote (PTTT1)</h3>
+            @if (target(); as tote) {
+            <p class="barcode">{{ tote.barcode }}</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Article</th>
+                        <th>Barcode</th>
+                        <th>Quantity</th>
+                        <th>Order</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (item of tote.items; track $index) {
+                    <tr>
+                        <td>{{ item.article }}</td>
+                        <td>{{ item.packaging }}</td>
+                        <td>{{ amountText(item) }}</td>
+                        <td>{{ item.orderId }}</td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+            } @else {
+            <p class="empty">No tote, waiting for an empty one</p>
+            }
         </div>
     </div>
 
-    <div [class.left]="!error()" [class.error]="error()">
-        <div>
-            <p>{{instructions()}}</p>
-        </div>
-    </div>
-
-    <div class="right">
-        <input type="text" placeholder="Scan barcode" #barcodeInput (keyup.enter)="onScan(barcodeInput.value)">
+    <div class="left">
+        <p>{{ instruction() }}</p>
     </div>
 
     <div class="bottom">
-        <button (click)=onCancel() class="cancel">Cancel</button>
-        <!-- <button (click)=onMakeLoadUnit() class="makeloadunit">Create LU</button> -->
-        <button (click)=onConfirm() class="confirm">Confirm</button>
+        <button (click)="onCancel()" class="cancel">Cancel</button>
+        <button (click)="onConfirm()" class="confirm"
+            [disabled]="source() === null || target() === null">Confirm</button>
     </div>
 </div>
