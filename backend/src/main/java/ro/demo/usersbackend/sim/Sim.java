@@ -27,10 +27,14 @@ public class Sim {
 		Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(sim::save, 5, 5, TimeUnit.SECONDS);
 		new Thread(() -> {
 			Scanner in = new Scanner(System.in);
-			while (in.hasNextLine()) {
-				if (in.nextLine().trim().equalsIgnoreCase("stop")) {
-					System.exit(0);
+			try {
+				while (in.hasNextLine()) {
+					if (in.nextLine().trim().equalsIgnoreCase("stop")) {
+						System.exit(0);
+					}
 				}
+			} finally {
+				in.close();
 			}
 		}).start();
 		new CustomHttpServer(sim);

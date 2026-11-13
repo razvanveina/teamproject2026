@@ -8,7 +8,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import ro.demo.usersbackend.entity.Article;
 import ro.demo.usersbackend.entity.Destination;
 import ro.demo.usersbackend.entity.StorageLocation;
 import ro.demo.usersbackend.entity.TransitLocation;
@@ -87,14 +86,14 @@ public class InitialDataCreator implements CommandLineRunner {
 		}
 	}
 
-	private void createArticles() {
-		for (int i = 1; i <= 25; i++) {
-			Article article = new Article();
-			article.setBarcode(String.valueOf(123 + i * 1));
-			article.setDescription("desc " + (i * 1));
-			entityManager.persist(article);
-		}
-	}
+//	private void createArticles() {
+//		for (int i = 1; i <= 25; i++) {
+//			Article article = new Article();
+//			article.setBarcode(String.valueOf(123 + i * 1));
+//			article.setDescription("desc " + (i * 1));
+//			entityManager.persist(article);
+//		}
+//	}
 
 //	private void createPackagingUnitTypes() {
 //		List<Article> articles = entityManager.createQuery("from Article a order by a.id", Article.class)

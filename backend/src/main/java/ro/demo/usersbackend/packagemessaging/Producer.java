@@ -30,6 +30,8 @@ public class Producer {
 				context.createProducer().send(queue, text);
 				System.out.println("Trimis: " + text);
 			}
+		} finally {
+			scanner.close();
 		}
 	}
 }

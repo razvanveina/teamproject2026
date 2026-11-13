@@ -69,9 +69,9 @@ public abstract class Entity implements Runnable {
 	@Override
 	public void run() {
 		while (true) {
-			for (Entity e : source) {
-
-			}
+//			for (Entity e : source) {
+//
+//			}
 
 			try {
 				Thread.sleep(1000);

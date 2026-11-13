@@ -1,9 +1,9 @@
 package ro.demo.usersbackend.service;
 
-import java.util.List;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -19,7 +19,6 @@ import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.LoadUnitType;
 import ro.demo.usersbackend.entity.Location;
 import ro.demo.usersbackend.entity.StockItem;
-import ro.demo.usersbackend.entity.TransitLocation;
 import ro.demo.usersbackend.repository.LoadUnitRepository;
 import ro.demo.usersbackend.repository.LocationRepository;
 import ro.demo.usersbackend.repository.StockItemRepository;
@@ -61,11 +60,10 @@ public class DecantingService {
 		LoadUnit loadUnit = findLoadUnit(request.loadUnitBarcode());
 		List<StockItem> matching = availableItems(loadUnit).stream()
 				.filter(s -> s.getArticlePackagingUnitType().getBarcode().equals(request.packagingBarcode()))
-				.sorted(Comparator.comparing((StockItem s) -> s.getReservation() == null))
-				.toList();
+				.sorted(Comparator.comparing((StockItem s) -> s.getReservation() == null)).toList();
 		if (matching.isEmpty()) {
-			throw badRequest("Item " + request.packagingBarcode() + " is not on load unit "
-					+ request.loadUnitBarcode() + ".");
+			throw badRequest(
+					"Item " + request.packagingBarcode() + " is not on load unit " + request.loadUnitBarcode() + ".");
 		}
 
 		int total = matching.stream().mapToInt(StockItem::getQuantity).sum();
@@ -106,9 +104,9 @@ public class DecantingService {
 	}
 
 	private LoadUnit createTote() {
-	    Location decanting = locationRepository.findByName(DECANTING_LOCATION)
-	            .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-	                    "Location " + DECANTING_LOCATION + " is missing."));
+		Location decanting = locationRepository.findByName(DECANTING_LOCATION)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+						"Location " + DECANTING_LOCATION + " is missing."));
 
 		LoadUnit tote = new LoadUnit();
 		tote.setBarcode(generateToteBarcode());
@@ -132,10 +130,10 @@ public class DecantingService {
 //		return new DecantingResponse(loadUnit.getBarcode(), tote == null ? null : tote.getBarcode(),
 //				items.stream().map(this::toItem).toList(), finished);
 //	}
-	
+
 	private DecantingResponse response(LoadUnit loadUnit, LoadUnit tote, List<StockItem> items, boolean finished) {
-		return new DecantingResponse(loadUnit.getBarcode(), tote == null ? null : tote.getBarcode(),
-				toItems(items), finished);
+		return new DecantingResponse(loadUnit.getBarcode(), tote == null ? null : tote.getBarcode(), toItems(items),
+				finished);
 	}
 
 //	private DecantingItem toItem(StockItem stockItem) {
@@ -144,7 +142,7 @@ public class DecantingService {
 //				packaging.getArticle().getDescription(), packaging.getPackagingUnitType().getName(),
 //				stockItem.getQuantity());
 //	}
-	
+
 	private List<DecantingItem> toItems(List<StockItem> stockItems) {
 		Map<String, DecantingItem> byBarcode = new LinkedHashMap<>();
 		for (StockItem s : stockItems) {
@@ -153,9 +151,9 @@ public class DecantingService {
 			DecantingItem line = new DecantingItem(p.getBarcode(), p.getArticle().getBarcode(),
 					p.getArticle().getDescription(), p.getPackagingUnitType().getName(), s.getQuantity(), reserved);
 
-			byBarcode.merge(p.getBarcode(), line, (a, b) -> new DecantingItem(a.packagingBarcode(),
-					a.articleBarcode(), a.description(), a.packaging(),
-					a.quantity() + b.quantity(), a.reservedQuantity() + b.reservedQuantity()));
+			byBarcode.merge(p.getBarcode(), line,
+					(a, b) -> new DecantingItem(a.packagingBarcode(), a.articleBarcode(), a.description(),
+							a.packaging(), a.quantity() + b.quantity(), a.reservedQuantity() + b.reservedQuantity()));
 		}
 		return List.copyOf(byBarcode.values());
 	}

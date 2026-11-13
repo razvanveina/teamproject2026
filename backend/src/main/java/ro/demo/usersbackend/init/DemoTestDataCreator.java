@@ -54,7 +54,7 @@ public class DemoTestDataCreator implements CommandLineRunner {
 		addAP("111", "111003", "BAX3");
 		addAP("111", "111006", "BAX6");
 
-		addAP("112", "112", "PIECE"); //la piece are acelasi barcode cu pack
+		addAP("112", "112", "PIECE"); // la piece are acelasi barcode cu pack
 		addAP("112", "112003", "BAX3");
 		addAP("112", "112012", "BAX12");
 	}
@@ -66,9 +66,14 @@ public class DemoTestDataCreator implements CommandLineRunner {
 		if (pack.isPresent() && article.isPresent()) {
 			Optional<ArticlePackagingUnitType> ap = articlePackagingUnitTypeRepository
 					.findByArticleAndPackagingUnitType(article.get(), pack.get());
-			articlePackagingUnitTypeRepository.save(new ArticlePackagingUnitType(barcode, article.get(), pack.get()));
+			if (ap.isEmpty()) {
+				articlePackagingUnitTypeRepository
+						.save(new ArticlePackagingUnitType(barcode, article.get(), pack.get()));
+			} else {
+				System.out.println("Packaging " + packName + " for article " + articleBarcode + " already exists");
+			}
 		} else {
-			System.out.println("error");
+			System.out.println("Article " + articleBarcode + " or packaging " + packName + " not found");
 		}
 	}
 

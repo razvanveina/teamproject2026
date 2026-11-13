@@ -34,7 +34,6 @@ public class AutomaticRetrievalService extends AbstractProcess {
 	public static final Logger log = LogManager.getLogger("automaticRetrieval");
 	private static final Logger mfsLog = LogManager.getLogger("mfsMessages");
 	private static final String CONVEYOR = "CONVEYOR";
-	private static final String DECANTING = "DECANTING";
 	private static final List<TransportOrderStatus> OPEN = List.of(TransportOrderStatus.NEW,
 			TransportOrderStatus.ACTIVE);
 

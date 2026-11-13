@@ -1,32 +1,25 @@
 package ro.demo.usersbackend.service;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import ro.demo.usersbackend.dto.ReceivingOrderLineResponse;
-import ro.demo.usersbackend.entity.ReceivingOrderLine;
-import ro.demo.usersbackend.repository.ReceivingLineRepository;
 
 @Service
 @Transactional
 public class ReceivingLineService {
 
-	private final ReceivingLineRepository receivingLineRepository;
-	private final LoadUnitService loadUnitSerivce;
-	private final TransportOrderService transportOrderService;
-	private final StorageLocationService storageLocationService;
+//	private final ReceivingLineRepository receivingLineRepository;
+//	private final LoadUnitService loadUnitSerivce;
+//	private final TransportOrderService transportOrderService;
+//	private final StorageLocationService storageLocationService;
 
-	public ReceivingLineService(ReceivingLineRepository receivingLineRepository, LoadUnitService loadUnitSerivce,
-			TransportOrderService transportOrderService, StorageLocationService storageLocationService) {
-		super();
-		this.receivingLineRepository = receivingLineRepository;
-		this.loadUnitSerivce = loadUnitSerivce;
-		this.transportOrderService = transportOrderService;
-		this.storageLocationService = storageLocationService;
-	}
+//	public ReceivingLineService(ReceivingLineRepository receivingLineRepository, LoadUnitService loadUnitSerivce,
+//			TransportOrderService transportOrderService, StorageLocationService storageLocationService) {
+//		super();
+//		this.receivingLineRepository = receivingLineRepository;
+////		this.loadUnitSerivce = loadUnitSerivce;
+//		this.transportOrderService = transportOrderService;
+//		this.storageLocationService = storageLocationService;
+//	}
 
 //	public ReceivingOrderResponse updateArticleQuantity(String orderId, String articleBarcode, int quantity) {
 //		ReceivingOrderLine line = receivingLineRepository.findByOrderIdAndArticleBarcode(orderId, articleBarcode)
@@ -67,15 +60,15 @@ public class ReceivingLineService {
 //				getResponseLines(order.getLines()));
 //	}
 
-	private List<ReceivingOrderLineResponse> getResponseLines(List<ReceivingOrderLine> lines) {
-
-		List<ReceivingOrderLineResponse> responseLines = new ArrayList<>();
-		for (ReceivingOrderLine line : lines) {
-			responseLines.add(
-					new ReceivingOrderLineResponse(line.getId(), line.getArticle().getDescription(), line.getQuantity(),
-							line.getReceivedQuantity(), line.getArticle().getBarcode(), line.getStatus().toString()));
-		}
-
-		return responseLines;
-	}
+//	private List<ReceivingOrderLineResponse> getResponseLines(List<ReceivingOrderLine> lines) {
+//
+//		List<ReceivingOrderLineResponse> responseLines = new ArrayList<>();
+//		for (ReceivingOrderLine line : lines) {
+//			responseLines.add(
+//					new ReceivingOrderLineResponse(line.getId(), line.getArticle().getDescription(), line.getQuantity(),
+//							line.getReceivedQuantity(), line.getArticle().getBarcode(), line.getStatus().toString()));
+//		}
+//
+//		return responseLines;
+//	}
 }
