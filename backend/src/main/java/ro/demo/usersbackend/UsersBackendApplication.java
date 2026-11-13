@@ -17,11 +17,10 @@ import ro.demo.usersbackend.server.process.ProcessManager;
 @ComponentScan(excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {
 		InitialDataCreator.class, InitialDataCreatorApplication.class, DemoTestDataCreator.class }))
 public class UsersBackendApplication {
-	public static void main(String[] args) throws Exception{
-		SpringApplication.run(UsersBackendApplication.class, args);
+	public static void main(String[] args) throws Exception {
 		Broker.start();
 		Consumer.start();
 		ProcessManager.startAll();
-		
+		SpringApplication.run(UsersBackendApplication.class, args);
 	}
 }

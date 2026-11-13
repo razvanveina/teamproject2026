@@ -13,12 +13,21 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import ro.demo.usersbackend.service.SimulatorService;
+
 @RestController
-@RequestMapping("/api/events")
-public class EventController {
-	public static final Logger log = LogManager.getLogger("application");
+@RequestMapping("/api/simulator")
+public class SimulatorController {
+	private static final Logger log = LogManager.getLogger("application");
 
 	private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
+
+	private final SimulatorService simulatorService;
+
+	public SimulatorController(SimulatorService simulatorService) {
+		super();
+		this.simulatorService = simulatorService;
+	}
 
 	@GetMapping("/subscribe")
 	public SseEmitter stream() {
@@ -48,4 +57,18 @@ public class EventController {
 		sendUpdate(name);
 		return ResponseEntity.ok().build();
 	}
+
+	@GetMapping("/entities")
+	public ResponseEntity<List<String>> getEntities() {
+		log.info("Requested entities from the simulator");
+
+		return ResponseEntity.ok(simulatorService.getEntities());
+	}
+
+//	@PostMapping("/createLU")
+//	public ResponseEntity<Void> createLU(@PathVariable String barcode, @PathVariable String location) {
+//		context.createProducer().send(outQueue, message);
+//		System.out.println(message);
+//		return ResponseEntity.ok().build();
+//	}
 }

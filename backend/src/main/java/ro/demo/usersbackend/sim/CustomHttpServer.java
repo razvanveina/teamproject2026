@@ -15,7 +15,8 @@ public class CustomHttpServer {
 		this.sim = sim;
 		server = HttpServer.create(new InetSocketAddress(8888), 0);
 
-		server.createContext("/visualization", this::sendVizualizationData);
+		server.createContext("/sim/visualization", this::sendVizualizationData);
+		server.createContext("/sim/picking");
 
 		server.start();
 		System.out.println("Server started");

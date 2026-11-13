@@ -12,6 +12,17 @@ import java.util.Scanner;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
+import java.util.stream.Collectors;
+
+import org.apache.activemq.ActiveMQConnectionFactory;
+
+import jakarta.jms.JMSConsumer;
+import jakarta.jms.JMSContext;
+import jakarta.jms.Message;
+import jakarta.jms.Queue;
+import jakarta.jms.TextMessage;
+import ro.demo.usersbackend.packagemessaging.Broker;
+import ro.demo.usersbackend.packagemessaging.MfsMessages;
 
 public class Sim {
 
@@ -20,9 +31,19 @@ public class Sim {
 
 	private final List<Entity> entities = new ArrayList<>();
 
+	private Queue outQueue;
+	private JMSConsumer consumer;
+	private JMSContext context;
+
 	public static void main(String[] args) throws IOException {
 		Sim sim = new Sim();
 		sim.run();
+
+		sim.initComms();
+		new Thread(sim::listen).start();
+
+		new CustomHttpServer(sim);
+
 		Runtime.getRuntime().addShutdownHook(new Thread(sim::save));
 		Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(sim::save, 5, 5, TimeUnit.SECONDS);
 		new Thread(() -> {
@@ -37,7 +58,39 @@ public class Sim {
 				in.close();
 			}
 		}).start();
-		new CustomHttpServer(sim);
+	}
+
+	public void initComms() {
+		try {
+			context = new ActiveMQConnectionFactory(Broker.URL).createContext();
+			consumer = context.createConsumer(context.createQueue(MfsMessages.FRONTEND_REQUEST_QUEUE));
+			outQueue = context.createQueue(MfsMessages.FRONTEND_RESPONSE_QUEUE);
+
+		} catch (Exception e) {
+			System.out.println("Exception " + e);
+		}
+	}
+
+	private void listen() {
+		while (true) {
+			try {
+				Message message = consumer.receive();
+				if (message instanceof TextMessage text) {
+					String request = text.getText();
+					if (request.equals("getEntities")) {
+						String response = entities.stream().map(Entity::getName).collect(Collectors.joining(","));
+						put(response);
+					}
+				}
+			} catch (Exception e) {
+				System.out.println("Exception " + e);
+			}
+		}
+	}
+
+	private void put(String message) {
+		context.createProducer().send(outQueue, message);
+		System.out.println(message);
 	}
 
 	private synchronized void save() {

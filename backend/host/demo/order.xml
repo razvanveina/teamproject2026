@@ -1,15 +1,12 @@
 <order>
-	<id>1111</id>
+	<id>1</id>
+	<destination>Iasi</destination>
+	<automatic>false</automatic>
 	<lines>
 		<line>
 			<nr>1</nr>
 			<article>111</article>
-			<quantity>12</quantity>
-		</line>
-		<line>
-			<nr>2</nr>
-			<article>112</article>
-			<quantity>11</quantity>
+			<quantity>5</quantity>
 		</line>
 	</lines>
 </order>

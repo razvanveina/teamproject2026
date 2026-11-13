@@ -1,7 +1,13 @@
 <div>
-    <input type="text" placeholder="Input barcode" #luBarcode (keyup.enter)="createLU(luBarcode.value)">
+    <input type="text" placeholder="Input barcode" #luBarcode>
+
+    <select [(ngModel)]="selectedEntity">
+        @for (entity of entities(); track entity) {
+        <option [value]="entity">
+            {{ entity }}
+        </option>
+        }
+    </select>
+
     <button (click)=createLU(luBarcode.value)>Create LU</button>
-    
-    <input type="text" placeholder="Input barcode" #cevaBarcode (keyup.enter)="createCeva(cevaBarcode.value)">
-    <button>Create ceva</button>
 </div>

@@ -8,6 +8,11 @@ public final class MfsMessages {
 	public static final String REQUEST_QUEUE = "MFS_REQUEST";
 	// simulator -> server
 	public static final String RESPONSE_QUEUE = "MFS_RESPONSE";
+	
+	// frontend -> simulator
+	public static final String FRONTEND_REQUEST_QUEUE = "MFS_REQUEST_FRONTEND";
+	// simulator -> frontend
+	public static final String FRONTEND_RESPONSE_QUEUE = "MFS_RESPONSE_FRONTEND";
 
 	private static final ObjectMapper MAPPER = new ObjectMapper();
 

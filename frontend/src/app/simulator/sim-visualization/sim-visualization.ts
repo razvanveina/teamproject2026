@@ -35,7 +35,7 @@ export class SimVisualization {
       },
       error: (err) => {
         this.error.set(true);
-        this.errorMessage = err.error?.detail ?? 'Somethinig went wrong';
+        this.errorMessage = err.error?.detail ?? 'Somethinig went wrong. Is the simulator running?';
       },
     });
   }
