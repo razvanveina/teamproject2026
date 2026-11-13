@@ -42,6 +42,11 @@ public class InventoryOrderController {
 		return inventoryOrderService.getStartedInventoryOrders();
 	}
 
+	@GetMapping("/code/{code}")
+	public InventoryOrderResponse getByCode(@PathVariable String code) {
+		return inventoryOrderService.getStartedInventoryOrder(code);
+	}
+
 	@PostMapping
 	public ResponseEntity<InventoryOrderResponse> create() {
 		return ResponseEntity.status(HttpStatus.CREATED).body(inventoryOrderService.createInventoryOrder());
@@ -63,6 +68,11 @@ public class InventoryOrderController {
 	@PostMapping("/{orderId}/lines/{lineId}/finish")
 	public InventoryOrderLineResponse finishLine(@PathVariable Long orderId, @PathVariable Long lineId) {
 		return inventoryOrderService.finishInventoryOrderLine(orderId, lineId);
+	}
+
+	@PostMapping("/{orderId}/lines/{lineId}/finish-empty")
+	public InventoryOrderLineResponse finishEmptyLine(@PathVariable Long orderId, @PathVariable Long lineId) {
+		return inventoryOrderService.finishEmptyInventoryOrderLine(orderId, lineId);
 	}
 
 	@PostMapping("/{orderId}/finish")

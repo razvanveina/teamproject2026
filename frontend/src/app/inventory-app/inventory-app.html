@@ -1,108 +1,55 @@
 <div class="container">
     <section class="top">
         <div class="order-heading">
-            <h1>Inventory Order</h1>
+            <div class="order-title">
+                <h1>{{ showOrderChooser ? 'Inventory Order' : 'Order ' + activeOrderCode }}</h1>
+                <span class="status-pill" [class.waiting-pill]="showOrderChooser">
+                    {{ showOrderChooser ? 'WAITING FOR SCAN' : 'ACTIVE' }}
+                </span>
+            </div>
             @if (!showOrderChooser) {
-            <span>Order #{{ activeOrderId }} — State: STARTED</span>
-            }
-        </div>
-
-        @if (showOrderChooser) {
-        <section class="order-chooser">
-            <h2>Started inventory orders</h2>
-            @if (isComparing) {
-            <p>Loading started orders...</p>
-            } @else if (startedOrders.length === 0) {
-            <p>There are no started inventory orders.</p>
-            } @else {
-            <div class="data-container">
-                <table class="load-unit-table">
-                    <thead>
-                        <tr>
-                            <th>Order</th>
-                            <th>Started</th>
-                            <th>Load units</th>
-                            <th>State</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (order of startedOrders; track order.id) {
-                        <tr>
-                            <td>#{{ order.id }}</td>
-                            <td>{{ order.createdAt | date:'short' }}</td>
-                            <td>{{ order.lines.length }}</td>
-                            <td>{{ order.status }}</td>
-                            <td>
-                                <button type="button" class="resume-order" (click)="resumeOrder(order)">
-                                    Resume
-                                </button>
-                            </td>
-                        </tr>
-                        }
-                    </tbody>
-                </table>
+            <div class="order-meta">
+                <span>Current line: <strong>{{ currentLineNumber }} / {{ orderLines.length }}</strong></span>
+                <span>Finished: <strong>{{ finishedLineCount }} / {{ orderLines.length }}</strong></span>
             </div>
             }
-            <button type="button" class="new-order" (click)="startNewOrder()"
-                [disabled]="isSaving || isComparing">
-                Start new inventory order
-            </button>
+        </div>
+
+        @if (currentOrderLine; as currentLine) {
+        <section class="current-load-unit-card" aria-live="polite">
+            <div class="current-load-unit-card-heading">
+                <h2>Current load-unit line</h2>
+                <span class="line-status" [class.line-status-active]="currentLine.status === 'STARTED'">
+                    {{ currentLine.status }}
+                </span>
+            </div>
+            <div class="current-load-unit-details">
+                <div><span>Location:</span><strong>{{ currentLine.locationName }}</strong></div>
+                <div><span>Load unit:</span><strong>{{ loadUnit || currentLine.loadUnitBarcode || 'Waiting for scan' }}</strong></div>
+                <div><span>Type:</span><strong>{{ loadUnitType || currentLine.loadUnitType || '—' }}</strong></div>
+            </div>
         </section>
-        } @else {
-        <div class="order-progress">
-            <strong>Load-unit lines: {{ orderLines.length }}</strong>
-            <span>Finished: {{ finishedLineCount }} / {{ orderLines.length }}</span>
-        </div>
 
-        @if (orderLines.length > 0) {
-        <div class="data-container">
-            <table class="load-unit-table order-lines-table">
-                <thead>
-                    <tr>
-                        <th>Load unit</th>
-                        <th>Location</th>
-                        <th>Type</th>
-                        <th>Scanned items</th>
-                        <th>State</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @for (line of orderLines; track line.id) {
-                    <tr>
-                        <td>{{ line.loadUnitBarcode }}</td>
-                        <td>{{ line.locationName }}</td>
-                        <td>{{ line.loadUnitType }}</td>
-                        <td>{{ line.items.length }}</td>
-                        <td>{{ line.status }}</td>
-                    </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-        }
-
-        @if (loadUnit) {
-        <div class="current-load-unit">
-            <strong>Current load unit:</strong> {{ loadUnit }}
-            <span>{{ loadUnitType }} — {{ locationName }} (STARTED)</span>
-        </div>
+        @if (currentOrderLine) {
         <div class="data-container current-items">
             <table class="load-unit-table">
                 <thead>
                     <tr>
-                        <th>Article barcode</th>
-                        <th>Description</th>
-                        <th>Quantity</th>
+                        <th>Product</th>
+                        <th>Barcode</th>
+                        <th>Counted quantity</th>
                     </tr>
                 </thead>
                 <tbody>
                     @for (line of lines; track $index) {
                     <tr>
-                        <td>{{ line.article }}</td>
                         <td>{{ line.description }}</td>
+                        <td>{{ line.article }}</td>
                         <td>{{ line.quantity }} {{ line.quantityUnit }}</td>
                     </tr>
+                    }
+                    @if (lines.length === 0) {
+                    <tr><td colspan="3" class="empty-items">No products scanned yet.</td></tr>
                     }
                 </tbody>
             </table>
@@ -115,7 +62,6 @@
         }
     </section>
 
-    @if (!showOrderChooser) {
     <section class="left">
         @if (comparisonComplete) {
         <section class="comparison-results" aria-live="polite">
@@ -137,18 +83,44 @@
         </div>
         }
     </section>
-    }
-
     @if (showMismatchDialog) {
     <div class="dialog-backdrop">
         <section class="mismatch-dialog" role="alertdialog" aria-modal="true"
             aria-labelledby="mismatch-title" aria-describedby="mismatch-description">
-            <h2 id="mismatch-title">Quantities do not match</h2>
+            <h2 id="mismatch-title">Stock difference found</h2>
             <p id="mismatch-description">
-                This load unit's counted quantities differ from saved stock. Finish this load-unit line anyway?
+                The database stock differs from the inventory you counted. Review the differences before finishing this line.
             </p>
+            <div class="difference-table-container">
+                <table class="difference-table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Package</th>
+                            <th>Database</th>
+                            <th>Counted</th>
+                            <th>Difference</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (difference of quantityDifferences; track $index) {
+                        <tr>
+                            <td>{{ difference.description }} ({{ difference.article }})</td>
+                            <td>{{ difference.packagingUnit }}</td>
+                            <td>{{ difference.sqlQuantity }}</td>
+                            <td>{{ difference.scannedQuantity }}</td>
+                            <td [class.difference-negative]="difference.difference < 0"
+                                [class.difference-positive]="difference.difference > 0">
+                                {{ difference.difference > 0 ? '+' : '' }}{{ difference.difference }}
+                            </td>
+                        </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <p>The difference will be saved in Stock Adjustment and the load-unit stock will be updated.</p>
             <div class="dialog-actions">
-                <button type="button" class="dialog-confirm" (click)="confirmMismatch()">Finish line</button>
+                <button type="button" class="dialog-confirm" (click)="confirmMismatch()">Save difference and finish</button>
                 <button type="button" class="dialog-cancel" (click)="cancelMismatch()">Cancel and rescan</button>
             </div>
         </section>
@@ -169,11 +141,10 @@
     </div>
     }
 
-    @if (!showOrderChooser) {
     <div class="right">
         <input
             class="scan-input"
-            [disabled]="isComparing || isSaving || comparisonComplete || showMismatchDialog || showCompletionDialog"
+            [disabled]="isComparing || isSaving || comparisonComplete || showMismatchDialog || showCompletionDialog || (!showOrderChooser && finishedLineCount === orderLines.length)"
             [ngClass]="{
                 'load-unit-step': step === 1,
                 'article-step': step === 2,
@@ -184,19 +155,20 @@
             #barcode
             (keyup.enter)="onScan(barcode.value); barcode.value = ''">
     </div>
-    }
 
     <div class="bottom">
         <button class="cancel" type="button" (click)="onCancel()">Cancel</button>
         @if (!showOrderChooser) {
-        <button class="secondary" type="button" (click)="returnToOrderList()"
-            [disabled]="isComparing || isSaving || comparisonComplete || showMismatchDialog || showCompletionDialog">
-            Started orders
-        </button>
         <button class="finish" type="button" (click)="onFinish()"
             [disabled]="!loadUnit || step !== 2 || isComparing || isSaving || comparisonComplete || showMismatchDialog || showCompletionDialog">
             Finish line
         </button>
+        @if (currentOrderLine?.status === 'NEW') {
+        <button class="finish-empty" type="button" (click)="finishEmptyCurrentLine()"
+            [disabled]="isComparing || isSaving || comparisonComplete || showMismatchDialog || showCompletionDialog">
+            Finish empty line
+        </button>
+        }
         <button class="finish-order" type="button" (click)="onFinishOrder()"
             [disabled]="!orderLines.length || finishedLineCount !== orderLines.length || isComparing || isSaving || comparisonComplete || showMismatchDialog || showCompletionDialog">
             {{ isSaving ? 'Finishing order...' : 'Finish IO' }}

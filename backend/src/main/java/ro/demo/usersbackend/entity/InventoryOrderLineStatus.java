@@ -1,5 +1,5 @@
 package ro.demo.usersbackend.entity;
 
 public enum InventoryOrderLineStatus {
-	STARTED, FINISHED
+	NEW, STARTED, FINISHED
 }

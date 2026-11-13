@@ -2,9 +2,10 @@
   "id": "io001",
   "title": "Inventory Orders",
   "entity": "InventoryOrder",
-  "actions": [],
+  "actions": ["add"],
   "columns": [
     { "field": "ID", "label": "ID" },
+    { "field": "CODE", "label": "Unique scan code", "addable": true },
     { "field": "CREATED_AT", "label": "Created at" },
     { "field": "FINISHED_AT", "label": "Finished at" },
     { "field": "STATUS", "label": "State" },

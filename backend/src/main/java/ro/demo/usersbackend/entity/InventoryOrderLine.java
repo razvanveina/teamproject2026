@@ -31,7 +31,11 @@ public class InventoryOrderLine {
 	@JoinColumn(name = "load_unit_id")
 	private LoadUnit loadUnit;
 
-	@Column(name = "load_unit_barcode", nullable = false, length = 255)
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "location_id", nullable = false)
+	private Location location;
+
+	@Column(name = "load_unit_barcode", length = 255)
 	private String loadUnitBarcode;
 
 	@Column(name = "load_unit_type", length = 50)
@@ -71,6 +75,9 @@ public class InventoryOrderLine {
 	public LoadUnit getLoadUnit() {
 		return loadUnit;
 	}
+
+	public Location getLocation() { return location; }
+	public void setLocation(Location location) { this.location = location; }
 
 	public void setLoadUnit(LoadUnit loadUnit) {
 		this.loadUnit = loadUnit;

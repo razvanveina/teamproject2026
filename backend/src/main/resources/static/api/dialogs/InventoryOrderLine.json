@@ -2,19 +2,24 @@
   "id": "iol001",
   "title": "Inventory Order Lines",
   "entity": "InventoryOrderLine",
-  "actions": [],
+  "actions": ["add"],
   "columns": [
     { "field": "ID", "label": "ID" },
     {
       "field": "INVENTORY_ORDER_ID",
       "label": "Inventory order",
       "lookup": { "entity": "InventoryOrder" },
+      "addable": true,
       "filterable": true
     },
-    { "field": "LOAD_UNIT_BARCODE", "label": "Load unit", "filterable": true },
-    { "field": "LOAD_UNIT_TYPE", "label": "Type" },
-    { "field": "LOCATION_NAME", "label": "Location" },
+    {
+      "field": "LOCATION_ID",
+      "label": "Inventory location",
+      "lookup": { "entity": "Location" },
+      "addable": true,
+      "filterable": true
+    },
     { "field": "STATUS", "label": "State" },
-    { "field": "COMPLETED_AT", "label": "Changed at" }
+    { "field": "COMPLETED_AT", "label": "Finished at" }
   ]
 }

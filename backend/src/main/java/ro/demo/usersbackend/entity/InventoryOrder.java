@@ -20,6 +20,9 @@ public class InventoryOrder {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
+	@Column(name = "code", nullable = false, unique = true, length = 100)
+	private String code;
+
 	@Column(name = "created_at", nullable = false)
 	private LocalDateTime createdAt;
 
@@ -39,6 +42,9 @@ public class InventoryOrder {
 	public Long getId() {
 		return id;
 	}
+
+	public String getCode() { return code; }
+	public void setCode(String code) { this.code = code; }
 
 	public LocalDateTime getCreatedAt() {
 		return createdAt;

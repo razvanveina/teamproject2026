@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,8 +42,8 @@ import ro.demo.usersbackend.entity.StockItem;
 import ro.demo.usersbackend.entity.TransitLocation;
 import ro.demo.usersbackend.repository.ArticlePackagingUnitTypeRepository;
 import ro.demo.usersbackend.repository.ArticleRepository;
-import ro.demo.usersbackend.repository.InventoryOrderLineRepository;
 import ro.demo.usersbackend.repository.InventoryOrderLineItemRepository;
+import ro.demo.usersbackend.repository.InventoryOrderLineRepository;
 import ro.demo.usersbackend.repository.InventoryOrderRepository;
 import ro.demo.usersbackend.repository.LoadUnitRepository;
 import ro.demo.usersbackend.repository.PackagingUnitTypeRepository;
@@ -99,10 +100,19 @@ public class InventoryOrderService {
 
 	public InventoryOrderResponse createInventoryOrder() {
 		InventoryOrder order = new InventoryOrder();
+		order.setCode("IO-" + UUID.randomUUID());
 		order.setCreatedAt(LocalDateTime.now());
 		order.setReasonMessage("INVENTORY");
 		order.setStatus(InventoryOrderStatus.STARTED);
 		return toOrderResponse(inventoryOrderRepository.save(order));
+	}
+
+	@Transactional(readOnly = true)
+	public InventoryOrderResponse getStartedInventoryOrder(String code) {
+		InventoryOrder order = inventoryOrderRepository.findByCodeAndStatus(code, InventoryOrderStatus.STARTED)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+						"Started inventory order was not found: " + code));
+		return toOrderResponse(order);
 	}
 
 	public InventoryOrderLineResponse startInventoryOrderLine(Long orderId, InventoryOrderLineStartRequest request) {
@@ -112,15 +122,19 @@ public class InventoryOrderService {
 			throw new ResponseStatusException(HttpStatus.CONFLICT,
 					"Finish the started load-unit line before starting another.");
 		}
+		LoadUnit loadUnit = findEligibleLoadUnit(request.loadUnitBarcode());
+		InventoryOrderLine line = inventoryOrderLineRepository.findByInventoryOrder_IdOrderByIdAsc(orderId).stream()
+				.filter(candidate -> candidate.getStatus() == InventoryOrderLineStatus.NEW
+						&& candidate.getLocation() != null
+						&& candidate.getLocation().getId() == loadUnit.getLocation().getId())
+				.findFirst().orElseThrow(() -> new ResponseStatusException(HttpStatus.CONFLICT,
+						"No new inventory line for load unit location: " + loadUnit.getLocation().getName()));
 		if (inventoryOrderLineRepository.findByInventoryOrder_IdOrderByIdAsc(orderId).stream()
-				.anyMatch(line -> line.getLoadUnitBarcode().equals(request.loadUnitBarcode()))) {
+				.anyMatch(candidate -> candidate.getLoadUnit() != null
+						&& candidate.getLoadUnit().getId().equals(loadUnit.getId()))) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT,
 					"Load unit is already in this inventory order: " + request.loadUnitBarcode());
 		}
-
-		LoadUnit loadUnit = findEligibleLoadUnit(request.loadUnitBarcode());
-		InventoryOrderLine line = new InventoryOrderLine();
-		line.setInventoryOrder(order);
 		line.setLoadUnit(loadUnit);
 		line.setLoadUnitBarcode(loadUnit.getBarcode());
 		line.setLoadUnitType(loadUnit.getType().name());
@@ -162,12 +176,30 @@ public class InventoryOrderService {
 		return toLineResponse(inventoryOrderLineRepository.save(line));
 	}
 
+	public InventoryOrderLineResponse finishEmptyInventoryOrderLine(Long orderId, Long lineId) {
+		InventoryOrder order = findStartedOrder(orderId);
+		InventoryOrderLine line = inventoryOrderLineRepository.findById(lineId)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+						"Inventory order line was not found: " + lineId));
+		if (!line.getInventoryOrder().getId().equals(order.getId())) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+					"Inventory order line does not belong to this order.");
+		}
+		if (line.getStatus() != InventoryOrderLineStatus.NEW || line.getLoadUnit() != null) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT,
+					"Only a new line without a scanned load unit can be finished as empty.");
+		}
+		line.setStatus(InventoryOrderLineStatus.FINISHED);
+		line.setCompletedAt(LocalDateTime.now());
+		return toLineResponse(inventoryOrderLineRepository.save(line));
+	}
+
 	private void createInventoryAdjustments(InventoryOrderLine line) {
 		LoadUnit loadUnit = findEligibleLoadUnit(line.getLoadUnitBarcode());
 		List<ScannedInventoryItemRequest> requestItems = inventoryOrderLineItemRepository
 				.findByInventoryOrderLine_IdOrderByIdAsc(line.getId()).stream()
-				.map(item -> new ScannedInventoryItemRequest(item.getArticleBarcode(),
-						item.getArticleDescription(), item.getPackagingUnitName(), item.getQuantity()))
+				.map(item -> new ScannedInventoryItemRequest(item.getArticleBarcode(), item.getArticleDescription(),
+						item.getPackagingUnitName(), item.getQuantity()))
 				.toList();
 		Map<ItemKey, ScannedInventoryItemRequest> scannedItems = getScannedItems(requestItems);
 		List<StockItem> stockItems = stockItemRepository.findByLoadUnitOrderByIdAsc(loadUnit);
@@ -193,8 +225,8 @@ public class InventoryOrderService {
 		LoadUnit loadUnit = findEligibleLoadUnit(line.getLoadUnitBarcode());
 		List<ScannedInventoryItemRequest> requestItems = inventoryOrderLineItemRepository
 				.findByInventoryOrderLine_IdOrderByIdAsc(line.getId()).stream()
-				.map(item -> new ScannedInventoryItemRequest(item.getArticleBarcode(),
-						item.getArticleDescription(), item.getPackagingUnitName(), item.getQuantity()))
+				.map(item -> new ScannedInventoryItemRequest(item.getArticleBarcode(), item.getArticleDescription(),
+						item.getPackagingUnitName(), item.getQuantity()))
 				.toList();
 		Map<ItemKey, ScannedInventoryItemRequest> scannedItems = getScannedItems(requestItems);
 		List<StockItem> stockItems = stockItemRepository.findByLoadUnitOrderByIdAsc(loadUnit);
@@ -220,6 +252,9 @@ public class InventoryOrderService {
 
 		LocalDateTime now = LocalDateTime.now();
 		for (InventoryOrderLine line : lines) {
+			if (line.getLoadUnit() == null) {
+				continue;
+			}
 			if (!line.isStockAdjustmentsCalculated()) {
 				createInventoryAdjustments(line);
 				line.setStockAdjustmentsCalculated(true);
@@ -238,9 +273,8 @@ public class InventoryOrderService {
 	}
 
 	private InventoryOrder findStartedOrder(Long orderId) {
-		InventoryOrder order = inventoryOrderRepository.findById(orderId)
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-						"Inventory order was not found: " + orderId));
+		InventoryOrder order = inventoryOrderRepository.findById(orderId).orElseThrow(
+				() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Inventory order was not found: " + orderId));
 		if (order.getStatus() != InventoryOrderStatus.STARTED) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "Inventory order is already finished.");
 		}
@@ -264,9 +298,8 @@ public class InventoryOrderService {
 
 	private InventoryOrderResponse toOrderResponse(InventoryOrder order) {
 		List<InventoryOrderLineResponse> lines = inventoryOrderLineRepository
-				.findByInventoryOrder_IdOrderByIdAsc(order.getId()).stream()
-				.map(this::toLineResponse).toList();
-		return new InventoryOrderResponse(order.getId(), order.getCreatedAt(), order.getFinishedAt(),
+				.findByInventoryOrder_IdOrderByIdAsc(order.getId()).stream().map(this::toLineResponse).toList();
+		return new InventoryOrderResponse(order.getId(), order.getCode(), order.getCreatedAt(), order.getFinishedAt(),
 				order.getStatus().name(), lines);
 	}
 
@@ -277,17 +310,18 @@ public class InventoryOrderService {
 						item.getPackagingUnitName(), item.getQuantity()))
 				.toList();
 		Long loadUnitId = line.getLoadUnit() == null ? null : line.getLoadUnit().getId();
-		return new InventoryOrderLineResponse(line.getId(), loadUnitId, line.getLoadUnitBarcode(),
-				line.getLoadUnitType(), line.getLocationName(), line.getStatus().name(), items);
+		Long locationId = line.getLocation() == null ? null : (long) line.getLocation().getId();
+		String locationName = line.getLocationName() != null ? line.getLocationName()
+				: line.getLocation() == null ? null : line.getLocation().getName();
+		return new InventoryOrderLineResponse(line.getId(), locationId, loadUnitId, line.getLoadUnitBarcode(),
+				line.getLoadUnitType(), locationName, line.getStatus().name(), items);
 	}
 
 	private LoadUnit findEligibleLoadUnit(String barcode) {
-		LoadUnit loadUnit = loadUnitRepository.findByBarcode(barcode)
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
-						"Load unit was not found: " + barcode));
+		LoadUnit loadUnit = loadUnitRepository.findByBarcode(barcode).orElseThrow(
+				() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Load unit was not found: " + barcode));
 		if (loadUnit.getLocation() == null) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-					"Load unit has no location: " + barcode);
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Load unit has no location: " + barcode);
 		}
 		if (loadUnit.getLocation() instanceof TransitLocation) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
