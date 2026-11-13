@@ -27,13 +27,6 @@ interface BarcodeRow {
     BARCODE: string;
 }
 
-interface EligibleLoadUnit {
-    id: number;
-    barcode: string;
-    loadUnitType: string;
-    locationName: string;
-}
-
 interface InventoryOrderItem {
     articleBarcode: string;
     articleDescription: string;
@@ -79,6 +72,11 @@ interface StockItemRow {
     QUANTITY: number;
     LOAD_UNIT_ID: number;
     ARTICLE_PACKAGING_UNIT_TYPE_ID: number;
+}
+
+interface LoadUnitLocationRow {
+    ID: number;
+    LOCATION_ID: number;
 }
 
 interface ArticlePackagingUnitRecord {
@@ -278,6 +276,9 @@ export class InventoryApp {
     }
 
     onScan(value: string): void {
+        if (this.isComparing || this.isSaving || this.comparisonComplete) {
+            return;
+        }
         const barcode = value.trim();
         if (!barcode) {
             return;
@@ -295,46 +296,32 @@ export class InventoryApp {
                 }
                 this.isComparing = true;
                 this.comparisonError = '';
-                this.http
-                    .get<EligibleLoadUnit>(
-                        `${API_BASE_URL}/inventory-orders/load-units/${encodeURIComponent(barcode)}`
-                    )
-                    .subscribe({
-                        next: loadUnit => {
-                            this.http.post<InventoryOrderLine>(
-                                `${API_BASE_URL}/inventory-orders/${this.activeOrderId}/lines`,
-                                { loadUnitBarcode: loadUnit.barcode }
-                            ).subscribe({
-                                next: line => {
-                                    this.isComparing = false;
-                                    this.loadUnit = loadUnit.barcode;
-                                    this.loadUnitType = loadUnit.loadUnitType;
-                                    this.locationName = loadUnit.locationName;
-                                    this.loadUnitId = loadUnit.id;
-                                    this.activeLineId = line.id;
-                                    this.lines = [];
-                                    this.orderLines = this.orderLines.map(existing =>
-                                        existing.id === line.id ? line : existing
-                                    );
-                                    this.comparisonError = '';
-                                    this.step = 2;
-                                    this.cdr.markForCheck();
-                                },
-                                error: error => {
-                                    this.isComparing = false;
-                                    this.comparisonError =
-                                        error.error?.message ?? 'Could not start this inventory order line.';
-                                    this.cdr.markForCheck();
-                                }
-                            });
-                        },
-                        error: error => {
-                            this.isComparing = false;
-                            this.comparisonError =
-                                error.error?.message ?? 'Could not verify this load unit is eligible.';
-                            this.cdr.markForCheck();
-                        }
-                    });
+                this.http.post<InventoryOrderLine>(
+                    `${API_BASE_URL}/inventory-orders/${this.activeOrderId}/lines`,
+                    { loadUnitBarcode: barcode }
+                ).subscribe({
+                    next: line => {
+                        this.isComparing = false;
+                        this.loadUnit = line.loadUnitBarcode ?? barcode;
+                        this.loadUnitType = line.loadUnitType ?? 'PALLET';
+                        this.locationName = line.locationName;
+                        this.loadUnitId = line.loadUnitId;
+                        this.activeLineId = line.id;
+                        this.lines = [];
+                        this.orderLines = this.orderLines.map(existing =>
+                            existing.id === line.id ? line : existing
+                        );
+                        this.comparisonError = '';
+                        this.step = 2;
+                        this.cdr.markForCheck();
+                    },
+                    error: error => {
+                        this.isComparing = false;
+                        this.comparisonError =
+                            error.error?.message ?? 'Could not start this inventory order line.';
+                        this.cdr.markForCheck();
+                    }
+                });
                 break;
 
             case 2:
@@ -521,8 +508,14 @@ export class InventoryApp {
         this.isComparing = true;
         this.showMismatchDialog = false;
         this.comparisonError = '';
+        const locationId = this.orderLines.find(line => line.id === this.activeLineId)?.locationId;
+        if (locationId === null || locationId === undefined) {
+            this.isComparing = false;
+            this.comparisonError = 'The current inventory line has no location.';
+            return;
+        }
 
-        this.getSavedStockItems(this.loadUnitId)
+        this.getSavedStockItemsAtLocation(locationId)
             .subscribe({
                 next: stockItems => {
                     this.compareQuantities(stockItems);
@@ -538,6 +531,21 @@ export class InventoryApp {
                     this.cdr.markForCheck();
                 }
             });
+    }
+
+    private getSavedStockItemsAtLocation(locationId: number): Observable<SavedStockItem[]> {
+        return this.http.get<LoadUnitLocationRow[]>(`${this.dataUrl}/LoadUnit`, {
+            params: { LOCATION_ID: String(locationId) }
+        }).pipe(
+            map(rows => rows
+                .filter(row => String(row.LOCATION_ID) === String(locationId))
+                .map(row => row.ID)),
+            switchMap(loadUnitIds => loadUnitIds.length === 0
+                ? of<SavedStockItem[]>([])
+                : forkJoin(loadUnitIds.map(id => this.getSavedStockItems(id))).pipe(
+                    map(itemsByLoadUnit => itemsByLoadUnit.flat())
+                ))
+        );
     }
 
     private getSavedStockItems(loadUnitId: number): Observable<SavedStockItem[]> {

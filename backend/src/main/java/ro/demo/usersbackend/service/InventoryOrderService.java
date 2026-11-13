@@ -30,6 +30,8 @@ import ro.demo.usersbackend.entity.InventoryOrderLineItem;
 import ro.demo.usersbackend.entity.InventoryOrderLineStatus;
 import ro.demo.usersbackend.entity.InventoryOrderStatus;
 import ro.demo.usersbackend.entity.LoadUnit;
+import ro.demo.usersbackend.entity.LoadUnitType;
+import ro.demo.usersbackend.entity.Location;
 import ro.demo.usersbackend.entity.PackagingUnitType;
 import ro.demo.usersbackend.entity.Reservation;
 import ro.demo.usersbackend.entity.RetrievalOrder;
@@ -39,6 +41,7 @@ import ro.demo.usersbackend.entity.RetrievalOrderStatus;
 import ro.demo.usersbackend.entity.StockAdjustment;
 import ro.demo.usersbackend.entity.StockAdjustmentReason;
 import ro.demo.usersbackend.entity.StockItem;
+import ro.demo.usersbackend.entity.StorageLocation;
 import ro.demo.usersbackend.entity.TransitLocation;
 import ro.demo.usersbackend.repository.ArticlePackagingUnitTypeRepository;
 import ro.demo.usersbackend.repository.ArticleRepository;
@@ -50,6 +53,7 @@ import ro.demo.usersbackend.repository.PackagingUnitTypeRepository;
 import ro.demo.usersbackend.repository.ReservationRepository;
 import ro.demo.usersbackend.repository.StockAdjustmentRepository;
 import ro.demo.usersbackend.repository.StockItemRepository;
+import ro.demo.usersbackend.repository.StorageLocationRepository;
 
 @Service
 @Transactional
@@ -64,6 +68,7 @@ public class InventoryOrderService {
 	private final ArticleRepository articleRepository;
 	private final PackagingUnitTypeRepository packagingUnitTypeRepository;
 	private final ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository;
+	private final StorageLocationRepository storageLocationRepository;
 	private static final Logger log = LoggerFactory.getLogger(InventoryOrderService.class);
 
 	public InventoryOrderService(InventoryOrderRepository inventoryOrderRepository,
@@ -72,7 +77,8 @@ public class InventoryOrderService {
 			StockAdjustmentRepository inventoryDifferenceRepository, LoadUnitRepository loadUnitRepository,
 			StockItemRepository stockItemRepository, ReservationRepository reservationRepository,
 			ArticleRepository articleRepository, PackagingUnitTypeRepository packagingUnitTypeRepository,
-			ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository) {
+			ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository,
+			StorageLocationRepository storageLocationRepository) {
 		this.inventoryOrderRepository = inventoryOrderRepository;
 		this.inventoryOrderLineRepository = inventoryOrderLineRepository;
 		this.inventoryOrderLineItemRepository = inventoryOrderLineItemRepository;
@@ -83,6 +89,7 @@ public class InventoryOrderService {
 		this.articleRepository = articleRepository;
 		this.packagingUnitTypeRepository = packagingUnitTypeRepository;
 		this.articlePackagingUnitTypeRepository = articlePackagingUnitTypeRepository;
+		this.storageLocationRepository = storageLocationRepository;
 	}
 
 	@Transactional(readOnly = true)
@@ -122,13 +129,28 @@ public class InventoryOrderService {
 			throw new ResponseStatusException(HttpStatus.CONFLICT,
 					"Finish the started load-unit line before starting another.");
 		}
-		LoadUnit loadUnit = findEligibleLoadUnit(request.loadUnitBarcode());
 		InventoryOrderLine line = inventoryOrderLineRepository.findByInventoryOrder_IdOrderByIdAsc(orderId).stream()
-				.filter(candidate -> candidate.getStatus() == InventoryOrderLineStatus.NEW
-						&& candidate.getLocation() != null
-						&& candidate.getLocation().getId() == loadUnit.getLocation().getId())
+				.filter(candidate -> candidate.getStatus() == InventoryOrderLineStatus.NEW)
 				.findFirst().orElseThrow(() -> new ResponseStatusException(HttpStatus.CONFLICT,
-						"No new inventory line for load unit location: " + loadUnit.getLocation().getName()));
+						"This inventory order has no new lines to scan."));
+		Location location = line.getLocation();
+		if (location == null || location instanceof TransitLocation) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT,
+					"The current inventory line must have a non-transit location.");
+		}
+		LoadUnit foundLoadUnit = loadUnitRepository.findByBarcode(request.loadUnitBarcode()).orElseGet(() -> {
+			LoadUnit created = new LoadUnit();
+			created.setBarcode(request.loadUnitBarcode());
+			created.setType(LoadUnitType.PALLET);
+			created.setLocation(location);
+			return loadUnitRepository.save(created);
+		});
+		LoadUnit loadUnit = findEligibleLoadUnit(foundLoadUnit.getBarcode());
+		if (loadUnit.getLocation().getId() != location.getId()) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT,
+					"Load unit " + loadUnit.getBarcode() + " is not at the current line location "
+							+ location.getName() + ".");
+		}
 		if (inventoryOrderLineRepository.findByInventoryOrder_IdOrderByIdAsc(orderId).stream()
 				.anyMatch(candidate -> candidate.getLoadUnit() != null
 						&& candidate.getLoadUnit().getId().equals(loadUnit.getId()))) {
@@ -141,6 +163,10 @@ public class InventoryOrderService {
 		line.setLocationName(loadUnit.getLocation().getName());
 		line.setStatus(InventoryOrderLineStatus.STARTED);
 		line.setCompletedAt(null);
+		if (location instanceof StorageLocation storageLocation) {
+			storageLocation.setLoadUnit(loadUnit);
+			storageLocationRepository.save(storageLocation);
+		}
 		return toLineResponse(inventoryOrderLineRepository.save(line));
 	}
 
@@ -189,8 +215,38 @@ public class InventoryOrderService {
 			throw new ResponseStatusException(HttpStatus.CONFLICT,
 					"Only a new line without a scanned load unit can be finished as empty.");
 		}
+		List<LoadUnit> loadUnits = loadUnitRepository.findByLocationOrderByIdAsc(line.getLocation());
+		if (!loadUnits.isEmpty()) {
+			line.setLoadUnitBarcode(loadUnits.get(0).getBarcode());
+			line.setLoadUnitType(loadUnits.get(0).getType().name());
+			line.setLocationName(line.getLocation().getName());
+		}
+		Map<ItemKey, Integer> expectedQuantities = getExpectedQuantities(getLocationStockItems(line.getLocation()));
+		List<StockAdjustment> adjustments = new ArrayList<>();
+		for (Map.Entry<ItemKey, Integer> expected : expectedQuantities.entrySet()) {
+			adjustments.add(createDifference(line, expected.getKey(), null, expected.getValue(), 0,
+					-expected.getValue()));
+		}
+		inventoryDifferenceRepository.saveAll(adjustments);
+		for (LoadUnit missingLoadUnit : loadUnits) {
+			List<StockItem> missingStockItems = stockItemRepository.findByLoadUnitOrderByIdAsc(missingLoadUnit);
+			requeueActiveOrders(missingStockItems);
+			if (!reservationRepository.findByStockItemIn(missingStockItems).isEmpty()) {
+				throw new ResponseStatusException(HttpStatus.CONFLICT,
+						"Cannot remove a missing load unit while it still has reservations.");
+			}
+			stockItemRepository.deleteAll(missingStockItems);
+			if (line.getLocation() instanceof StorageLocation storageLocation
+					&& storageLocation.getLoadUnit() != null
+					&& storageLocation.getLoadUnit().getId().equals(missingLoadUnit.getId())) {
+				storageLocation.setLoadUnit(null);
+				storageLocationRepository.save(storageLocation);
+			}
+			loadUnitRepository.delete(missingLoadUnit);
+		}
 		line.setStatus(InventoryOrderLineStatus.FINISHED);
 		line.setCompletedAt(LocalDateTime.now());
+		line.setStockAdjustmentsCalculated(true);
 		return toLineResponse(inventoryOrderLineRepository.save(line));
 	}
 
@@ -202,7 +258,7 @@ public class InventoryOrderService {
 						item.getPackagingUnitName(), item.getQuantity()))
 				.toList();
 		Map<ItemKey, ScannedInventoryItemRequest> scannedItems = getScannedItems(requestItems);
-		List<StockItem> stockItems = stockItemRepository.findByLoadUnitOrderByIdAsc(loadUnit);
+		List<StockItem> stockItems = getLocationStockItems(line.getLocation());
 		Map<ItemKey, Integer> expectedQuantities = getExpectedQuantities(stockItems);
 		Set<ItemKey> allItems = new LinkedHashSet<>();
 		allItems.addAll(expectedQuantities.keySet());
@@ -219,6 +275,12 @@ public class InventoryOrderService {
 			}
 		}
 		inventoryDifferenceRepository.saveAll(adjustments);
+	}
+
+	private List<StockItem> getLocationStockItems(Location location) {
+		return loadUnitRepository.findByLocationOrderByIdAsc(location).stream()
+				.flatMap(loadUnit -> stockItemRepository.findByLoadUnitOrderByIdAsc(loadUnit).stream())
+				.toList();
 	}
 
 	private void updateInventoryOrderLineStock(InventoryOrderLine line) {
