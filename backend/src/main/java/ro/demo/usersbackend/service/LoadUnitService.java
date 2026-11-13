@@ -78,8 +78,8 @@ public class LoadUnitService {
 	private void checkLocation(LoadUnit loadUnit, String targetLocation) {
 		String location = loadUnit.getLocation() == null ? "nowhere" : loadUnit.getLocation().getName();
 		if (!targetLocation.equals(location)) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-					"Load unit " + loadUnit.getBarcode() + " is at " + location + ". Bring it to OUT first");
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Load unit " + loadUnit.getBarcode() + " is at "
+					+ location + ". Bring it to " + targetLocation + " first");
 		}
 	}
 
@@ -208,7 +208,7 @@ public class LoadUnitService {
 				createItems(carton.getStockItems()));
 	}
 
-	public void finishLoadUnit(String barcode, String user, String cartonBarcode) {
+	public boolean finishLoadUnit(String barcode, String user, String cartonBarcode) {
 		LoadUnit loadUnit = findLoadUnit(barcode);
 		checkShippable(loadUnit);
 		checkLocation(loadUnit, "OUT");
@@ -251,8 +251,12 @@ public class LoadUnitService {
 			order.setStatus(RetrievalOrderStatus.FINISHED);
 			carton.setLocation(destinationToGate.getGate());
 			if (loadUnit.getType() == LoadUnitType.TOTE) {
-				transportOrderService.createTransportOrder(loadUnit, location("EMPTY_TOTES"));
+				if (order.isAutomatic()) {
+					return true; // tote de pe banda, deci controllerul il elibereaza din OUT dupa commit
+				}
+				transportOrderService.createTransportOrder(loadUnit, location("EMPTY_TOTES")); // flux manual
 			}
+			return false;
 		} else {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
 					"All lines status must be PICKED. There are " + lineCount + " lines with a different status");

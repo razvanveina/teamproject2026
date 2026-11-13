@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import ro.demo.usersbackend.dto.LoadUnitResponse;
+import ro.demo.usersbackend.server.mfs.StationControl;
 import ro.demo.usersbackend.service.LoadUnitService;
 
 @RestController
@@ -50,9 +51,10 @@ public class ShippingController {
 	public void confirmLoadUnit(@PathVariable String barcode, @RequestParam(required = false) String carton,
 			Authentication authentication) {
 		log.info("Shipping: {} confirmed load unit {}", authentication.getName(), barcode);
+		boolean releaseOut = false;
 		try {
 			synchronized (SHIPPING_LOCK) {
-				loadUnitService.finishLoadUnit(barcode, authentication.getName(), carton);
+				releaseOut = loadUnitService.finishLoadUnit(barcode, authentication.getName(), carton);
 			}
 		} catch (ResponseStatusException e) {
 			log.warn("Shipping: confirm rejected {}", e.getReason());
@@ -60,6 +62,17 @@ public class ShippingController {
 		} catch (Exception e) {
 			log.error("Shipping: exception: {}", e.getMessage());
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+		}
+
+		if (releaseOut) {
+			try {
+				StationControl.release("OUT");
+				log.info("Shipping: tote {} released from OUT", barcode);
+			} catch (Exception e) {
+				log.error("Shipping: tote {} not released from OUT {}", barcode, e.toString());
+				throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+						"Order shipped, but tote " + barcode + " could not be released from OUT: " + e.getMessage());
+			}
 		}
 	}
 

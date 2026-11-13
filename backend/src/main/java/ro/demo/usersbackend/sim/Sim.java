@@ -108,7 +108,7 @@ public class Sim {
 
 		StationPoint ptts1 = add(new StationPoint("PTTS1"));
 		StationPoint pttt1 = add(new StationPoint("PTTT1"));
-		StationPoint o = add(new StationPoint("O"));
+		StationPoint out = add(new StationPoint("OUT"));
 
 		c6.getSource().add(tps1);
 		ip1.getSource().add(c6);
@@ -145,8 +145,8 @@ public class Sim {
 
 		tpt1.getSource().add(c5);
 
-		o.getSource().add(c9);
-		c13.getSource().add(o);
+		out.getSource().add(c9);
+		c13.getSource().add(out);
 
 		c11.getSource().add(dp3);
 		e.getSource().add(c11);

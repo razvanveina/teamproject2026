@@ -82,8 +82,7 @@ public class InitialDataCreator implements CommandLineRunner {
 	}
 
 	private void createSimulatorData() {
-		for (String name : List.of("IP1", "IP2", "EMPTY", "DP1", "DP2", "DP3", "TPS1", "TPT1", "PTTS1",
-				"PTTT1", "O")) {
+		for (String name : List.of("IP1", "IP2", "EMPTY", "DP1", "DP2", "DP3", "TPS1", "TPT1", "PTTS1", "PTTT1")) {
 			createTransitLocation(name);
 		}
 	}
