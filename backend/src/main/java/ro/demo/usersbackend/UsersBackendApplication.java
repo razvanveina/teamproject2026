@@ -20,7 +20,7 @@ public class UsersBackendApplication {
 	public static void main(String[] args) throws Exception {
 		Broker.start();
 		Consumer.start();
-		ProcessManager.startAll();
 		SpringApplication.run(UsersBackendApplication.class, args);
+		ProcessManager.startAll();
 	}
 }
