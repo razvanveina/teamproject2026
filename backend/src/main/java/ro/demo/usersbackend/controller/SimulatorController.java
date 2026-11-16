@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -65,10 +66,11 @@ public class SimulatorController {
 		return ResponseEntity.ok(simulatorService.getEntities());
 	}
 
-//	@PostMapping("/createLU")
-//	public ResponseEntity<Void> createLU(@PathVariable String barcode, @PathVariable String location) {
-//		context.createProducer().send(outQueue, message);
-//		System.out.println(message);
-//		return ResponseEntity.ok().build();
-//	}
+	@PostMapping("/createLU")
+	public ResponseEntity<Void> createLU(@RequestParam String barcode, @RequestParam String location) {
+		System.out.println("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+		simulatorService.createLU(barcode, location);
+
+		return ResponseEntity.ok().build();
+	}
 }

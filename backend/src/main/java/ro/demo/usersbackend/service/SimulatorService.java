@@ -49,4 +49,8 @@ public class SimulatorService {
 
 		return entities;
 	}
+
+	public void createLU(String barcode, String locationName) {
+		context.createProducer().send(outQueue, "createLU " + barcode + " " + locationName);
+	}
 }

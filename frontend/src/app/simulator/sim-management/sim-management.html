@@ -1,5 +1,5 @@
 <div>
-    <input type="text" placeholder="Input barcode" #luBarcode>
+    <input type="text" placeholder="Input barcode" #barcode>
 
     <select [(ngModel)]="selectedEntity">
         @for (entity of entities(); track entity) {
@@ -9,5 +9,5 @@
         }
     </select>
 
-    <button (click)=createLU(luBarcode.value)>Create LU</button>
+    <button (click)=createLU(barcode.value)>Create LU</button>
 </div>

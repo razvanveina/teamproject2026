@@ -80,6 +80,13 @@ public class Sim {
 					if (request.equals("getEntities")) {
 						String response = entities.stream().map(Entity::getName).collect(Collectors.joining(","));
 						put(response);
+					} else if (request.startsWith("createLU")) {
+						String[] s = request.split(" ");
+						entities.forEach(e -> {
+							if (e.getName().equals(s[2]) && e.getClass() == Conveyor.class) {
+								((Conveyor) e).createLU(s[1]);
+							}
+						});
 					}
 				}
 			} catch (Exception e) {

@@ -12,7 +12,7 @@ export class SimulatorService {
     }
 
     createLU(barcode: string, location: string){
-        return this.http.post(`${this.url}/createLU`, {barcode: barcode, location: location})
+        return this.http.post(`${this.url}/createLU?barcode=${barcode}&location=${location}`, {})
     }
 
     getEntities() {

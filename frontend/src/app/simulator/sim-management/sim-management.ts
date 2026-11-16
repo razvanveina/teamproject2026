@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, ElementRef, inject, signal, ViewChild } from '@angular/core';
 import { API_BASE_URL } from '../../api.config';
 import { SimulatorService } from '../simulator-service';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -14,9 +14,12 @@ import { FormsModule } from '@angular/forms';
 export class SimManagement {
   private log = inject(LogService);
   private service = inject(SimulatorService);
-  private eventSource!: EventSource; 
+  private eventSource!: EventSource;
   private selectedEntity = '';
   entities = signal<string[]>([]);
+
+  @ViewChild('barcode')
+  barcodeInput!: ElementRef<HTMLInputElement>;
 
   ngOnInit() {
     this.eventSource = new EventSource(`${API_BASE_URL}/events/subscribe`);
@@ -37,10 +40,24 @@ export class SimManagement {
   }
 
   createLU(barcode: string) {
+    if (this.selectedEntity === '') {
+      alert("Please select an entitty");
+      return;
+    }
+
+    if (barcode === '') {
+      alert("Please input a barcode");
+      return;
+    }
+
     this.log.action(`User created LU with barcode: ${barcode} | On location: ${this.selectedEntity}`);
-    this.service.triggerEvent(barcode).subscribe({
+    this.service.createLU(barcode, this.selectedEntity).subscribe({
+      next: () => {
+        this.barcodeInput.nativeElement.value = '';
+        this.selectedEntity = '';
+      },
       error: (err: HttpErrorResponse) => {
-        console.log(err)
+        alert(err.error.detail)
       }
     });
   }
