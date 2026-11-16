@@ -33,7 +33,7 @@ public class LoadUnit {
 	private Location location;
 
 	@JsonManagedReference
-	@Column(nullable = false)
+//	@Column(nullable = false)
 	@OneToMany(mappedBy = "loadUnit")
 	private List<StockItem> stockItems;
 

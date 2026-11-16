@@ -17,8 +17,8 @@ export class SimVisualization {
   error = signal(false);
   points = signal<SimEntity[]>(
     [
-      { id: 1, name: "test", loadUnits: ["lu1", "lu2"] },
-      { id: 2, name: "point", loadUnits: ["lu1", "lu2", "lu3"] }
+      { id: 1, capacity: 3, name: "test", loadUnits: ["lu1", "lu2"] },
+      { id: 2, capacity: 5, name: "point", loadUnits: ["lu1", "lu2", "lu3"] }
     ]
   );
 
@@ -32,6 +32,8 @@ export class SimVisualization {
       next: (response: SimEntity[]) => {
         this.points.set(response);
         this.error.set(false);
+      // next: (response: any) => {
+      //   console.log(response);
       },
       error: (err) => {
         this.error.set(true);

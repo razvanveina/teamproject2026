@@ -8,7 +8,11 @@
     @for (point of points(); track point.id) {
 
     <div class="point-card">
-        <p>{{ point.name }}</p>
+        <p>{{ point.name }}
+            @if (point.capacity != null){
+            - {{point.capacity }} capacity
+            }
+        </p>
         <p>{{point.loadUnits }}</p>
     </div>
 

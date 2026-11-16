@@ -1,4 +1,4 @@
-// The backend server. To work on the shared server on Alex's laptop use 'http://TIMW0342.wamas.com'.
+// export const URL = 'http://TIMW0322.wamas.com';
 export const URL = 'http://localhost';
 
 export const SIM_URL = URL + ':8888'

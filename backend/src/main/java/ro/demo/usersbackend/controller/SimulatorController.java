@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import ro.demo.usersbackend.service.LoadUnitService;
 import ro.demo.usersbackend.service.SimulatorService;
 
 @RestController
@@ -24,10 +25,12 @@ public class SimulatorController {
 	private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
 
 	private final SimulatorService simulatorService;
+	private final LoadUnitService loadUnitService;
 
-	public SimulatorController(SimulatorService simulatorService) {
+	public SimulatorController(SimulatorService simulatorService, LoadUnitService loadUnitService) {
 		super();
 		this.simulatorService = simulatorService;
+		this.loadUnitService = loadUnitService;
 	}
 
 	@GetMapping("/subscribe")
@@ -70,6 +73,7 @@ public class SimulatorController {
 	public ResponseEntity<Void> createLU(@RequestParam String barcode, @RequestParam String location) {
 		System.out.println("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
 		simulatorService.createLU(barcode, location);
+		loadUnitService.createEmptyTote(barcode);
 
 		return ResponseEntity.ok().build();
 	}

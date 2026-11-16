@@ -130,6 +130,22 @@ public class LoadUnitService {
 		return loadUnitRepository.save(carton);
 	}
 
+	public LoadUnit createEmptyTote(String barcode) {
+		LoadUnit loadUnit = new LoadUnit();
+
+		Location loc = locationRepository.findByName("IP1")
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot find location IP1"));
+		;
+
+		loadUnit.setLocation(loc);
+		loadUnit.setBarcode(barcode);
+		loadUnit.setType(LoadUnitType.TOTE);
+
+		loadUnitRepository.save(loadUnit);
+
+		return loadUnit;
+	}
+
 	public LoadUnit createLoadUnit(List<ScannedPackage> scannedPackages) {
 
 		Location in = locationRepository.findByName("IN")
