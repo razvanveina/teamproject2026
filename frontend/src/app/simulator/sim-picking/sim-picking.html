@@ -15,7 +15,7 @@
                 </thead>
                 <tbody>
                     @for (item of tote.items; track $index) {
-                    <tr [class.move]="item.orderId !== null">
+                    <tr [class.move]="item.orderId !== null && item.orderId === orderId()">
                         <td>{{ item.article }}</td>
                         <td>{{ item.packaging }}</td>
                         <td>{{ amountText(item) }}</td>

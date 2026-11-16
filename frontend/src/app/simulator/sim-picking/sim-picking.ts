@@ -12,9 +12,11 @@ export class SimPicking implements OnInit, OnDestroy {
   private log = inject(LogService);
   private checker: any;
   private leaving = '';
+  private targetLeaving = '';
 
   source = signal<any>(null);
   target = signal<any>(null);
+  orderId = signal<string | null>(null);
   message = signal('');
 
   ngOnInit(): void {
@@ -35,8 +37,15 @@ export class SimPicking implements OnInit, OnDestroy {
         } else {
           this.leaving = '';
         }
+        let target = station.target;
+        if (target !== null && target.barcode === this.targetLeaving) {
+          target = null;
+        } else {
+          this.targetLeaving = '';
+        }
         this.source.set(source);
-        this.target.set(station.target);
+        this.target.set(target);
+        this.orderId.set(station.orderId);
       },
     });
   }
@@ -51,7 +60,7 @@ export class SimPicking implements OnInit, OnDestroy {
   toMove(): any[] {
     const items: any[] = [];
     for (const item of this.source().items) {
-      if (item.orderId !== null) {
+      if (item.orderId !== null && item.orderId === this.orderId()) {
         items.push(item);
       }
     }
@@ -67,7 +76,7 @@ export class SimPicking implements OnInit, OnDestroy {
     }
     const items = this.toMove();
     if (items.length === 0) {
-      return 'Tote ' + this.source().barcode + ' has nothing for an order. Press Confirm to send it on';
+      return 'Tote ' + this.source().barcode + ' has nothing to pick here. Press Confirm to send it on';
     }
     let text = '';
     for (const item of items) {
@@ -88,6 +97,10 @@ export class SimPicking implements OnInit, OnDestroy {
         this.message.set(res.message + '.');
         this.leaving = source.barcode;
         this.source.set(null);
+        if (res.message.indexOf('goes to OUT') >= 0) {
+          this.targetLeaving = target.barcode;
+          this.target.set(null);
+        }
       },
     });
   }

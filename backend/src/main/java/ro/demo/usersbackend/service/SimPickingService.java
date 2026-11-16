@@ -36,15 +36,24 @@ public class SimPickingService {
 		this.loadUnitRepository = loadUnitRepository;
 	}
 
-	// ce e acum in statie, sus si jos
+	// ce e acum in statie, sus si jos, si orderul pe care lucreaza statia
 	@Transactional(readOnly = true)
 	public SimStationResponse findStation() {
-		return new SimStationResponse(findTote("PTTS1"), findTote("PTTT1"));
+		LoadUnit source = findToteAt("PTTS1");
+		LoadUnit target = findToteAt("PTTT1");
+
+		String orderId = null;
+		if (source != null && target != null) {
+			RetrievalOrder order = chooseOrder(source, target);
+			if (order != null) {
+				orderId = order.getOrderId();
+			}
+		}
+		return new SimStationResponse(toResponse(source), toResponse(target), orderId);
 	}
 
-	// tote-ul care are locatia egala cu punctul, cu tot ce e in el; null daca nu e
-	// niciunul
-	private SimToteResponse findTote(String point) {
+	// tote-ul care are locatia egala cu punctul; null daca nu e niciunul
+	private LoadUnit findToteAt(String point) {
 		List<LoadUnit> totes = loadUnitRepository.findByLocationName(point);
 		if (totes.isEmpty()) {
 			return null;
@@ -52,8 +61,14 @@ public class SimPickingService {
 		if (totes.size() > 1) {
 			log.warn("Sim picking: {} totes on {}, showing {}", totes.size(), point, totes.get(0).getBarcode());
 		}
+		return totes.get(0);
+	}
 
-		LoadUnit tote = totes.get(0);
+	// tote-ul cu tot ce e in el, pentru ecran
+	private SimToteResponse toResponse(LoadUnit tote) {
+		if (tote == null) {
+			return null;
+		}
 		List<SimItemResponse> items = new ArrayList<>();
 		for (StockItem item : tote.getStockItems()) {
 			ArticlePackagingUnitType packaging = item.getArticlePackagingUnitType();
@@ -68,31 +83,34 @@ public class SimPickingService {
 	}
 
 	// muncitorul a mutat marfa din tote-ul de sus in cel de jos si a apasat Confirm
-	// mutam in tinta doar marfa rezervata pentru orderul sursei, apoi sursa primeste release (drumul il decide DP2)
+	// mutam in tinta doar marfa rezervata pentru orderul ales de chooseOrder
+	// (acelasi order pe care il arata si ecranul), apoi sursa primeste release
+	// (drumul il decide DP2)
 	// tinta primeste release (spre OUT) doar cand orderul e complet
 	public String confirm(String sourceBarcode, String targetBarcode) {
 		LoadUnit source = findToteAt(sourceBarcode, "PTTS1");
 		LoadUnit target = findToteAt(targetBarcode, "PTTT1");
 
-		RetrievalOrder order = findOrder(source);
+		RetrievalOrder order = chooseOrder(source, target);
 		if (order == null) {
 			release("PTTS1");
-			return "Tote " + sourceBarcode + " has nothing reserved to pick, it goes on";
+			return "Tote " + sourceBarcode + " has nothing to pick here, it goes on";
 		}
 
-		RetrievalOrder targetOrder = findOrder(target);
-		if (targetOrder != null && !targetOrder.getOrderId().equals(order.getOrderId())) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tote " + targetBarcode + " is for order "
-					+ targetOrder.getOrderId() + ", but tote " + sourceBarcode + " is for order " + order.getOrderId());
-		}
-
+		int moved = 0;
 		for (StockItem item : source.getStockItems()) {
 			if (item.getReservation() != null && item.getReservation().getRetrievalOrderLine().getOrder().getOrderId()
 					.equals(order.getOrderId())) {
 				item.setLoadUnit(target);
+				moved++;
 				log.info("Sim picking: stock item {} moved from {} to {} for order {}", item.getId(), sourceBarcode,
 						targetBarcode, order.getOrderId());
 			}
+		}
+
+		if (moved == 0) {
+			release("PTTS1");
+			return "Tote " + sourceBarcode + " has nothing for order " + order.getOrderId() + ", it goes on";
 		}
 
 		updateStatus(order, target);
@@ -110,7 +128,8 @@ public class SimPickingService {
 		try {
 			StationControl.release(point);
 		} catch (Exception e) {
-			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Cannot release " + point + ": " + e.getMessage());
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+					"Cannot release " + point + ": " + e.getMessage());
 		}
 		log.info("Sim picking: {} released", point);
 	}
@@ -132,6 +151,25 @@ public class SimPickingService {
 		for (StockItem item : tote.getStockItems()) {
 			if (item.getReservation() != null) {
 				return item.getReservation().getRetrievalOrderLine().getOrder();
+			}
+		}
+		return null;
+	}
+
+	// orderul pe care lucreaza statia: al tintei daca are deja ceva in ea,
+	// altfel primul order automat din sursa; orderele manuale nu se iau aici
+	// null daca nu e nimic de luat
+	private RetrievalOrder chooseOrder(LoadUnit source, LoadUnit target) {
+		RetrievalOrder targetOrder = findOrder(target);
+		if (targetOrder != null) {
+			return targetOrder;
+		}
+		for (StockItem item : source.getStockItems()) {
+			if (item.getReservation() != null) {
+				RetrievalOrder order = item.getReservation().getRetrievalOrderLine().getOrder();
+				if (order.isAutomatic()) {
+					return order;
+				}
 			}
 		}
 		return null;
