@@ -1,5 +1,7 @@
 package ro.demo.usersbackend.controller;
 
+import java.util.Map;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -25,6 +27,13 @@ public class DecantingController {
 		this.decantingService = decantingService;
 	}
 
+	@PostMapping("/tote")
+	public Map<String, String> createEmptyTote() {
+		String barcode = decantingService.createEmptyTote();
+		log.info("Decanting: empty tote {} created");
+		return Map.of("toteBarcode", barcode);
+	}
+
 	@PostMapping("/start")
 	public DecantingResponse start(@RequestBody DecantingStartRequest request) {
 		log.info("Decanting: user scanned load unit {}", request.loadUnitBarcode());
@@ -38,7 +47,8 @@ public class DecantingController {
 
 	@PostMapping("/transfer")
 	public DecantingResponse transfer(@RequestBody DecantingTransferRequest request) {
-		log.info("Decanting: user moved {} {} from load unit {}", request.quantity(), request.packagingBarcode(), request.loadUnitBarcode());
+		log.info("Decanting: user moved {} {} from load unit {}", request.quantity(), request.packagingBarcode(),
+				request.loadUnitBarcode());
 		try {
 			return decantingService.transfer(request);
 		} catch (ResponseStatusException e) {

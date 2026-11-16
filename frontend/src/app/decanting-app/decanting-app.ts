@@ -8,7 +8,7 @@ type Step = 'LOAD_UNIT' | 'ITEM' | 'QUANTITY';
 @Component({
   imports: [],
   selector: 'app-decanting-app',
-  styleUrl: '../transport-app/transport-app.css',
+  styleUrls: ['../transport-app/transport-app.css', './decanting-app.css'],
   templateUrl: './decanting-app.html',
 })
 export class DecantingApp {
@@ -50,64 +50,75 @@ export class DecantingApp {
   }
 
   private scanItem(barcode: string): void {
-  const session = this.session();
-  const item = session?.items.find((i) => i.packagingBarcode === barcode);
-  if (!session || !item) {
-    this.showError(`Item ${barcode} is not on load unit ${session?.loadUnitBarcode}. Scan another item.`);
-    return;
+    const session = this.session();
+    const item = session?.items.find((i) => i.packagingBarcode === barcode);
+    if (!session || !item) {
+      this.showError(`Item ${barcode} is not on load unit ${session?.loadUnitBarcode}. Scan another item.`);
+      return;
+    }
+
+    this.currentItem.set(item);
+    this.step.set('QUANTITY');
+    this.hasError.set(false);
+    const reserved = item.reservedQuantity > 0 ? ` (of which ${item.reservedQuantity} reserved)` : '';
+    this.instructions.set(`${item.description} (${item.packaging}): ${item.quantity} available${reserved}. `
+      + `How many do you move into a new tote?`);
   }
 
-  this.currentItem.set(item);
-  this.step.set('QUANTITY');
-  this.hasError.set(false);
-  const reserved = item.reservedQuantity > 0 ? ` (of which ${item.reservedQuantity} reserved)` : '';
-  this.instructions.set(`${item.description} (${item.packaging}): ${item.quantity} available${reserved}. `
-    + `How many do you move into a new tote?`);
-}
+  private enterQuantity(value: string): void {
+    const session = this.session();
+    const item = this.currentItem();
+    if (!session || !item) {
+      return;
+    }
 
-private enterQuantity(value: string): void {
-  const session = this.session();
-  const item = this.currentItem();
-  if (!session || !item) {
-    return;
+    const quantity = Number(value);
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      this.showError('Enter a whole number greater than 0.');
+      return;
+    }
+    if (quantity > item.quantity) {
+      this.showError(`Cannot move ${quantity}: only ${item.quantity} available. Enter a smaller quantity.`);
+      return;
+    }
+
+    this.log.action(`DECANT ${quantity} x ${item.packagingBarcode} FROM LU ${session.loadUnitBarcode}`);
+    this.api.transfer(session.loadUnitBarcode, item.packagingBarcode, quantity).subscribe({
+      next: (next) => this.showNextItem(next, `Put ${quantity} x ${item.description} into tote ${next.toteBarcode}. `),
+      error: (err: HttpErrorResponse) => this.showError(err.error?.detail ?? 'Transfer failed. Please try again.'),
+    });
   }
 
-  const quantity = Number(value);
-  if (!Number.isInteger(quantity) || quantity <= 0) {
-    this.showError('Enter a whole number greater than 0.');
-    return;
+  private showNextItem(session: DecantingResponse, done = ''): void {
+    this.currentItem.set(null);
+    this.hasError.set(false);
+
+    if (session.finished) {
+      this.session.set(null);
+      this.step.set('LOAD_UNIT');
+      this.instructions.set(`${done}Load unit ${session.loadUnitBarcode} is empty. Scan the next load unit.`);
+      return;
+    }
+
+    this.session.set(session);
+    this.step.set('ITEM');
+    this.instructions.set(`${done}Scan an item from load unit ${session.loadUnitBarcode}.`);
   }
-  if (quantity > item.quantity) {
-    this.showError(`Cannot move ${quantity}: only ${item.quantity} available. Enter a smaller quantity.`);
-    return;
-  }
-
-  this.log.action(`DECANT ${quantity} x ${item.packagingBarcode} FROM LU ${session.loadUnitBarcode}`);
-  this.api.transfer(session.loadUnitBarcode, item.packagingBarcode, quantity).subscribe({
-    next: (next) => this.showNextItem(next, `Put ${quantity} x ${item.description} into tote ${next.toteBarcode}. `),
-    error: (err: HttpErrorResponse) => this.showError(err.error?.detail ?? 'Transfer failed. Please try again.'),
-  });
-}
-
-private showNextItem(session: DecantingResponse, done = ''): void {
-  this.currentItem.set(null);
-  this.hasError.set(false);
-
-  if (session.finished) {
-    this.session.set(null);
-    this.step.set('LOAD_UNIT');
-    this.instructions.set(`${done}Load unit ${session.loadUnitBarcode} is empty. Scan the next load unit.`);
-    return;
-  }
-
-  this.session.set(session);
-  this.step.set('ITEM');
-  this.instructions.set(`${done}Scan an item from load unit ${session.loadUnitBarcode}.`);
-}
 
   private showError(message: string): void {
     this.instructions.set(message);
     this.hasError.set(true);
+  }
+
+  onNewTote(): void {
+    this.log.action('DECANT NEW EMPTY TOTE');
+    this.api.createEmptyTote().subscribe({
+      next: (res) => {
+        this.hasError.set(false);
+        this.instructions.set(`Empty tote ${res.toteBarcode} created.`);
+      },
+      error: (err: HttpErrorResponse) => this.showError(err.error?.detail ?? 'Could not create the tote.'),
+    });
   }
 
   onCancel(): void {

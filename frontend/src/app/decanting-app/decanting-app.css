@@ -1,0 +1,11 @@
+.new-tote {
+    width: auto;
+    padding: 0 24px;
+    white-space: nowrap;
+    background: linear-gradient(110deg, #172b4d, #203b5e);
+}
+
+.new-tote:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}

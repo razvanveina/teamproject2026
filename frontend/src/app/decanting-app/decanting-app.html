@@ -17,7 +17,9 @@
                     @if (currentItem(); as item) {
                     <tr>
                         <th scope="row">Item</th>
-                        <td>{{item.description}} ({{item.packaging}}) — {{item.quantity}} available{{item.reservedQuantity > 0 ? ', of which ' + item.reservedQuantity + ' reserved' : ''}}</td>
+                        <td>{{item.description}} ({{item.packaging}}) — {{item.quantity}}
+                            available{{item.reservedQuantity > 0 ? ', of which ' + item.reservedQuantity + ' reserved' :
+                            ''}}</td>
                     </tr>
                     }
                 </tbody>
@@ -37,5 +39,6 @@
 
     <div class="bottom">
         <button (click)="onCancel()" class="cancel">Cancel</button>
+        <button (click)="onNewTote()" class="new-tote" [disabled]="step() !== 'LOAD_UNIT'">New empty tote</button>
     </div>
 </div>

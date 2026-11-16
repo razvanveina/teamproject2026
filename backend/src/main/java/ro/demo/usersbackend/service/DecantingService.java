@@ -41,6 +41,11 @@ public class DecantingService {
 	}
 
 	@Transactional
+	public String createEmptyTote() {
+		return createTote().getBarcode();
+	}
+
+	@Transactional
 	public DecantingResponse start(String loadUnitBarcode) {
 		LoadUnit loadUnit = findLoadUnit(loadUnitBarcode);
 		if (loadUnit.getType() == LoadUnitType.TOTE) {
