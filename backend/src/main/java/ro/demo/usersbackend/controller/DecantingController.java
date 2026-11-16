@@ -30,7 +30,7 @@ public class DecantingController {
 	@PostMapping("/tote")
 	public Map<String, String> createEmptyTote() {
 		String barcode = decantingService.createEmptyTote();
-		log.info("Decanting: empty tote {} created");
+		log.info("Decanting: empty tote {} created", barcode);
 		return Map.of("toteBarcode", barcode);
 	}
 
