@@ -1,7 +1,7 @@
 <order>
 	<id>1</id>
 	<destination>Iasi</destination>
-	<automatic>false</automatic>
+	<automatic>true</automatic>
 	<lines>
 		<line>
 			<nr>1</nr>
