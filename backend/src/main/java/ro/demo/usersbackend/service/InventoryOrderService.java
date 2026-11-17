@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -47,8 +48,8 @@ import ro.demo.usersbackend.repository.ArticleRepository;
 import ro.demo.usersbackend.repository.InventoryOrderLineItemRepository;
 import ro.demo.usersbackend.repository.InventoryOrderLineRepository;
 import ro.demo.usersbackend.repository.InventoryOrderRepository;
-import ro.demo.usersbackend.repository.LocationRepository;
 import ro.demo.usersbackend.repository.LoadUnitRepository;
+import ro.demo.usersbackend.repository.LocationRepository;
 import ro.demo.usersbackend.repository.PackagingUnitTypeRepository;
 import ro.demo.usersbackend.repository.ReservationRepository;
 import ro.demo.usersbackend.repository.StockAdjustmentRepository;
@@ -159,10 +160,12 @@ public class InventoryOrderService {
 					"Finish the started load-unit line before starting another.");
 		}
 		InventoryOrderLine line = inventoryOrderLineRepository.findByInventoryOrder_IdOrderByIdAsc(orderId).stream()
-				.filter(candidate -> candidate.getStatus() == InventoryOrderLineStatus.NEW)
-				.findFirst().orElseThrow(() -> new ResponseStatusException(HttpStatus.CONFLICT,
+				.filter(candidate -> candidate.getStatus() == InventoryOrderLineStatus.NEW).findFirst()
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.CONFLICT,
 						"This inventory order has no new lines to scan."));
-		Location location = line.getLocation();
+
+		// the real entity, not a lazy proxy, so the instanceof checks work
+		Location location = Hibernate.unproxy(line.getLocation(), Location.class);
 		if (location == null || location instanceof TransitLocation) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT,
 					"The current inventory line must have a non-transit location.");
@@ -176,9 +179,8 @@ public class InventoryOrderService {
 		});
 		LoadUnit loadUnit = findEligibleLoadUnit(foundLoadUnit.getBarcode());
 		if (loadUnit.getLocation().getId() != location.getId()) {
-			throw new ResponseStatusException(HttpStatus.CONFLICT,
-					"Load unit " + loadUnit.getBarcode() + " is not at the current line location "
-							+ location.getName() + ".");
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "Load unit " + loadUnit.getBarcode()
+					+ " is not at the current line location " + location.getName() + ".");
 		}
 		if (inventoryOrderLineRepository.findByInventoryOrder_IdOrderByIdAsc(orderId).stream()
 				.anyMatch(candidate -> candidate.getLoadUnit() != null
@@ -244,17 +246,21 @@ public class InventoryOrderService {
 			throw new ResponseStatusException(HttpStatus.CONFLICT,
 					"Only a new line without a scanned load unit can be finished as empty.");
 		}
-		List<LoadUnit> loadUnits = loadUnitRepository.findByLocationOrderByIdAsc(line.getLocation());
+
+		// the real entity, not a lazy proxy, so instanceof StorageLocation works
+		Location location = Hibernate.unproxy(line.getLocation(), Location.class);
+
+		List<LoadUnit> loadUnits = loadUnitRepository.findByLocationOrderByIdAsc(location);
 		if (!loadUnits.isEmpty()) {
 			line.setLoadUnitBarcode(loadUnits.get(0).getBarcode());
 			line.setLoadUnitType(loadUnits.get(0).getType().name());
-			line.setLocationName(line.getLocation().getName());
+			line.setLocationName(location.getName());
 		}
-		Map<ItemKey, Integer> expectedQuantities = getExpectedQuantities(getLocationStockItems(line.getLocation()));
+		Map<ItemKey, Integer> expectedQuantities = getExpectedQuantities(getLocationStockItems(location));
 		List<StockAdjustment> adjustments = new ArrayList<>();
 		for (Map.Entry<ItemKey, Integer> expected : expectedQuantities.entrySet()) {
-			adjustments.add(createDifference(line, expected.getKey(), null, expected.getValue(), 0,
-					-expected.getValue()));
+			adjustments
+					.add(createDifference(line, expected.getKey(), null, expected.getValue(), 0, -expected.getValue()));
 		}
 		inventoryDifferenceRepository.saveAll(adjustments);
 		for (LoadUnit missingLoadUnit : loadUnits) {
@@ -265,12 +271,17 @@ public class InventoryOrderService {
 						"Cannot remove a missing load unit while it still has reservations.");
 			}
 			stockItemRepository.deleteAll(missingStockItems);
-			if (line.getLocation() instanceof StorageLocation storageLocation
-					&& storageLocation.getLoadUnit() != null
+			if (location instanceof StorageLocation storageLocation && storageLocation.getLoadUnit() != null
 					&& storageLocation.getLoadUnit().getId().equals(missingLoadUnit.getId())) {
 				storageLocation.setLoadUnit(null);
 				storageLocationRepository.save(storageLocation);
+				storageLocationRepository.flush();
 			}
+			for (InventoryOrderLine oldLine : inventoryOrderLineRepository.findByLoadUnit(missingLoadUnit)) {
+				oldLine.setLoadUnit(null);
+			}
+			inventoryOrderLineRepository.flush();
+
 			loadUnitRepository.delete(missingLoadUnit);
 		}
 		line.setStatus(InventoryOrderLineStatus.FINISHED);
@@ -308,8 +319,7 @@ public class InventoryOrderService {
 
 	private List<StockItem> getLocationStockItems(Location location) {
 		return loadUnitRepository.findByLocationOrderByIdAsc(location).stream()
-				.flatMap(loadUnit -> stockItemRepository.findByLoadUnitOrderByIdAsc(loadUnit).stream())
-				.toList();
+				.flatMap(loadUnit -> stockItemRepository.findByLoadUnitOrderByIdAsc(loadUnit).stream()).toList();
 	}
 
 	private void updateInventoryOrderLineStock(InventoryOrderLine line) {

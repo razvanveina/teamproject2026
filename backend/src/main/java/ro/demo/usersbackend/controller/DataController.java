@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -30,6 +31,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.metamodel.EntityType;
+import ro.demo.usersbackend.service.LoadUnitService;
 
 @RestController
 @RequestMapping("/api/data")
@@ -40,10 +42,12 @@ public class DataController {
 
 	private final JdbcTemplate jdbcTemplate;
 	private final EntityManager entityManager;
+	private final LoadUnitService loadUnitService;
 
-	public DataController(JdbcTemplate jdbcTemplate, EntityManager entityManager) {
+	public DataController(JdbcTemplate jdbcTemplate, EntityManager entityManager, LoadUnitService loadUnitService) {
 		this.jdbcTemplate = jdbcTemplate;
 		this.entityManager = entityManager;
+		this.loadUnitService = loadUnitService;
 	}
 
 	// All rows of a table, plus the columns of the linked tables from entitySpec
@@ -190,7 +194,7 @@ public class DataController {
 
 		String sql = "UPDATE " + tableNameOf(entity) + " SET " + String.join(", ", sets) + " WHERE ID = ?";
 		try {
-			log.info("Data: {] {} updated", entity, id);
+			log.info("Data: {} {} updated", entity, id);
 			jdbcTemplate.update(sql, params.toArray());
 			if (entity.equals("LoadUnit") && values.containsKey("LOCATION_ID")) {
 				jdbcTemplate.update("UPDATE location SET load_unit_id = NULL WHERE load_unit_id = ?", id);
@@ -207,9 +211,21 @@ public class DataController {
 	public ResponseEntity<Map<String, String>> delete(@PathVariable String entity, @PathVariable Long id) {
 		try {
 			log.info("Data: delete {} {} ", entity, id);
-			jdbcTemplate.update("DELETE FROM " + tableNameOf(entity) + " WHERE ID = ?", id);
+
+			if (entity.equals("LoadUnit")) {
+				String refusal = loadUnitService.deleteLoadUnit(id);
+				if (refusal != null) {
+					log.warn("Data: {}", refusal);
+					return ResponseEntity.badRequest().body(Map.of("message", refusal));
+				}
+			} else {
+				jdbcTemplate.update("DELETE FROM " + tableNameOf(entity) + " WHERE ID = ?", id);
+			}
+
 			log.info("Data: {} {} deleted", entity, id);
 			return ResponseEntity.ok(Map.of("message", "Deleted"));
+		} catch (DataIntegrityViolationException e) {
+			return error("Cannot delete " + entity + " " + id + ": it is still referenced by other records", e);
 		} catch (DataAccessException e) {
 			return error("Cannot delete " + entity + " " + id, e);
 		}

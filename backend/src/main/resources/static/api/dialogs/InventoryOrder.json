@@ -2,7 +2,7 @@
   "id": "io001",
   "title": "Inventory Orders",
   "entity": "InventoryOrder",
-  "actions": ["add"],
+  "actions": ["add","delete"],
   "create": {
     "endpoint": "/inventory-orders",
     "body": { "code": "CODE" }

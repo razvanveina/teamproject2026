@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -46,6 +47,7 @@ public class LoadUnitService {
 	private final DestinationToGateRepository destinationToGateRepository;
 	private final ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository;
 	private final TransportOrderService transportOrderService;
+	private final JdbcTemplate jdbcTemplate;
 
 	private RetrievalOrder orderOf(LoadUnit loadUnit) {
 		return loadUnit.getStockItems().stream().filter(s -> s.getReservation() != null)
@@ -64,7 +66,7 @@ public class LoadUnitService {
 			LoadUnitRepository loadUnitRepository, LocationRepository locationRepository,
 			DestinationToGateRepository destinationToGateRepository,
 			ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository,
-			TransportOrderService transportOrderService) {
+			TransportOrderService transportOrderService, JdbcTemplate jdbcTemplate, JdbcTemplate jdbcTemplate2) {
 		super();
 		this.entityManager = entityManager;
 		this.stockItemRepository = stockItemRepository;
@@ -73,6 +75,42 @@ public class LoadUnitService {
 		this.destinationToGateRepository = destinationToGateRepository;
 		this.articlePackagingUnitTypeRepository = articlePackagingUnitTypeRepository;
 		this.transportOrderService = transportOrderService;
+		this.jdbcTemplate = jdbcTemplate;
+	}
+
+	// Deletes a load unit together with its stock items (and their reservations).
+	// Transport orders block the delete; order lines and the storage location only
+	// lose their link, so inventory orders and stock adjustments stay.
+	// Returns the refusal message, or null when the load unit was deleted.
+	public String deleteLoadUnit(Long id) {
+		Integer transports = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM transport_order WHERE load_unit_id = ?",
+				Integer.class, id);
+		if (transports != null && transports > 0) {
+			return "Cannot delete load unit " + id + ": it is still used in TRANSPORT_ORDER (" + transports + " rows)";
+		}
+
+		// 1. break the cycle: stock items stop pointing at the reservations being
+		// removed
+		jdbcTemplate.update("""
+				UPDATE stock_item SET reservation_id = NULL WHERE reservation_id IN
+				(SELECT id FROM reservation WHERE stock_item_id IN
+				 (SELECT id FROM stock_item WHERE load_unit_id = ?))""", id);
+
+		// 2. reservations of this load unit's stock items
+		jdbcTemplate.update("""
+				DELETE FROM reservation WHERE stock_item_id IN
+				(SELECT id FROM stock_item WHERE load_unit_id = ?)""", id);
+
+		// 3. the stock items
+		jdbcTemplate.update("DELETE FROM stock_item WHERE load_unit_id = ?", id);
+
+		// 4. detach, don't delete: history and the storage location stay
+		jdbcTemplate.update("UPDATE inventory_order_line SET load_unit_id = NULL WHERE load_unit_id = ?", id);
+		jdbcTemplate.update("UPDATE location SET load_unit_id = NULL WHERE load_unit_id = ?", id);
+
+		// 5. the load unit
+		jdbcTemplate.update("DELETE FROM load_unit WHERE id = ?", id);
+		return null;
 	}
 
 	private void checkLocation(LoadUnit loadUnit, String targetLocation) {
