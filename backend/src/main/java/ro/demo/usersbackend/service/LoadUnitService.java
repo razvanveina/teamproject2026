@@ -89,26 +89,21 @@ public class LoadUnitService {
 			return "Cannot delete load unit " + id + ": it is still used in TRANSPORT_ORDER (" + transports + " rows)";
 		}
 
-		// 1. break the cycle: stock items stop pointing at the reservations being
-		// removed
 		jdbcTemplate.update("""
 				UPDATE stock_item SET reservation_id = NULL WHERE reservation_id IN
 				(SELECT id FROM reservation WHERE stock_item_id IN
 				 (SELECT id FROM stock_item WHERE load_unit_id = ?))""", id);
 
-		// 2. reservations of this load unit's stock items
 		jdbcTemplate.update("""
 				DELETE FROM reservation WHERE stock_item_id IN
 				(SELECT id FROM stock_item WHERE load_unit_id = ?)""", id);
 
-		// 3. the stock items
 		jdbcTemplate.update("DELETE FROM stock_item WHERE load_unit_id = ?", id);
 
-		// 4. detach, don't delete: history and the storage location stay
 		jdbcTemplate.update("UPDATE inventory_order_line SET load_unit_id = NULL WHERE load_unit_id = ?", id);
+
 		jdbcTemplate.update("UPDATE location SET load_unit_id = NULL WHERE load_unit_id = ?", id);
 
-		// 5. the load unit
 		jdbcTemplate.update("DELETE FROM load_unit WHERE id = ?", id);
 		return null;
 	}

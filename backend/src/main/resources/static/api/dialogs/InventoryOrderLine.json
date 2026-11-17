@@ -2,7 +2,7 @@
   "id": "iol001",
   "title": "Inventory Order Lines",
   "entity": "InventoryOrderLine",
-  "actions": ["add","delete"],
+  "actions": ["add"],
   "create": {
     "endpoint": "/inventory-orders/{INVENTORY_ORDER_ID}/planned-lines",
     "body": { "locationId": "LOCATION_ID" }
