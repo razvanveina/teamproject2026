@@ -57,24 +57,25 @@
         }
         }
 
-        @if (comparisonError) {
-        <p class="comparison-error" role="alert">{{ comparisonError }}</p>
-        }
     </section>
 
-    <section class="left">
+    <section class="left" [class.warning-state]="!!comparisonError">
         @if (comparisonComplete) {
         <section class="comparison-results" aria-live="polite">
             <h2>Inventory order completed</h2>
         </section>
         } @else {
-        <div class="instruction-container">
+        <div class="instruction-container" aria-live="polite">
+            @if (comparisonError) {
+            <p class="comparison-error" role="alert">{{ comparisonError }}</p>
+            } @else {
             <p>
                 {{ isSaving ? 'Saving inventory order...' :
                    isComparing ? (step === 1 ? 'Verifying load unit...' : 'Comparing quantities...') :
                    currentInstruction }}
             </p>
-            @if (step === 3 && !isComparing && !isSaving) {
+            }
+            @if (!comparisonError && step === 3 && !isComparing && !isSaving) {
             <p class="scan-selection">
                 {{ currentArticleDescription }} — {{ currentQuantityUnit }}
                 ({{ currentQuantityPerUnit }} pieces per package)
@@ -89,36 +90,8 @@
             aria-labelledby="mismatch-title" aria-describedby="mismatch-description">
             <h2 id="mismatch-title">Stock difference found</h2>
             <p id="mismatch-description">
-                The database stock differs from the inventory you counted. Review the differences before finishing this line.
+                A discrepancy was detected during the inventory count. Please review the load unit and confirm the inventory result.
             </p>
-            <div class="difference-table-container">
-                <table class="difference-table">
-                    <thead>
-                        <tr>
-                            <th>Product</th>
-                            <th>Package</th>
-                            <th>Database</th>
-                            <th>Counted</th>
-                            <th>Difference</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (difference of quantityDifferences; track $index) {
-                        <tr>
-                            <td>{{ difference.description }} ({{ difference.article }})</td>
-                            <td>{{ difference.packagingUnit }}</td>
-                            <td>{{ difference.sqlQuantity }}</td>
-                            <td>{{ difference.scannedQuantity }}</td>
-                            <td [class.difference-negative]="difference.difference < 0"
-                                [class.difference-positive]="difference.difference > 0">
-                                {{ difference.difference > 0 ? '+' : '' }}{{ difference.difference }}
-                            </td>
-                        </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-            <p>The difference will be saved in Stock Adjustment and the load-unit stock will be updated.</p>
             <div class="dialog-actions">
                 <button type="button" class="dialog-confirm" (click)="confirmMismatch()">Save difference and finish</button>
                 <button type="button" class="dialog-cancel" (click)="cancelMismatch()">Cancel and rescan</button>

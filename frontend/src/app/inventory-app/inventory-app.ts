@@ -220,7 +220,6 @@ export class InventoryApp {
 
     private openOrderByCode(code: string): void {
         this.isComparing = true;
-        this.comparisonError = '';
         this.http.get<InventoryOrder>(
             `${API_BASE_URL}/inventory-orders/code/${encodeURIComponent(code)}`
         ).subscribe({
@@ -231,7 +230,7 @@ export class InventoryApp {
             },
             error: error => {
                 this.isComparing = false;
-                this.comparisonError = error.error?.message ?? 'Inventory order code was not found.';
+                this.comparisonError = error.error?.message ?? 'Inventory order code was not found. Please try again.';
                 this.cdr.markForCheck();
             }
         });
@@ -246,7 +245,6 @@ export class InventoryApp {
         }
 
         this.isSaving = true;
-        this.comparisonError = '';
         const items: InventoryOrderItem[] = this.lines.map(line => ({
             articleBarcode: line.article,
             articleDescription: line.description,
@@ -295,7 +293,6 @@ export class InventoryApp {
                     return;
                 }
                 this.isComparing = true;
-                this.comparisonError = '';
                 this.http.post<InventoryOrderLine>(
                     `${API_BASE_URL}/inventory-orders/${this.activeOrderId}/lines`,
                     { loadUnitBarcode: barcode }
@@ -507,7 +504,6 @@ export class InventoryApp {
         }
         this.isComparing = true;
         this.showMismatchDialog = false;
-        this.comparisonError = '';
         const locationId = this.orderLines.find(line => line.id === this.activeLineId)?.locationId;
         if (locationId === null || locationId === undefined) {
             this.isComparing = false;
@@ -688,7 +684,6 @@ export class InventoryApp {
         }
 
         this.isSaving = true;
-        this.comparisonError = '';
         this.http.post<InventoryOrderLine>(
             `${API_BASE_URL}/inventory-orders/${this.activeOrderId}/lines/${currentLine.id}/finish-empty`,
             {}
@@ -722,13 +717,13 @@ export class InventoryApp {
         }
 
         this.isSaving = true;
-        this.comparisonError = '';
         this.http.post<void>(
             `${API_BASE_URL}/inventory-orders/${this.activeOrderId}/finish`,
             {}
         ).subscribe({
             next: () => {
                 this.isSaving = false;
+                this.comparisonError = '';
                 this.comparisonComplete = true;
                 this.showCompletionDialog = true;
                 this.cdr.markForCheck();

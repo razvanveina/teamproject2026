@@ -504,6 +504,18 @@ input {
     font-size: 35px;
 }
 
+.left.warning-state {
+    background: #fff2bf;
+    color: #604b10;
+}
+
+.left .comparison-error {
+    margin: 8px 0;
+    padding: 0;
+    color: #604b10;
+    font-size: inherit;
+}
+
 .instruction-container {
     width: 100%;
 }
