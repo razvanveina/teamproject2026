@@ -54,7 +54,6 @@ export class SimManagement {
     this.service.createLU(barcode, this.selectedEntity).subscribe({
       next: () => {
         this.barcodeInput.nativeElement.value = '';
-        this.selectedEntity = '';
       },
       error: (err: HttpErrorResponse) => {
         alert(err.error.detail)
