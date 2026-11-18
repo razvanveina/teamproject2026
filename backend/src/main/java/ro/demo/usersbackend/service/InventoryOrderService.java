@@ -54,7 +54,6 @@ import ro.demo.usersbackend.repository.PackagingUnitTypeRepository;
 import ro.demo.usersbackend.repository.ReservationRepository;
 import ro.demo.usersbackend.repository.StockAdjustmentRepository;
 import ro.demo.usersbackend.repository.StockItemRepository;
-import ro.demo.usersbackend.repository.StorageLocationRepository;
 
 @Service
 @Transactional
@@ -69,7 +68,6 @@ public class InventoryOrderService {
 	private final ArticleRepository articleRepository;
 	private final PackagingUnitTypeRepository packagingUnitTypeRepository;
 	private final ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository;
-	private final StorageLocationRepository storageLocationRepository;
 	private final LocationRepository locationRepository;
 	private static final Logger log = LoggerFactory.getLogger(InventoryOrderService.class);
 
@@ -80,7 +78,7 @@ public class InventoryOrderService {
 			StockItemRepository stockItemRepository, ReservationRepository reservationRepository,
 			ArticleRepository articleRepository, PackagingUnitTypeRepository packagingUnitTypeRepository,
 			ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository,
-			StorageLocationRepository storageLocationRepository, LocationRepository locationRepository) {
+			LocationRepository locationRepository) {
 		this.inventoryOrderRepository = inventoryOrderRepository;
 		this.inventoryOrderLineRepository = inventoryOrderLineRepository;
 		this.inventoryOrderLineItemRepository = inventoryOrderLineItemRepository;
@@ -91,7 +89,6 @@ public class InventoryOrderService {
 		this.articleRepository = articleRepository;
 		this.packagingUnitTypeRepository = packagingUnitTypeRepository;
 		this.articlePackagingUnitTypeRepository = articlePackagingUnitTypeRepository;
-		this.storageLocationRepository = storageLocationRepository;
 		this.locationRepository = locationRepository;
 	}
 
@@ -153,7 +150,7 @@ public class InventoryOrderService {
 	}
 
 	public InventoryOrderLineResponse startInventoryOrderLine(Long orderId, InventoryOrderLineStartRequest request) {
-		InventoryOrder order = findStartedOrder(orderId);
+		findStartedOrder(orderId);
 		if (inventoryOrderLineRepository.existsByInventoryOrder_IdAndStatus(orderId,
 				InventoryOrderLineStatus.STARTED)) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT,
@@ -194,10 +191,6 @@ public class InventoryOrderService {
 		line.setLocationName(loadUnit.getLocation().getName());
 		line.setStatus(InventoryOrderLineStatus.STARTED);
 		line.setCompletedAt(null);
-		if (location instanceof StorageLocation storageLocation) {
-			storageLocation.setLoadUnit(loadUnit);
-			storageLocationRepository.save(storageLocation);
-		}
 		return toLineResponse(inventoryOrderLineRepository.save(line));
 	}
 
@@ -271,12 +264,6 @@ public class InventoryOrderService {
 						"Cannot remove a missing load unit while it still has reservations.");
 			}
 			stockItemRepository.deleteAll(missingStockItems);
-			if (location instanceof StorageLocation storageLocation && storageLocation.getLoadUnit() != null
-					&& storageLocation.getLoadUnit().getId().equals(missingLoadUnit.getId())) {
-				storageLocation.setLoadUnit(null);
-				storageLocationRepository.save(storageLocation);
-				storageLocationRepository.flush();
-			}
 			for (InventoryOrderLine oldLine : inventoryOrderLineRepository.findByLoadUnit(missingLoadUnit)) {
 				oldLine.setLoadUnit(null);
 			}
@@ -291,7 +278,6 @@ public class InventoryOrderService {
 	}
 
 	private void createInventoryAdjustments(InventoryOrderLine line) {
-		LoadUnit loadUnit = findEligibleLoadUnit(line.getLoadUnitBarcode());
 		List<ScannedInventoryItemRequest> requestItems = inventoryOrderLineItemRepository
 				.findByInventoryOrderLine_IdOrderByIdAsc(line.getId()).stream()
 				.map(item -> new ScannedInventoryItemRequest(item.getArticleBarcode(), item.getArticleDescription(),

@@ -66,7 +66,7 @@ public class LoadUnitService {
 			LoadUnitRepository loadUnitRepository, LocationRepository locationRepository,
 			DestinationToGateRepository destinationToGateRepository,
 			ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository,
-			TransportOrderService transportOrderService, JdbcTemplate jdbcTemplate, JdbcTemplate jdbcTemplate2) {
+			TransportOrderService transportOrderService, JdbcTemplate jdbcTemplate) {
 		super();
 		this.entityManager = entityManager;
 		this.stockItemRepository = stockItemRepository;
@@ -101,8 +101,6 @@ public class LoadUnitService {
 		jdbcTemplate.update("DELETE FROM stock_item WHERE load_unit_id = ?", id);
 
 		jdbcTemplate.update("UPDATE inventory_order_line SET load_unit_id = NULL WHERE load_unit_id = ?", id);
-
-		jdbcTemplate.update("UPDATE location SET load_unit_id = NULL WHERE load_unit_id = ?", id);
 
 		jdbcTemplate.update("DELETE FROM load_unit WHERE id = ?", id);
 		return null;
