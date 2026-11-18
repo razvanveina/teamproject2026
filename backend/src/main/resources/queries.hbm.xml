@@ -1,0 +1,248 @@
+<!DOCTYPE hibernate-mapping PUBLIC
+        "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+        "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping>
+
+    <query name="Location.findByName">
+        <![CDATA[
+            from Location l
+            where l.name = :name
+        ]]>
+    </query>
+
+    <query name="LoadUnit.findByBarcode">
+        <![CDATA[
+            from LoadUnit lu
+            where lu.barcode = :barcode
+        ]]>
+    </query>
+    
+    <query name="TransportOrder.findByLoadUnitBarcode">
+    <![CDATA[
+        select count(o) from TransportOrder o
+        where o.loadUnit.barcode = :barcode
+    ]]>
+	</query>
+
+    <query name="RetrievalOrder.findByShippingUserAndStatus">
+        <![CDATA[
+            from RetrievalOrder o
+            where o.shippingUser = :user and o.status = :status
+        ]]>
+    </query>
+
+    <query name="LoadUnit.findPickingTotesForAutomaticOrders">
+    	<![CDATA[
+        	select distinct u.id from LoadUnit u
+        	join u.stockItems s
+        	where u.type = :tote and u.location.name like 'PICK%'
+       		and s.reservation.retrievalOrderLine.order.automatic = true
+        	and not exists (select t.id from TransportOrder t
+                 			where t.loadUnit = u and t.status in :open)
+    	]]>
+	</query>
+	
+	<query name="TransportOrder.countActiveByLoadUnit">
+    <![CDATA[
+        select count(t) from TransportOrder t
+        where t.loadUnit = :tote and t.status in (:new, :active)
+    ]]>
+	</query>
+
+	<query name="TransportOrder.countActiveByTarget">
+	    <![CDATA[
+	        select count(t) from TransportOrder t
+	        where t.target = :location and t.status in (:new, :active)
+	    ]]>
+	</query>
+
+	<query name="StorageLocation.findFreePickingLocations">
+	    <![CDATA[
+	        from StorageLocation l
+	        where l.name like 'PICK%' and l.loadUnits is empty
+	        and l.id not in (select a.location.id from ArticlePickingLocation a)
+	    ]]>
+	</query>
+
+	<query name="ArticlePickingLocation.findByArticle">
+	    <![CDATA[
+	        from ArticlePickingLocation a
+	        where a.article = :article
+	    ]]>
+	</query>
+	
+	<query name="LoadUnit.findByTypeInDecantingOrTpt1">
+    	<![CDATA[
+        	from LoadUnit u
+        	where u.type = :type and u.location.name in ('DECANTING', 'TPT1')
+    	]]>
+	</query>
+	
+	<query name="StockItem.findFreeByArticle">
+	    <![CDATA[
+	        select s from StockItem s
+	        join s.loadUnit u
+	        join u.location l
+	        join s.articlePackagingUnitType p
+	        where p.article = :article and s.reservation is null and type(l) = StorageLocation
+	        order by case when l.name like 'PICK%' then 0 else 1 end, s.id
+	    ]]>
+	</query>
+	
+	<query name="ArticlePackagingUnitType.findSingleUnitByArticle">
+	    <![CDATA[
+	        from ArticlePackagingUnitType p
+	        where p.article = :article and p.packagingUnitType.quantity = 1
+	        order by p.id
+	    ]]>
+	</query>
+	
+	<query name="RetrievalOrder.findByOrderId">
+	    <![CDATA[
+	        from RetrievalOrder o where o.orderId = :id
+	    ]]>
+	</query>
+	
+	<query name="RetrievalOrder.findOrderIdsByStatus">
+	    <![CDATA[
+	        select o.orderId from RetrievalOrder o where o.status = :status
+	    ]]>
+	</query>
+	
+	<query name="RetrievalOrder.countByOrderId">
+	    <![CDATA[
+	        select count(o) from RetrievalOrder o where o.orderId = :id
+	    ]]>
+	</query>
+	
+	<query name="ReceivingOrder.countByOrderId">
+	    <![CDATA[
+	        select count(o) from ReceivingOrder o where o.orderId = :id
+	    ]]>
+	</query>
+	
+	<query name="StorageLocation.findFreeStorageLocations">
+	    <![CDATA[
+	        from StorageLocation l
+	        where l.aisle > 0 and l.loadUnits is empty
+	        and l.id not in (select t.target.id from TransportOrder t where t.status in :open)
+	        order by l.x asc
+	    ]]>
+	</query>
+	
+	<query name="LoadUnit.findFreePalletIdsInDecanting">
+	    <![CDATA[
+	        select u.id from LoadUnit u
+	        where u.type = :pallet and u.location.name = :decanting
+	        and not exists (select s.id from StockItem s where s.loadUnit = u and s.reservation is not null)
+	        and not exists (select t.id from TransportOrder t where t.loadUnit = u and t.status in :open)
+	    ]]>
+	</query>
+	
+	<query name="LoadUnit.findReservedIdsInStorage">
+	    <![CDATA[
+	        select distinct u.id from StorageLocation l
+	        join l.loadUnits u
+	        join u.stockItems s
+	        where l.aisle > 0 and s.reservation is not null
+	        and not exists (select t.id from TransportOrder t where t.loadUnit = u and t.status in :open)
+	    ]]>
+	</query>
+	
+	<query name="StockItem.countReservedByLoadUnitBarcode">
+	    <![CDATA[
+	        select count(s) from StockItem s
+	        where s.loadUnit.barcode = :barcode and s.reservation is not null
+	    ]]>
+	</query>
+	
+	<query name="StockItem.countByLoadUnitBarcode">
+	    <![CDATA[
+	        select count(s) from StockItem s where s.loadUnit.barcode = :barcode
+	    ]]>
+	</query>
+	
+	<query name="StockItem.countAutomaticByLoadUnitBarcode">
+	    <![CDATA[
+	        select count(s) from StockItem s
+	        where s.loadUnit.barcode = :barcode
+	        and s.reservation.retrievalOrderLine.order.automatic = true
+	    ]]>
+	</query>
+	
+	<query name="Article.findByBarcode">
+	    <![CDATA[
+	        from Article a where a.barcode = :barcode
+	    ]]>
+	</query>
+	
+	<query name="Destination.findByName">
+	    <![CDATA[
+	        from Destination d where d.name = :name
+	    ]]>
+	</query>
+	
+	<query name="TransportOrder.findIdsByStatusAndTargetName">
+	    <![CDATA[
+	        select t.id from TransportOrder t
+	        where t.status = :status and t.target.name = :target
+	        order by t.id
+	    ]]>
+	</query>
+
+    <sql-query name="TransportOrder.countByLoadUnitId">
+        <![CDATA[
+            SELECT COUNT(*) FROM transport_order
+            WHERE load_unit_id = :loadUnitId
+        ]]>
+    </sql-query>
+
+    <sql-query name="releaseReservationsForLoadUnit">
+        <![CDATA[
+            UPDATE stock_item SET reservation_id = NULL
+            WHERE reservation_id IN
+                (SELECT id FROM reservation WHERE stock_item_id IN
+                    (SELECT id FROM stock_item WHERE load_unit_id = :loadUnitId))
+        ]]>
+    </sql-query>
+
+    <sql-query name="Reservation.deleteByLoadUnitId">
+        <![CDATA[
+            DELETE FROM reservation
+            WHERE stock_item_id IN
+                (SELECT id FROM stock_item WHERE load_unit_id = :loadUnitId)
+        ]]>
+    </sql-query>
+
+    <sql-query name="StockItem.deleteByLoadUnitId">
+        <![CDATA[
+            DELETE FROM stock_item WHERE load_unit_id = :loadUnitId
+        ]]>
+    </sql-query>
+
+    <sql-query name="InvetoryOrderLine.deleteByLoadUnitId">
+        <![CDATA[
+            UPDATE inventory_order_line SET load_unit_id = NULL
+            WHERE load_unit_id = :loadUnitId
+        ]]>
+    </sql-query>
+
+    <sql-query name="LoadUnit.deleteById">
+        <![CDATA[
+            DELETE FROM load_unit WHERE id = :id
+        ]]>
+    </sql-query>
+
+    <sql-query name="LoadUnit.generateNextSequence">
+        <![CDATA[
+            SELECT LOADUNIT_SEQUENCE.NEXTVAL FROM DUAL
+        ]]>
+    </sql-query>
+
+    <database-object>
+        <create>CREATE SEQUENCE LOADUNIT_SEQUENCE START WITH 1 INCREMENT BY 1</create>
+        <drop>DROP SEQUENCE LOADUNIT_SEQUENCE</drop>
+    </database-object>
+
+</hibernate-mapping>
