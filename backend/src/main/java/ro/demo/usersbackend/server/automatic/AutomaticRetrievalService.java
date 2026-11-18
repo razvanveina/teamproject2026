@@ -19,7 +19,6 @@ import jakarta.jms.TextMessage;
 import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.LoadUnitType;
 import ro.demo.usersbackend.entity.Location;
-import ro.demo.usersbackend.entity.StorageLocation;
 import ro.demo.usersbackend.entity.TransportOrder;
 import ro.demo.usersbackend.entity.TransportOrderStatus;
 import ro.demo.usersbackend.packagemessaging.Broker;
@@ -85,8 +84,6 @@ public class AutomaticRetrievalService extends AbstractProcess {
 		}
 
 		LoadUnit loadUnit = order.getLoadUnit();
-		session.createQuery("from StorageLocation l where l.loadUnit = :loadUnit", StorageLocation.class)
-				.setParameter("loadUnit", loadUnit).getResultList().forEach(l -> l.setLoadUnit(null));
 		loadUnit.setLocation(order.getTarget());
 		order.setStatus(TransportOrderStatus.FINISHED);
 		log.info("Automatic retrieval: ACK_GET, load unit {} is on {}", loadUnit.getBarcode(),

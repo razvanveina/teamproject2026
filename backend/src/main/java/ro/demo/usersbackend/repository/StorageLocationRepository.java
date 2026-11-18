@@ -1,11 +1,13 @@
 package ro.demo.usersbackend.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.StorageLocation;
 
 public interface StorageLocationRepository extends JpaRepository<StorageLocation, Long> {
@@ -18,9 +20,22 @@ public interface StorageLocationRepository extends JpaRepository<StorageLocation
 //			WHERE location.loadUnit IS NULL
 //			ORDER BY location.x
 //			""")
-	@Query("select l from StorageLocation l " + "where l.loadUnit is null and l.aisle > 0 "
-			+ "and l.id not in (select t.target.id from TransportOrder t) " + "order by l.x asc")
+	@Query("select l from StorageLocation l " + "where not exists (select u from LoadUnit u where u.location = l) " // inainte
+																													// era
+																													// where
+																													// l.loadUnit
+																													// is
+																													// null,
+																													// insa
+																													// loc
+																													// nu
+																													// mai
+																													// are
+																													// fieldul
+																													// loadunit
+			+ "and l.aisle > 0 " + "and l.id not in (select t.target.id from TransportOrder t) " + "order by l.x asc")
 	Optional<StorageLocation> findFirstFreeByX(Limit limit);
 
-	// List<StorageLocation> findByLoadUnit(LoadUnit loadUnit);
+	@Query("select l from StorageLocation l join LoadUnit u on u.location = l where u = ?1")
+	List<StorageLocation> findByLoadUnit(LoadUnit loadUnit);
 }

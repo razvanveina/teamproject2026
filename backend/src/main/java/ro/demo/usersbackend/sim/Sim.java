@@ -38,6 +38,7 @@ public class Sim {
 	public static void main(String[] args) throws IOException {
 		Sim sim = new Sim();
 		sim.run();
+		SimWindow.open(sim.getEntities());
 
 		sim.initComms();
 		new Thread(sim::listen).start();
@@ -144,19 +145,19 @@ public class Sim {
 	}
 
 	public void run() {
-		Conveyor c1 = add(new Conveyor("C01", 30000, 30));
-		Conveyor c2 = add(new Conveyor("C02", 2000, 2));
-		Conveyor c3 = add(new Conveyor("C03", 30000, 30));
-		Conveyor c4 = add(new Conveyor("C04", 2000, 2));
+		Conveyor c1 = add(new Conveyor("C01", 10000, 10));
+		Conveyor c2 = add(new Conveyor("C02", 3000, 3));
+		Conveyor c3 = add(new Conveyor("C03", 20000, 20));
+		Conveyor c4 = add(new Conveyor("C04", 3000, 3));
 		Conveyor c5 = add(new Conveyor("C05", 2000, 2));
 		Conveyor c6 = add(new Conveyor("C06", 2000, 2));
-		Conveyor c7 = add(new Conveyor("C07", 2000, 2));
-		Conveyor c8 = add(new Conveyor("C08", 2000, 2));
-		Conveyor c9 = add(new Conveyor("C09", 10000, 10));
-		Conveyor c10 = add(new Conveyor("C10", 10000, 10));
-		Conveyor c11 = add(new Conveyor("C11", 10000, 10));
+		Conveyor c7 = add(new Conveyor("C07", 3000, 3));
+		Conveyor c8 = add(new Conveyor("C08", 3000, 3));
+		Conveyor c9 = add(new Conveyor("C09", 15000, 15));
+		Conveyor c10 = add(new Conveyor("C10", 7000, 7));
+		Conveyor c11 = add(new Conveyor("C11", 3000, 3));
 		Conveyor c12 = add(new Conveyor("C12", 10000, 10));
-		Conveyor c13 = add(new Conveyor("C13", 10000, 10));
+		Conveyor c13 = add(new Conveyor("C13", 25000, 25));
 
 		InfoPoint ip1 = add(new InfoPoint("IP1"));
 		InfoPoint ip2 = add(new InfoPoint("IP2"));
@@ -233,5 +234,9 @@ public class Sim {
 			items.add(entities.get(i).toJSON(i));
 		}
 		return "[\n" + String.join(",\n", items) + "\n]";
+	}
+
+	public List<Entity> getEntities() {
+		return entities;
 	}
 }

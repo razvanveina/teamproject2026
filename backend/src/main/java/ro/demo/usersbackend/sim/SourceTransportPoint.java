@@ -31,7 +31,7 @@ public class SourceTransportPoint extends ServerPoint {
 	public synchronized void get(String barcode, Long transportOrderId) {
 		this.barcode = barcode;
 		this.setTransportOrderId(transportOrderId);
-		loadedAt = System.currentTimeMillis();
+		loadedAt = currentSimulationTime();
 		acknowledged = false;
 		System.out.println(barcode + " loaded");
 	}
@@ -49,7 +49,7 @@ public class SourceTransportPoint extends ServerPoint {
 		}
 
 		synchronized (this) {
-			if (barcode != null && !acknowledged && System.currentTimeMillis() - loadedAt >= 2000) {
+			if (barcode != null && !acknowledged && currentSimulationTime() - loadedAt >= 2000) {
 				acknowledged = true;
 				put(MfsMessages.toJson(new AckGet("ACK_GET", getTransportOrderId(), barcode)));
 				announceLU(barcode);
@@ -79,7 +79,7 @@ public class SourceTransportPoint extends ServerPoint {
 	@Override
 	public synchronized void restore(EntityState state) {
 		super.restore(state);
-		loadedAt = System.currentTimeMillis();
+		loadedAt = currentSimulationTime();
 		acknowledged = state.ready();
 	}
 }
