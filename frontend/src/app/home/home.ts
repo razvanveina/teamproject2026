@@ -73,9 +73,18 @@ export class Home implements OnInit {
   });
 
   ngOnInit(): void {
-    this.service.getRows('StorageLocation').subscribe({
-      next: rows => {
-        const slots = rows
+    forkJoin({
+      locations: this.service.getRows('StorageLocation'),
+      loadUnits: this.service.getRows('LoadUnit')
+    }).subscribe({
+      next: ({ locations, loadUnits }) => {
+        // locatia nu mai stie ce load unit are, doar load unit-ul stie pe ce locatie sta (location_id)
+        const loadUnitByLocation = new Map<number, number>();
+        for (const loadUnit of loadUnits.map(lowerKeys)) {
+          loadUnitByLocation.set(Number(loadUnit['location_id']), Number(loadUnit['id']));
+        }
+
+        const slots = locations
           .map(lowerKeys)
           .map(r => ({
             name: String(r['name']),
@@ -83,7 +92,7 @@ export class Home implements OnInit {
             x: Number(r['x']),
             y: Number(r['y']),
             z: Number(r['z']),
-            loadUnitId: r['load_unit_id'] == null ? null : Number(r['load_unit_id'])
+            loadUnitId: loadUnitByLocation.get(Number(r['id'])) ?? null
           }))
           // transit location-urile nu au culoar si locatiile de picking au culoarul 0
           // filtram doar locatiile de depozitare cu un culoar existent
