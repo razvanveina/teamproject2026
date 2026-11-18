@@ -36,24 +36,34 @@ END;
     <!-- trigger: dropped and created again on every start, it holds no data -->
 
 
-    <database-object>
+       <database-object>
         <create><![CDATA[
 CREATE OR REPLACE TRIGGER TRG_STORAGE_CAPACITY
-BEFORE INSERT OR UPDATE OF LOCATION_ID
-ON LOAD_UNIT
-FOR EACH ROW
-DECLARE
-    v_dtype LOCATION.DTYPE%TYPE;
+FOR INSERT OR UPDATE OF LOCATION_ID ON LOAD_UNIT
+COMPOUND TRIGGER
+    TYPE t_ids IS TABLE OF LOAD_UNIT.LOCATION_ID%TYPE;
+    v_ids t_ids := t_ids();
     v_count NUMBER;
-BEGIN
-    SELECT DTYPE INTO v_dtype FROM LOCATION WHERE ID = :NEW.LOCATION_ID;
-    IF v_dtype = 'STORAGE' THEN
-        SELECT COUNT(*) INTO v_count FROM LOAD_UNIT
-        WHERE LOCATION_ID = :NEW.LOCATION_ID AND ID <> NVL(:NEW.ID, -1);
-        IF v_count >= 1 THEN
-            RAISE_APPLICATION_ERROR(-20001, 'Storage location already contains a load unit');
-        END IF;
-    END IF;
+
+    AFTER EACH ROW IS
+    BEGIN
+        v_ids.EXTEND;
+        v_ids(v_ids.COUNT) := :NEW.LOCATION_ID;
+    END AFTER EACH ROW;
+
+    AFTER STATEMENT IS
+    BEGIN
+        FOR i IN 1 .. v_ids.COUNT LOOP
+            SELECT COUNT(*) INTO v_count
+            FROM LOAD_UNIT u
+            JOIN LOCATION l ON l.ID = u.LOCATION_ID
+            WHERE l.ID = v_ids(i) AND l.DTYPE = 'STORAGE';
+
+            IF v_count > 1 THEN
+                RAISE_APPLICATION_ERROR(-20001, 'Storage location already contains a load unit');
+            END IF;
+        END LOOP;
+    END AFTER STATEMENT;
 END;
         ]]></create>
         <drop>DROP TRIGGER TRG_STORAGE_CAPACITY</drop>
