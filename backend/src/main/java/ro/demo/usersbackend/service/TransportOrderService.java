@@ -17,7 +17,6 @@ import ro.demo.usersbackend.entity.TransportOrder;
 import ro.demo.usersbackend.entity.TransportOrderErrorReason;
 import ro.demo.usersbackend.entity.TransportOrderStatus;
 import ro.demo.usersbackend.repository.LocationRepository;
-import ro.demo.usersbackend.repository.StorageLocationRepository;
 import ro.demo.usersbackend.repository.TransportOrderRepository;
 import ro.demo.usersbackend.server.mfs.StationControl;
 
@@ -29,14 +28,12 @@ public class TransportOrderService {
 	private static final String CONVEYOR = "CONVEYOR";
 	private final TransportOrderRepository transportOrderRepository;
 	private final LocationRepository locationRepository;
-	private final StorageLocationRepository storageLocationRepository;
 
 	public TransportOrderService(TransportOrderRepository transportOrderRepository,
-			LocationRepository locationRepository, StorageLocationRepository storageLocationRepository) {
+			LocationRepository locationRepository) {
 		super();
 		this.transportOrderRepository = transportOrderRepository;
 		this.locationRepository = locationRepository;
-		this.storageLocationRepository = storageLocationRepository;
 	}
 
 	private Location decanting() {
@@ -197,22 +194,12 @@ public class TransportOrderService {
 	}
 
 	private void moveLoadUnit(LoadUnit loadUnit, Location target) {
-		if (target instanceof StorageLocation storage && storage.getLoadUnit() != null
-				&& !storage.getLoadUnit().equals(loadUnit)) {
+		if (target instanceof StorageLocation && target.getLoadUnit() != null
+				&& !target.getLoadUnit().equals(loadUnit)) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT,
 					"Location " + target.getName() + " is already occupied");
 		}
-
-		for (StorageLocation previous : storageLocationRepository.findByLoadUnit(loadUnit)) {
-			if (!previous.equals(target)) {
-				previous.setLoadUnit(null);
-			}
-		}
-		transportOrderRepository.flush();
-		if (target instanceof StorageLocation storage) {
-			storage.setLoadUnit(loadUnit);
-		}
-		loadUnit.setLocation(target);
+		loadUnit.setLocation(target); // this alone frees the old location and fills the new one
 	}
 
 	private TransportOrderResponse toResponse(TransportOrder order) {

@@ -1,6 +1,5 @@
 package ro.demo.usersbackend.entity;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.persistence.Column;
@@ -51,12 +50,14 @@ public abstract class Location {
 		this.loadUnits = loadUnits;
 	}
 
+	// the load unit on this location (a load unit whose location is this one), or
+	// null if it is empty
 	public LoadUnit getLoadUnit() {
-		return loadUnits.get(0);
+		return loadUnits == null || loadUnits.isEmpty() ? null : loadUnits.get(0);
 	}
 
-	public void setLoadUnit(LoadUnit loadUnit) {
-		loadUnits = new ArrayList<LoadUnit>();
-		loadUnits.add(loadUnit);
-	}
+//	public void setLoadUnit(LoadUnit loadUnit) {
+//		loadUnits = new ArrayList<LoadUnit>();
+//		loadUnits.add(loadUnit);
+//	}
 }

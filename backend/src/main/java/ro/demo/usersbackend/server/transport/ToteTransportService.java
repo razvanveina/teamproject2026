@@ -95,7 +95,7 @@ public class ToteTransportService extends AbstractProcess {
 	private StorageLocation findNearestFreePlace(Session session, StorageLocation from) {
 		List<StorageLocation> free = session
 				.createQuery(
-						"from StorageLocation l where l.name like 'PICK%' and l.loadUnit is null "
+						"from StorageLocation l where l.name like 'PICK%' and l.loadUnits is empty "
 								+ "and l.id not in (select a.location.id from ArticlePickingLocation a)",
 						StorageLocation.class)
 				.getResultList();
