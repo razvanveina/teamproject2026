@@ -42,7 +42,7 @@ public class DecisionPoint extends ServerPoint {
 				String reply = text.getText().trim();
 				decision = getTarget().get(toIndex(reply));
 				System.out.println(name + ": " + barcode + " reply " + reply + ", goes to " + decision.getName());
-			} else if (System.currentTimeMillis() - askedAt >= TIMEOUT) {
+			} else if (currentSimulationTime() - askedAt >= TIMEOUT) {
 				decision = getTarget().get(0);
 				System.out.println(name + ": " + barcode + " no reply, goes to " + decision.getName());
 			}
@@ -68,7 +68,7 @@ public class DecisionPoint extends ServerPoint {
 				synchronized (this) {
 					barcode = s;
 					decision = null;
-					askedAt = System.currentTimeMillis();
+					askedAt = currentSimulationTime();
 				}
 				announceLU(s);
 				System.out.println(s + " arrived at " + name);
@@ -102,6 +102,6 @@ public class DecisionPoint extends ServerPoint {
 	public synchronized void restore(EntityState state) {
 		super.restore(state);
 		decision = null;
-		askedAt = System.currentTimeMillis();
+		askedAt = currentSimulationTime();
 	}
 }

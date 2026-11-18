@@ -40,6 +40,10 @@ public abstract class ServerPoint extends Entity {
 			connected(context);
 
 			while (true) {
+				if (isPaused()) {
+					Thread.sleep(50);
+					continue;
+				}
 				LOCK.readLock().lock();
 				try {
 					step();

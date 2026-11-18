@@ -8,6 +8,28 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public abstract class Entity implements Runnable {
 	static final ReadWriteLock LOCK = new ReentrantReadWriteLock(true);
 
+	private static volatile boolean paused;
+	private static long pausedAt;
+	private static long pausedTotal;
+
+	public static synchronized long currentSimulationTime() {
+		return (paused ? pausedAt : System.currentTimeMillis()) - pausedTotal;
+	}
+
+	public static synchronized void togglePause() {
+		long t = System.currentTimeMillis();
+		if (paused) {
+			pausedTotal += t - pausedAt;
+		} else {
+			pausedAt = t;
+		}
+		paused = !paused;
+	}
+
+	public static boolean isPaused() {
+		return paused;
+	}
+
 	protected String name;
 	private List<Entity> source = new ArrayList<>();
 	private List<Entity> target = new ArrayList<>();
