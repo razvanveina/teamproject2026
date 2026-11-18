@@ -2,6 +2,8 @@ package ro.demo.usersbackend.entity;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -19,6 +21,7 @@ public abstract class Location {
 	@Column(nullable = false, unique = true)
 	private String name;
 
+	@JsonIgnore
 	@OneToMany(mappedBy = "location")
 	private List<LoadUnit> loadUnits;
 
@@ -52,6 +55,7 @@ public abstract class Location {
 
 	// the load unit on this location (a load unit whose location is this one), or
 	// null if it is empty
+	@JsonIgnore
 	public LoadUnit getLoadUnit() {
 		return loadUnits == null || loadUnits.isEmpty() ? null : loadUnits.get(0);
 	}
