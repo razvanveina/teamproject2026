@@ -31,7 +31,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.metamodel.EntityType;
-import ro.demo.usersbackend.service.LoadUnitService;
 
 @RestController
 @RequestMapping("/api/data")
@@ -42,12 +41,10 @@ public class DataController {
 
 	private final JdbcTemplate jdbcTemplate;
 	private final EntityManager entityManager;
-	private final LoadUnitService loadUnitService;
 
-	public DataController(JdbcTemplate jdbcTemplate, EntityManager entityManager, LoadUnitService loadUnitService) {
+	public DataController(JdbcTemplate jdbcTemplate, EntityManager entityManager) {
 		this.jdbcTemplate = jdbcTemplate;
 		this.entityManager = entityManager;
-		this.loadUnitService = loadUnitService;
 	}
 
 	// All rows of a table, plus the columns of the linked tables from entitySpec
@@ -161,9 +158,6 @@ public class DataController {
 		try {
 			log.info("Data: row added to {}", entity);
 			jdbcTemplate.update(sql, params.toArray());
-			if (entity.equals("LoadUnit")) {
-				linkStorageLocation(values);
-			}
 			return ResponseEntity.ok(Map.of("message", "Saved"));
 		} catch (DataAccessException e) {
 			return error("Cannot save " + entity, e);
@@ -196,10 +190,6 @@ public class DataController {
 		try {
 			log.info("Data: {} {} updated", entity, id);
 			jdbcTemplate.update(sql, params.toArray());
-			if (entity.equals("LoadUnit") && values.containsKey("LOCATION_ID")) {
-				jdbcTemplate.update("UPDATE location SET load_unit_id = NULL WHERE load_unit_id = ?", id);
-				linkStorageLocation(values);
-			}
 			return ResponseEntity.ok(Map.of("message", "Saved"));
 		} catch (DataAccessException e) {
 			return error("Cannot save " + entity + " " + id, e);
@@ -211,17 +201,6 @@ public class DataController {
 	public ResponseEntity<Map<String, String>> delete(@PathVariable String entity, @PathVariable Long id) {
 		try {
 			log.info("Data: delete {} {} ", entity, id);
-
-			if (entity.equals("LoadUnit")) {
-				String refusal = loadUnitService.deleteLoadUnit(id);
-				if (refusal != null) {
-					log.warn("Data: {}", refusal);
-					return ResponseEntity.badRequest().body(Map.of("message", refusal));
-				}
-			} else {
-				jdbcTemplate.update("DELETE FROM " + tableNameOf(entity) + " WHERE ID = ?", id);
-			}
-
 			log.info("Data: {} {} deleted", entity, id);
 			return ResponseEntity.ok(Map.of("message", "Deleted"));
 		} catch (DataIntegrityViolationException e) {
@@ -262,12 +241,5 @@ public class DataController {
 		}
 		log.warn("Data: entity {} not found", entity);
 		throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown entity: " + entity);
-	}
-
-	private void linkStorageLocation(Map<String, Object> values) {
-		jdbcTemplate.update("""
-				UPDATE location SET load_unit_id = (SELECT id FROM load_unit WHERE barcode = ?)
-				WHERE id = ? AND dtype = 'STORAGE' AND load_unit_id IS NULL
-				""", values.get("BARCODE"), values.get("LOCATION_ID"));
 	}
 }
