@@ -12,27 +12,8 @@ import ro.demo.usersbackend.entity.StorageLocation;
 
 public interface StorageLocationRepository extends JpaRepository<StorageLocation, Long> {
 
-//	@Query("""
-//			SELECT location
-//			FROM StorageLocation location
-//			LEFT JOIN TransportOrder t 
-//			ON t.target = location
-//			WHERE location.loadUnit IS NULL
-//			ORDER BY location.x
-//			""")
-	@Query("select l from StorageLocation l " + "where not exists (select u from LoadUnit u where u.location = l) " // inainte
-																													// era
-																													// where
-																													// l.loadUnit
-																													// is
-																													// null,
-																													// insa
-																													// loc
-																													// nu
-																													// mai
-																													// are
-																													// fieldul
-																													// loadunit
+	// inainte era where l.loadUnit is null, insa loc nu mai are fieldul loadunit
+	@Query("select l from StorageLocation l " + "where not exists (select u from LoadUnit u where u.location = l) "
 			+ "and l.aisle > 0 " + "and l.id not in (select t.target.id from TransportOrder t) " + "order by l.x asc")
 	Optional<StorageLocation> findFirstFreeByX(Limit limit);
 
