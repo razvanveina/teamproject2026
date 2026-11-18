@@ -16,6 +16,7 @@ import jakarta.jms.JMSException;
 import jakarta.jms.Message;
 import jakarta.jms.Queue;
 import jakarta.jms.TextMessage;
+import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.LoadUnitType;
 import ro.demo.usersbackend.entity.Location;
@@ -32,9 +33,6 @@ import ro.demo.usersbackend.server.session.ServerSessionFactory;
 public class AutomaticRetrievalService extends AbstractProcess {
 	public static final Logger log = LogManager.getLogger("automaticRetrieval");
 	private static final Logger mfsLog = LogManager.getLogger("mfsMessages");
-	private static final String CONVEYOR = "CONVEYOR";
-	private static final List<TransportOrderStatus> OPEN = List.of(TransportOrderStatus.NEW,
-			TransportOrderStatus.ACTIVE);
 
 	public AutomaticRetrievalService() {
 		super("automaticRetrievalService");
@@ -59,7 +57,7 @@ public class AutomaticRetrievalService extends AbstractProcess {
 	private void receiveReplies(SessionFactory sessionFactory, JMSContext context) throws JMSException {
 		JMSConsumer consumer = context.createConsumer(context.createQueue(MfsMessages.RESPONSE_QUEUE));
 		Message message;
-		while ((message = consumer.receive(1000)) != null) {
+		while ((message = consumer.receive(Constants.ACK_GET_WAIT)) != null) {
 			try {
 				String text = ((TextMessage) message).getText();
 				mfsLog.info("SIM -> SERVER [{}] {}", MfsMessages.RESPONSE_QUEUE, text);
@@ -94,7 +92,7 @@ public class AutomaticRetrievalService extends AbstractProcess {
 	private void sendRequests(SessionFactory sessionFactory, JMSContext context) {
 		List<Long> orderIds = sessionFactory.fromTransaction(session -> session.createQuery(
 				"select t.id from TransportOrder t where t.status = :status and t.target.name = :target order by t.id",
-				Long.class).setParameter("status", TransportOrderStatus.NEW).setParameter("target", CONVEYOR)
+				Long.class).setParameter("status", TransportOrderStatus.NEW).setParameter("target", Constants.CONVEYOR)
 				.getResultList());
 
 		Queue requests = context.createQueue(MfsMessages.REQUEST_QUEUE);
@@ -120,11 +118,12 @@ public class AutomaticRetrievalService extends AbstractProcess {
 		List<Long> loadUnitIds = sessionFactory.fromTransaction(session -> session.createQuery("""
 				select distinct u.id from LoadUnit u
 				join u.stockItems s
-				where u.type = :tote and u.location.name like 'PICK%'
+				where u.type = :tote and u.location.name like :pick
 				and s.reservation.retrievalOrderLine.order.automatic = true
 				and not exists (select t.id from TransportOrder t where t.loadUnit = u and t.status in :open)
-				""", Long.class).setParameter("tote", LoadUnitType.TOTE).setParameterList("open", OPEN)
-				.getResultList());
+				""", Long.class).setParameter("tote", LoadUnitType.TOTE)
+				.setParameter("pick", Constants.PICK_PREFIX + "%")
+				.setParameterList("open", Constants.OPEN_TRANSPORT_STATUSES).getResultList());
 
 		for (Long loadUnitId : loadUnitIds) {
 			try {
@@ -137,15 +136,15 @@ public class AutomaticRetrievalService extends AbstractProcess {
 
 	private static void createTransportOrder(Session session, Long loadUnitId) {
 		Location conveyor = session.createQuery("from Location l where l.name = :name", Location.class)
-				.setParameter("name", CONVEYOR).uniqueResultOptional().orElse(null);
+				.setParameter("name", Constants.CONVEYOR).uniqueResultOptional().orElse(null);
 		if (conveyor == null) {
-			log.error("Automatic retrieval: location {} is missing", CONVEYOR);
+			log.error("Automatic retrieval: location {} is missing", Constants.CONVEYOR);
 			return;
 		}
 
 		LoadUnit loadUnit = session.find(LoadUnit.class, loadUnitId);
 		session.persist(new TransportOrder(loadUnit.getLocation(), conveyor, TransportOrderStatus.NEW, loadUnit));
 		log.info("Automatic retrieval: load unit {} goes from {} to {}", loadUnit.getBarcode(),
-				loadUnit.getLocation().getName(), CONVEYOR);
+				loadUnit.getLocation().getName(), Constants.CONVEYOR);
 	}
 }

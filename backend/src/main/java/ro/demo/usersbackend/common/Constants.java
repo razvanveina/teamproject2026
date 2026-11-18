@@ -1,0 +1,59 @@
+package ro.demo.usersbackend.common;
+
+import java.util.List;
+
+import ro.demo.usersbackend.entity.TransportOrderStatus;
+
+public final class Constants {
+
+	private Constants() {
+	}
+
+	// transit locations
+	public static final String IN = "IN";
+	public static final String OUT = "OUT";
+	public static final String DECANTING = "DECANTING";
+	public static final String CONVEYOR = "CONVEYOR";
+	public static final String PICKING = "PICKING";
+	public static final String EMPTY_TOTES = "EMPTY_TOTES";
+
+	// punctele de pe conveyor
+	public static final String TPS1 = "TPS1";
+	public static final String TPT1 = "TPT1";
+	public static final String IP1 = "IP1";
+	public static final String IP2 = "IP2";
+	public static final String DP1 = "DP1";
+	public static final String DP2 = "DP2";
+	public static final String DP3 = "DP3";
+	public static final String EMPTY = "EMPTY";
+	public static final String PTTS1 = "PTTS1";
+	public static final String PTTT1 = "PTTT1";
+
+	// location names
+	public static final String PICK_PREFIX = "PICK";
+	public static final String PICK_NAME = "PICK%03d%02d"; // x, y
+	public static final String HBW_NAME = "HBW%02d%03d%02d%02d"; // aisle, x, y, z
+	public static final String GATE_NAME = "GATE%02d";
+
+	// to care nu sunt finalizate (new sau active)
+	public static final List<TransportOrderStatus> OPEN_TRANSPORT_STATUSES = List.of(TransportOrderStatus.NEW,
+			TransportOrderStatus.ACTIVE);
+
+	// barcode-uri
+	public static final String TOTE_SEQUENCE = "TOTE_SEQUENCE";
+	public static final String TOTE_BARCODE = "%06d";
+	public static final String LOAD_UNIT_SEQUENCE = "LOADUNIT_SEQUENCE";
+	public static final String LOAD_UNIT_BARCODE = "%05d";
+
+	// mesaje dintre sv si sim
+	public static final String RELEASE = "release";
+	public static final String GET_ENTITIES = "getEntities";
+	public static final String CREATE_LU = "createLU";
+
+	// timings
+	public static final long PROCESS_INTERVAL = 10000;
+	public static final long DECISION_TIMEOUT = 30000;
+	public static final long INFO_POINT_DWELL = 1000; // cat sta un tote pe un info point
+	public static final long TPS1_ACK_DELAY = 2000; // TPS1 confirma GET dupa asta
+	public static final long ACK_GET_WAIT = 1000; // cat asteapta sv pentru urmatorul reply
+}
