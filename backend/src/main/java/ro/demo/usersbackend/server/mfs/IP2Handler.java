@@ -1,7 +1,9 @@
 package ro.demo.usersbackend.server.mfs;
 
-public class IP2Handler extends PointHandler{
+import ro.demo.usersbackend.common.Constants;
+
+public class IP2Handler extends PointHandler {
 	public IP2Handler() {
-		super("IP2");
+		super(Constants.IP2);
 	}
 }

@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.hibernate.Session;
 
+import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
 import ro.demo.usersbackend.entity.Article;
 import ro.demo.usersbackend.entity.ArticlePackagingUnitType;
@@ -39,7 +40,8 @@ public class SimpleInitialDataCreator {
 	}
 
 	private void createSimulatorData() {
-		for (String name : List.of("IP1", "IP2", "EMPTY", "DP1", "DP2", "DP3", "TPS1", "TPT1", "PTTS1", "PTTT1")) {
+		for (String name : List.of(Constants.IP1, Constants.IP2, Constants.EMPTY, Constants.DP1, Constants.DP2,
+				Constants.DP3, Constants.TPS1, Constants.TPT1, Constants.PTTS1, Constants.PTTT1)) {
 			createTransitLocation(name);
 		}
 	}
@@ -99,11 +101,11 @@ public class SimpleInitialDataCreator {
 	}
 
 	private void createTransitLocations() {
-		createTransitLocation("IN");
-		createTransitLocation("OUT");
+		createTransitLocation(Constants.IN);
+		createTransitLocation(Constants.OUT);
 
 		for (int gate = 1; gate <= 10; gate++) {
-			createTransitLocation(String.format("GATE%02d", gate));
+			createTransitLocation(String.format(Constants.GATE_NAME, gate));
 		}
 	}
 

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.dto.SimItemResponse;
 import ro.demo.usersbackend.dto.SimStationResponse;
 import ro.demo.usersbackend.dto.SimToteResponse;
@@ -39,8 +40,8 @@ public class SimPickingService {
 	// ce e acum in statie, sus si jos, si orderul pe care lucreaza statia
 	@Transactional(readOnly = true)
 	public SimStationResponse findStation() {
-		LoadUnit source = findToteAt("PTTS1");
-		LoadUnit target = findToteAt("PTTT1");
+		LoadUnit source = findToteAt(Constants.PTTS1);
+		LoadUnit target = findToteAt(Constants.PTTT1);
 
 		String orderId = null;
 		if (source != null && target != null) {
@@ -88,12 +89,12 @@ public class SimPickingService {
 	// (drumul il decide DP2)
 	// tinta primeste release (spre OUT) doar cand orderul e complet
 	public String confirm(String sourceBarcode, String targetBarcode) {
-		LoadUnit source = findToteAt(sourceBarcode, "PTTS1");
-		LoadUnit target = findToteAt(targetBarcode, "PTTT1");
+		LoadUnit source = findToteAt(sourceBarcode, Constants.PTTS1);
+		LoadUnit target = findToteAt(targetBarcode, Constants.PTTT1);
 
 		RetrievalOrder order = chooseOrder(source, target);
 		if (order == null) {
-			release("PTTS1");
+			release(Constants.PTTS1);
 			return "Tote " + sourceBarcode + " has nothing to pick here, it goes on";
 		}
 
@@ -109,15 +110,15 @@ public class SimPickingService {
 		}
 
 		if (moved == 0) {
-			release("PTTS1");
+			release(Constants.PTTS1);
 			return "Tote " + sourceBarcode + " has nothing for order " + order.getOrderId() + ", it goes on";
 		}
 
 		updateStatus(order, target);
-		release("PTTS1");
+		release(Constants.PTTS1);
 		if (order.getStatus() == RetrievalOrderStatus.PICKED) {
-			release("PTTT1");
-			return "Order " + order.getOrderId() + " is complete, tote " + targetBarcode + " goes to OUT";
+			release(Constants.PTTT1);
+			return "Order " + order.getOrderId() + " is complete, tote " + targetBarcode + " goes to " + Constants.OUT;
 		}
 		return "Moved to " + targetBarcode + ", the order " + order.getOrderId() + " needs more totes";
 	}

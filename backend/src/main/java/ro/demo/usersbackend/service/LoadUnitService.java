@@ -14,6 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.dto.LoadUnitResponse;
 import ro.demo.usersbackend.dto.ScannedPackage;
 import ro.demo.usersbackend.dto.StockItemResponse;
@@ -149,7 +150,7 @@ public class LoadUnitService {
 				throw new ResponseStatusException(HttpStatus.CONFLICT,
 						"Carton " + barcode + " is already used. Take an empty carton");
 			}
-			carton.setLocation(location("OUT"));
+			carton.setLocation(location(Constants.OUT));
 			return carton;
 		}
 
@@ -157,16 +158,15 @@ public class LoadUnitService {
 		carton.setBarcode(barcode);
 		carton.setType(LoadUnitType.CARTON);
 		carton.setStockItems(new ArrayList<>());
-		carton.setLocation(location("OUT"));
+		carton.setLocation(location(Constants.OUT));
 		return loadUnitRepository.save(carton);
 	}
 
 	public LoadUnit createEmptyTote(String barcode) {
 		LoadUnit loadUnit = new LoadUnit();
 
-		Location loc = locationRepository.findByName("IP1")
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot find location IP1"));
-		;
+		Location loc = locationRepository.findByName(Constants.IP1).orElseThrow(
+				() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot find location " + Constants.IP1));
 
 		loadUnit.setLocation(loc);
 		loadUnit.setBarcode(barcode);
@@ -179,8 +179,8 @@ public class LoadUnitService {
 
 	public LoadUnit createLoadUnit(List<ScannedPackage> scannedPackages) {
 
-		Location in = locationRepository.findByName("IN")
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot find a IN location"));
+		Location in = locationRepository.findByName(Constants.IN).orElseThrow(
+				() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot find location " + Constants.IN));
 
 		// nr de package uri per tipul de package
 		// se aduna daca e acelasi tip de package scanat iar
@@ -211,7 +211,7 @@ public class LoadUnitService {
 	public LoadUnitResponse findByBarcode(String barcode, String user) {
 		LoadUnit loadUnit = findLoadUnit(barcode);
 		checkShippable(loadUnit);
-		checkLocation(loadUnit, "OUT");
+		checkLocation(loadUnit, Constants.OUT);
 		RetrievalOrder order = orderOf(loadUnit);
 
 		if (order.getStatus() == RetrievalOrderStatus.FINISHED) {
@@ -246,7 +246,7 @@ public class LoadUnitService {
 		if (tote.getType() != LoadUnitType.TOTE) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only a tote needs a carton");
 		}
-		checkLocation(tote, "OUT");
+		checkLocation(tote, Constants.OUT);
 		RetrievalOrder order = orderOf(tote);
 		checkOwner(order, user, toteBarcode);
 
@@ -258,7 +258,7 @@ public class LoadUnitService {
 	public boolean finishLoadUnit(String barcode, String user, String cartonBarcode) {
 		LoadUnit loadUnit = findLoadUnit(barcode);
 		checkShippable(loadUnit);
-		checkLocation(loadUnit, "OUT");
+		checkLocation(loadUnit, Constants.OUT);
 		RetrievalOrder order = orderOf(loadUnit);
 
 		checkOwner(order, user, barcode);
@@ -301,7 +301,7 @@ public class LoadUnitService {
 				if (order.isAutomatic()) {
 					return true; // tote de pe banda, deci controllerul il elibereaza din OUT dupa commit
 				}
-				transportOrderService.createTransportOrder(loadUnit, location("EMPTY_TOTES")); // flux manual
+				transportOrderService.createTransportOrder(loadUnit, location(Constants.EMPTY_TOTES)); // flux manual
 			}
 			return false;
 		} else {
@@ -319,10 +319,10 @@ public class LoadUnitService {
 	}
 
 	private String generateLoadUnitBarcode() {
-		Number result = (Number) entityManager.createNativeQuery("SELECT LOADUNIT_SEQUENCE.NEXTVAL FROM DUAL")
-				.getSingleResult();
+		Number result = (Number) entityManager
+				.createNativeQuery("SELECT " + Constants.LOAD_UNIT_SEQUENCE + ".NEXTVAL FROM DUAL").getSingleResult();
 
-		return String.format("%05d", result.longValue());
+		return String.format(Constants.LOAD_UNIT_BARCODE, result.longValue());
 	}
 
 	private List<StockItemResponse> createItems(List<StockItem> items) {

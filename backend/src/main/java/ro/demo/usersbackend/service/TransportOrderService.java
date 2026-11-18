@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.dto.TransportOrderResponse;
 import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.Location;
@@ -24,8 +25,6 @@ import ro.demo.usersbackend.server.mfs.StationControl;
 @Transactional
 public class TransportOrderService {
 
-	private static final String DECANTING = "DECANTING";
-	private static final String CONVEYOR = "CONVEYOR";
 	private final TransportOrderRepository transportOrderRepository;
 	private final LocationRepository locationRepository;
 
@@ -37,21 +36,18 @@ public class TransportOrderService {
 	}
 
 	private Location decanting() {
-		return locationRepository.findByName(DECANTING)
+		return locationRepository.findByName(Constants.DECANTING)
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-						"Cannot find location with the name " + DECANTING));
+						"Cannot find location with the name " + Constants.DECANTING));
 	}
-
-	private static final List<TransportOrderStatus> OPEN = List.of(TransportOrderStatus.ACTIVE,
-			TransportOrderStatus.NEW);
 
 	private static boolean isTote(TransportOrder order) {
 		String source = order.getSource().getName();
-		return DECANTING.equals(source) || "TPT1".equals(source);
+		return Constants.DECANTING.equals(source) || Constants.TPT1.equals(source);
 	}
 
 	private static boolean isAutomatic(TransportOrder order) {
-		return CONVEYOR.equals(order.getTarget().getName());
+		return Constants.CONVEYOR.equals(order.getTarget().getName());
 	}
 
 	private TransportOrder find(Long id) {
@@ -73,15 +69,16 @@ public class TransportOrderService {
 
 	private Optional<TransportOrderResponse> nextFor(String user, boolean tote) {
 		// 1. are deja un transport preluat? il continua
-		Optional<TransportOrder> mine = transportOrderRepository.findByAssignedToAndStatusInOrderByIdAsc(user, OPEN)
-				.stream().filter(o -> !isAutomatic(o)).filter(o -> isTote(o) == tote).sorted(activeFirst()).findFirst();
+		Optional<TransportOrder> mine = transportOrderRepository
+				.findByAssignedToAndStatusInOrderByIdAsc(user, Constants.OPEN_TRANSPORT_STATUSES).stream()
+				.filter(o -> !isAutomatic(o)).filter(o -> isTote(o) == tote).sorted(activeFirst()).findFirst();
 		if (mine.isPresent()) {
 			return mine.map(this::toResponse);
 		}
 
 		// 2. altfel il preia pe cel mai vechi liber
-		return transportOrderRepository.findByAssignedToIsNullAndStatusInOrderByIdAsc(OPEN).stream()
-				.filter(o -> !isAutomatic(o)).filter(o -> isTote(o) == tote).sorted(activeFirst()).findFirst()
+		return transportOrderRepository.findByAssignedToIsNullAndStatusInOrderByIdAsc(Constants.OPEN_TRANSPORT_STATUSES)
+				.stream().filter(o -> !isAutomatic(o)).filter(o -> isTote(o) == tote).sorted(activeFirst()).findFirst()
 				.map(order -> {
 					order.setAssignedTo(user);
 					return toResponse(order);
@@ -160,7 +157,7 @@ public class TransportOrderService {
 			}
 			moveLoadUnit(order.getLoadUnit(), order.getTarget());
 			order.setStatus(TransportOrderStatus.FINISHED);
-			if ("TPT1".equals(order.getSource().getName())) {
+			if (Constants.TPT1.equals(order.getSource().getName())) {
 				releaseTPT1();
 			}
 		}
@@ -169,10 +166,10 @@ public class TransportOrderService {
 
 	private void releaseTPT1() {
 		try {
-			StationControl.release("TPT1");
+			StationControl.release(Constants.TPT1);
 		} catch (Exception e) {
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-					"cannot release TPT1: " + e.getMessage());
+					"cannot release " + Constants.TPT1 + ": " + e.getMessage());
 		}
 	}
 

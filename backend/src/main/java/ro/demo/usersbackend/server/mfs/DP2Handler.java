@@ -1,10 +1,11 @@
 package ro.demo.usersbackend.server.mfs;
 
+import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.server.session.ServerSessionFactory;
 
 public class DP2Handler extends DecisionPointHandler {
 	public DP2Handler() {
-		super("DP2");
+		super(Constants.DP2);
 	}
 
 	// 0 = DP2 -> TPT1 (C5) ; 1 = DP2 -> IP1 (C4), bucla

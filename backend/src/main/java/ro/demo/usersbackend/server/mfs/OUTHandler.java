@@ -1,12 +1,13 @@
 package ro.demo.usersbackend.server.mfs;
 
+import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.packagemessaging.MfsMessages;
 import ro.demo.usersbackend.packagemessaging.MfsMessages.Arrived;
 import ro.demo.usersbackend.server.session.ServerSessionFactory;
 
 public class OUTHandler extends PointHandler {
 	public OUTHandler() {
-		super("OUT");
+		super(Constants.OUT);
 	}
 
 	@Override
@@ -19,10 +20,10 @@ public class OUTHandler extends PointHandler {
 				Long.class).setParameter("barcode", barcode).getSingleResult());
 
 		if (reserved == 0) {
-			log.warn("OUT: tote {} has nothing to ship, released", barcode);
-			StationControl.release("OUT");
+			log.warn("{}: tote {} has nothing to ship, released", Constants.OUT, barcode);
+			StationControl.release(Constants.OUT);
 		} else {
-			log.info("OUT: tote {} waits for shipping", barcode);
+			log.info("{}: tote {} waits for shipping", Constants.OUT, barcode);
 		}
 	}
 }

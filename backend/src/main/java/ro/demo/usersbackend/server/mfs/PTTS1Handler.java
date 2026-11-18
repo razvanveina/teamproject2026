@@ -1,8 +1,9 @@
 package ro.demo.usersbackend.server.mfs;
 
-public class PTTS1Handler extends PointHandler{
+import ro.demo.usersbackend.common.Constants;
+
+public class PTTS1Handler extends PointHandler {
 	public PTTS1Handler() {
-		super("PTTS1");
+		super(Constants.PTTS1);
 	}
-	
 }

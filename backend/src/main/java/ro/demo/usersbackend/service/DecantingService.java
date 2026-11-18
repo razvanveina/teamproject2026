@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import jakarta.persistence.EntityManager;
+import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.dto.DecantingItem;
 import ro.demo.usersbackend.dto.DecantingResponse;
 import ro.demo.usersbackend.dto.DecantingTransferRequest;
@@ -25,7 +26,6 @@ import ro.demo.usersbackend.repository.StockItemRepository;
 
 @Service
 public class DecantingService {
-	private static final String DECANTING_LOCATION = "DECANTING";
 
 	private final LoadUnitRepository loadUnitRepository;
 	private final StockItemRepository stockItemRepository;
@@ -109,9 +109,9 @@ public class DecantingService {
 	}
 
 	private LoadUnit createTote() {
-		Location decanting = locationRepository.findByName(DECANTING_LOCATION)
+		Location decanting = locationRepository.findByName(Constants.DECANTING)
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-						"Location " + DECANTING_LOCATION + " is missing."));
+						"Location " + Constants.DECANTING + " is missing."));
 
 		LoadUnit tote = new LoadUnit();
 		tote.setBarcode(generateToteBarcode());
@@ -121,9 +121,9 @@ public class DecantingService {
 	}
 
 	private String generateToteBarcode() {
-		Number result = (Number) entityManager.createNativeQuery("SELECT TOTE_SEQUENCE.NEXTVAL FROM DUAL")
-				.getSingleResult();
-		return String.format("%06d", result.longValue());
+		Number result = (Number) entityManager
+				.createNativeQuery("SELECT " + Constants.TOTE_SEQUENCE + ".NEXTVAL FROM DUAL").getSingleResult();
+		return String.format(Constants.TOTE_BARCODE, result.longValue());
 	}
 
 	private LoadUnit findLoadUnit(String barcode) {

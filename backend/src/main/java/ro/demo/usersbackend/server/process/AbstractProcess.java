@@ -1,5 +1,7 @@
 package ro.demo.usersbackend.server.process;
 
+import ro.demo.usersbackend.common.Constants;
+
 public abstract class AbstractProcess {
 	public volatile boolean stop;
 	public volatile boolean paused;
@@ -16,7 +18,7 @@ public abstract class AbstractProcess {
 			}
 
 			try {
-				Thread.sleep(10000);
+				Thread.sleep(Constants.PROCESS_INTERVAL);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 			}

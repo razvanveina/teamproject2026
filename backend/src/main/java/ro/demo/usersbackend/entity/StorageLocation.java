@@ -2,6 +2,7 @@ package ro.demo.usersbackend.entity;
 
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
+import ro.demo.usersbackend.common.Constants;
 
 @Entity
 @DiscriminatorValue("STORAGE")
@@ -23,7 +24,7 @@ public class StorageLocation extends Location {
 		this.y = y;
 		this.z = z;
 		this.aisle = aisle;
-		setName(String.format("HBW%02d%03d%02d%02d", aisle, x, y, z));
+		setName(String.format(Constants.HBW_NAME, aisle, x, y, z));
 	}
 
 	public StorageLocation(int x, int y) {
@@ -31,7 +32,7 @@ public class StorageLocation extends Location {
 		this.y = y;
 		this.z = 0;
 		this.aisle = 0;
-		setName(String.format("PICK%03d%02d", x, y));
+		setName(String.format(Constants.PICK_NAME, x, y));
 	}
 
 	public int getX() {

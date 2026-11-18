@@ -9,6 +9,7 @@ import org.apache.logging.log4j.Logger;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 
+import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.entity.Article;
 import ro.demo.usersbackend.entity.ArticlePackagingUnitType;
 import ro.demo.usersbackend.entity.Reservation;
@@ -201,6 +202,7 @@ public class ReservationService extends AbstractProcess {
 		return item.getArticlePackagingUnitType().getPackagingUnitType().getQuantity();
 	}
 
+	// stocul liber al articolului, cu cel din locatiile de picking primul
 	private static List<StockItem> findAvailableStock(Session session, Article article) {
 		return session.createQuery("""
 				select s from StockItem s
@@ -208,7 +210,8 @@ public class ReservationService extends AbstractProcess {
 				join u.location l
 				join s.articlePackagingUnitType p
 				where p.article = :article and s.reservation is null and type(l) = StorageLocation
-				order by case when l.name like 'PICK%' then 0 else 1 end, s.id
-				""", StockItem.class).setParameter("article", article).getResultList();
+				order by case when l.name like :pick then 0 else 1 end, s.id
+				""", StockItem.class).setParameter("article", article).setParameter("pick", Constants.PICK_PREFIX + "%")
+				.getResultList();
 	}
 }

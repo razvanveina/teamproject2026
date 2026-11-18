@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.entity.Destination;
 import ro.demo.usersbackend.entity.StorageLocation;
 import ro.demo.usersbackend.entity.TransitLocation;
@@ -55,14 +56,14 @@ public class InitialDataCreator implements CommandLineRunner {
 	}
 
 	private void createTransitLocations() {
-		createTransitLocation("IN");
-		createTransitLocation("OUT");
-		createTransitLocation("DECANTING");
-		createTransitLocation("PICKING");
-		createTransitLocation("CONVEYOR");
+		createTransitLocation(Constants.IN);
+		createTransitLocation(Constants.OUT);
+		createTransitLocation(Constants.DECANTING);
+		createTransitLocation(Constants.PICKING);
+		createTransitLocation(Constants.CONVEYOR);
 
 		for (int gate = 1; gate <= 10; gate++) {
-			createTransitLocation(String.format("GATE%02d", gate));
+			createTransitLocation(String.format(Constants.GATE_NAME, gate));
 		}
 	}
 
@@ -81,7 +82,8 @@ public class InitialDataCreator implements CommandLineRunner {
 	}
 
 	private void createSimulatorData() {
-		for (String name : List.of("IP1", "IP2", "EMPTY", "DP1", "DP2", "DP3", "TPS1", "TPT1", "PTTS1", "PTTT1")) {
+		for (String name : List.of(Constants.IP1, Constants.IP2, Constants.EMPTY, Constants.DP1, Constants.DP2,
+				Constants.DP3, Constants.TPS1, Constants.TPT1, Constants.PTTS1, Constants.PTTT1)) {
 			createTransitLocation(name);
 		}
 	}

@@ -12,6 +12,7 @@ import jakarta.jms.JMSContext;
 import jakarta.jms.Message;
 import jakarta.jms.Queue;
 import jakarta.jms.TextMessage;
+import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.packagemessaging.Broker;
 import ro.demo.usersbackend.packagemessaging.MfsMessages;
 
@@ -35,7 +36,7 @@ public class SimulatorService {
 	public List<String> getEntities() {
 		List<String> entities = new ArrayList<>();
 
-		context.createProducer().send(outQueue, "getEntities");
+		context.createProducer().send(outQueue, Constants.GET_ENTITIES);
 
 		try {
 			Message message = consumer.receive();
@@ -51,6 +52,6 @@ public class SimulatorService {
 	}
 
 	public void createLU(String barcode, String locationName) {
-		context.createProducer().send(outQueue, "createLU " + barcode + " " + locationName);
+		context.createProducer().send(outQueue, Constants.CREATE_LU + " " + barcode + " " + locationName);
 	}
 }

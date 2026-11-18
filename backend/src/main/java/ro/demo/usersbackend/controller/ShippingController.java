@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.dto.LoadUnitResponse;
 import ro.demo.usersbackend.server.mfs.StationControl;
 import ro.demo.usersbackend.service.LoadUnitService;
@@ -66,12 +67,12 @@ public class ShippingController {
 
 		if (releaseOut) {
 			try {
-				StationControl.release("OUT");
-				log.info("Shipping: tote {} released from OUT", barcode);
+				StationControl.release(Constants.OUT);
+				log.info("Shipping: tote {} released from {}", barcode, Constants.OUT);
 			} catch (Exception e) {
-				log.error("Shipping: tote {} not released from OUT {}", barcode, e.toString());
-				throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-						"Order shipped, but tote " + barcode + " could not be released from OUT: " + e.getMessage());
+				log.error("Shipping: tote {} not released from {} {}", barcode, Constants.OUT, e.toString());
+				throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Order shipped, but tote " + barcode
+						+ " could not be released from " + Constants.OUT + ": " + e.getMessage());
 			}
 		}
 	}

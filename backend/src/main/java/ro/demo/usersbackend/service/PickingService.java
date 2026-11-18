@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.dto.PickingLineResponse;
 import ro.demo.usersbackend.dto.PickingOrderResponse;
 import ro.demo.usersbackend.dto.PickingStepResponse;
@@ -76,8 +77,10 @@ public class PickingService {
 		this.stockAdjustmentRepository = stockAdjustmentRepository;
 	}
 
-	// intai orderul deja luat de user; altfel il luam pe primul liber si il blocam pentru el (pickedBy)
-	// ordinea: STARTED apoi ACTIVE, cel mai vechi primul; doar manuale si cu toata marfa in picking
+	// intai orderul deja luat de user; altfel il luam pe primul liber si il blocam
+	// pentru el (pickedBy)
+	// ordinea: STARTED apoi ACTIVE, cel mai vechi primul; doar manuale si cu toata
+	// marfa in picking
 	public PickingOrderResponse findNextOrder(String user) {
 		List<RetrievalOrder> orders = findReady(user);
 		if (orders.isEmpty()) {
@@ -106,7 +109,8 @@ public class PickingService {
 
 	// orderele gata de picking, fara cele luate de alt user
 	private List<RetrievalOrder> findReady(String user) {
-		List<RetrievalOrder> orders = new ArrayList<>(retrievalOrderRepository.findByStatusAndAutomaticFalseOrderByIdAsc(RetrievalOrderStatus.STARTED));
+		List<RetrievalOrder> orders = new ArrayList<>(
+				retrievalOrderRepository.findByStatusAndAutomaticFalseOrderByIdAsc(RetrievalOrderStatus.STARTED));
 		orders.addAll(retrievalOrderRepository.findByStatusAndAutomaticFalseOrderByIdAsc(RetrievalOrderStatus.ACTIVE));
 
 		List<RetrievalOrder> ready = new ArrayList<>();
@@ -124,14 +128,16 @@ public class PickingService {
 	public void takeOrder(String orderId, String user) {
 		RetrievalOrder order = findOrder(orderId);
 		if (order.getPickedBy() != null && !order.getPickedBy().equals(user)) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Order " + orderId + " is already taken by " + order.getPickedBy());
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+					"Order " + orderId + " is already taken by " + order.getPickedBy());
 		}
 		releaseOrders(user);
 		order.setPickedBy(user);
 		log.info("Picking: order {} is now taken by {}", orderId, user);
 	}
 
-	// elibereaza orderele userului la care n-a scanat inca cutia (le-a vazut doar pe ecran)
+	// elibereaza orderele userului la care n-a scanat inca cutia (le-a vazut doar
+	// pe ecran)
 	public void releaseOrders(String user) {
 		for (RetrievalOrder order : retrievalOrderRepository.findByPickedBy(user)) {
 			if (!hasBox(order) && order.getStatus() != RetrievalOrderStatus.PICKED) {
@@ -166,24 +172,29 @@ public class PickingService {
 		}
 		RetrievalOrder order = findOrder(orderId);
 		if (order.getPickedBy() != null && !order.getPickedBy().equals(user)) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Order " + orderId + " is already taken by " + order.getPickedBy());
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+					"Order " + orderId + " is already taken by " + order.getPickedBy());
 		}
 		order.setPickedBy(user);
 
 		LoadUnit box = new LoadUnit();
 		box.setBarcode(barcode);
 		box.setType(LoadUnitType.CARTON);
-		Location picking = locationRepository.findByName("PICKING")
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Location PICKING is missing"));
-		box.setLocation(picking);loadUnitRepository.save(box);
+		Location picking = locationRepository.findByName(Constants.PICKING)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+						"Location " + Constants.PICKING + " is missing"));
+		box.setLocation(picking);
+		loadUnitRepository.save(box);
 		order.setStatus(RetrievalOrderStatus.STARTED);
 		log.info("Picking: box {} created for order {}", barcode, orderId);
 		return "Box " + barcode + " ready";
 	}
 
-	// muncitorul a apasat confirm: stock itemul din pasul de pe ecran intra in cutie
+	// muncitorul a apasat confirm: stock itemul din pasul de pe ecran intra in
+	// cutie
 	// il luam dupa id, pentru ca acelasi barcode poate fi in mai multe locatii
-	// linia devine PICKED cand e toata in cutie, altfel STARTED (are doar o parte in cutie)
+	// linia devine PICKED cand e toata in cutie, altfel STARTED (are doar o parte
+	// in cutie)
 	public void moveItemToBox(Long stockItemId, String boxBarcode) {
 		LoadUnit box = findBox(boxBarcode);
 		StockItem item = findStockItem(stockItemId);
@@ -196,25 +207,31 @@ public class PickingService {
 		} else {
 			line.setStatus(RetrievalOrderLineStatus.STARTED);
 		}
-		log.info("Picking: stock item {} ({}) moved into box {}", stockItemId, line.getArticle().getDescription(), boxBarcode);
+		log.info("Picking: stock item {} ({}) moved into box {}", stockItemId, line.getArticle().getDescription(),
+				boxBarcode);
 
 		sendToteIfEmpty(tote);
 	}
 
-	// muncitorul a apasat Error: a gasit mai putin decat scrie pe ecran (marfa stricata sau lipsa)
-	// intai salvam diferenta ca stock adjustment, la fel ca la inventar, apoi stocul scade
+	// muncitorul a apasat Error: a gasit mai putin decat scrie pe ecran (marfa
+	// stricata sau lipsa)
+	// intai salvam diferenta ca stock adjustment, la fel ca la inventar, apoi
+	// stocul scade
 	// ce a gasit intra in cutie, restul dispare din baza de date
-	// linia ramane deschisa, iar orderul trece pe NEW ca rezervarea sa caute doar partea lipsa
+	// linia ramane deschisa, iar orderul trece pe NEW ca rezervarea sa caute doar
+	// partea lipsa
 	public void reportError(Long stockItemId, String boxBarcode, String reason, int found) {
 		StockItem item = findStockItem(stockItemId);
 		if (found < 0 || found >= item.getQuantity()) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Found quantity must be less than " + item.getQuantity());
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+					"Found quantity must be less than " + item.getQuantity());
 		}
 		LoadUnit tote = item.getLoadUnit();
 		RetrievalOrder order = item.getReservation().getRetrievalOrderLine().getOrder();
 		saveStockAdjustment(item, found, reason);
 		log.warn("Picking: error {} for stock item {} ({}) in {}: found {} of {}", reason, stockItemId,
-				item.getArticlePackagingUnitType().getArticle().getDescription(), tote.getBarcode(), found, item.getQuantity());
+				item.getArticlePackagingUnitType().getArticle().getDescription(), tote.getBarcode(), found,
+				item.getQuantity());
 
 		if (found > 0) {
 			item.setQuantity(found);
@@ -249,7 +266,8 @@ public class PickingService {
 		inventoryOrderLine.setLoadUnit(item.getLoadUnit());
 		inventoryOrderLine.setLoadUnitBarcode(item.getLoadUnit().getBarcode());
 		inventoryOrderLine.setLoadUnitType(item.getLoadUnit().getType().toString());
-		inventoryOrderLine.setLocationName(item.getLoadUnit().getLocation() == null ? null : item.getLoadUnit().getLocation().getName());
+		inventoryOrderLine.setLocationName(
+				item.getLoadUnit().getLocation() == null ? null : item.getLoadUnit().getLocation().getName());
 		inventoryOrderLine.setStatus(InventoryOrderLineStatus.FINISHED);
 		inventoryOrderLine.setCompletedAt(now);
 		inventoryOrderLine = inventoryOrderLineRepository.save(inventoryOrderLine);
@@ -269,16 +287,19 @@ public class PickingService {
 		stockAdjustmentRepository.save(adjustment);
 	}
 
-	// daca tote-ul din care am luat a ramas gol, il trimitem la EMPTY_TOTES ca sa se elibereze locatia de picking
-	// daca nu exista locatia EMPTY_TOTES, tote-ul ramane pe locatie si pickingul merge mai departe
+	// daca tote-ul din care am luat a ramas gol, il trimitem la EMPTY_TOTES ca sa
+	// se elibereze locatia de picking
+	// daca nu exista locatia EMPTY_TOTES, tote-ul ramane pe locatie si pickingul
+	// merge mai departe
 	private void sendToteIfEmpty(LoadUnit tote) {
 		if (tote.getType() == LoadUnitType.TOTE && stockItemRepository.findByLoadUnitOrderByIdAsc(tote).isEmpty()) {
-			Location emptyTotes = locationRepository.findByName("EMPTY_TOTES").orElse(null);
+			Location emptyTotes = locationRepository.findByName(Constants.EMPTY_TOTES).orElse(null);
 			if (emptyTotes == null) {
-				log.warn("Picking: tote {} is empty, but there is no EMPTY_TOTES location, the tote stays", tote.getBarcode());
+				log.warn("Picking: tote {} is empty, but there is no {} location, the tote stays", tote.getBarcode(),
+						Constants.EMPTY_TOTES);
 			} else {
 				transportOrderService.createTransportOrder(tote, emptyTotes);
-				log.info("Picking: tote {} is empty, transport order to EMPTY_TOTES", tote.getBarcode());
+				log.info("Picking: tote {} is empty, transport order to {}", tote.getBarcode(), Constants.EMPTY_TOTES);
 			}
 		}
 	}
@@ -296,29 +317,32 @@ public class PickingService {
 		return pieces >= line.getQuantity();
 	}
 
-	// muncitorul a scanat iar cutia: daca toate liniile sunt gata, cutia merge la OUT si comanda devine PICKED
+	// muncitorul a scanat iar cutia: daca toate liniile sunt gata, cutia merge la
+	// OUT si comanda devine PICKED
 	public String closeBox(String orderId, String boxBarcode) {
-		long open = retrievalOrderLineRepository.countByOrderOrderIdAndStatusNot(orderId, RetrievalOrderLineStatus.PICKED);
+		long open = retrievalOrderLineRepository.countByOrderOrderIdAndStatusNot(orderId,
+				RetrievalOrderLineStatus.PICKED);
 		if (open > 0) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, open + " lines are not finished yet");
 		}
 
-		Location out = locationRepository.findByName("OUT")
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot find the OUT location"));
+		Location out = locationRepository.findByName(Constants.OUT).orElseThrow(
+				() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot find location " + Constants.OUT));
 		transportOrderService.createTransportOrder(findBox(boxBarcode), out);
 
 		findOrder(orderId).setStatus(RetrievalOrderStatus.PICKED);
-		log.info("Picking: box {} closed, transport order to OUT", boxBarcode);
-		return "Box " + boxBarcode + " goes to OUT";
+		log.info("Picking: box {} closed, transport order to {}", boxBarcode, Constants.OUT);
+		return "Box " + boxBarcode + " goes to " + Constants.OUT;
 	}
 
-	// toate liniile au destule bucati rezervate in locatii PICK (getTotalQuantity = baxuri x bucati pe bax)
+	// toate liniile au destule bucati rezervate in locatii PICK (getTotalQuantity =
+	// baxuri x bucati pe bax)
 	private boolean isInPicking(RetrievalOrder order) {
 		for (RetrievalOrderLine line : order.getLines()) {
 			int pieces = 0;
 			for (Reservation reservation : line.getReservations()) {
 				StockItem item = reservation.getStockItem();
-				if (item.getLoadUnit().getLocation().getName().startsWith("PICK")) {
+				if (item.getLoadUnit().getLocation().getName().startsWith(Constants.PICK_PREFIX)) {
 					pieces = pieces + item.getTotalQuantity();
 				}
 			}
@@ -329,7 +353,8 @@ public class PickingService {
 		return true;
 	}
 
-	// ce primeste frontendul: comanda, cutia (daca exista deja) si liniile cu bucatile deja mutate in cutie
+	// ce primeste frontendul: comanda, cutia (daca exista deja) si liniile cu
+	// bucatile deja mutate in cutie
 	// si cu pasii ramasi, cate un pas de stock item rezervat
 	private PickingOrderResponse toResponse(RetrievalOrder order) {
 		String box = null;
@@ -352,12 +377,13 @@ public class PickingService {
 			lines.add(new PickingLineResponse(line.getArticle().getBarcode(), line.getArticle().getDescription(),
 					line.getQuantity(), moved, line.getStatus().toString(), steps));
 		}
-		return new PickingOrderResponse(order.getOrderId(), order.getStatus().toString(), order.getDestination().getName(), box, lines);
+		return new PickingOrderResponse(order.getOrderId(), order.getStatus().toString(),
+				order.getDestination().getName(), box, lines);
 	}
 
 	private StockItem findStockItem(Long stockItemId) {
-		return stockItemRepository.findById(stockItemId)
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot find stock item " + stockItemId));
+		return stockItemRepository.findById(stockItemId).orElseThrow(
+				() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot find stock item " + stockItemId));
 	}
 
 	private RetrievalOrder findOrder(String orderId) {
