@@ -4,30 +4,26 @@
         "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
 <hibernate-mapping>
 
-    <!-- sequences: created only if missing and never dropped, so they keep their value on update -->
+    <!-- sequences: from 1 again when LOAD_UNIT is empty (after create), otherwise keep their value -->
     <database-object>
         <create><![CDATA[
+DECLARE
+    TYPE t_names IS TABLE OF VARCHAR2(30);
+    v_names t_names := t_names('LOADUNIT_SEQUENCE', 'TOTE_SEQUENCE');
+    v_rows NUMBER;
+    v_exists NUMBER;
 BEGIN
-    EXECUTE IMMEDIATE 'CREATE SEQUENCE LOADUNIT_SEQUENCE START WITH 1 INCREMENT BY 1';
-EXCEPTION
-    WHEN OTHERS THEN
-        IF SQLCODE != -955 THEN
-            RAISE;
+    SELECT COUNT(*) INTO v_rows FROM LOAD_UNIT;
+    FOR i IN 1 .. v_names.COUNT LOOP
+        SELECT COUNT(*) INTO v_exists FROM USER_SEQUENCES WHERE SEQUENCE_NAME = v_names(i);
+        IF v_rows = 0 AND v_exists = 1 THEN
+            EXECUTE IMMEDIATE 'DROP SEQUENCE ' || v_names(i);
+            v_exists := 0;
         END IF;
-END;
-        ]]></create>
-        <drop>BEGIN NULL; END;</drop>
-    </database-object>
-
-    <database-object>
-        <create><![CDATA[
-BEGIN
-    EXECUTE IMMEDIATE 'CREATE SEQUENCE TOTE_SEQUENCE START WITH 1 INCREMENT BY 1';
-EXCEPTION
-    WHEN OTHERS THEN
-        IF SQLCODE != -955 THEN
-            RAISE;
+        IF v_exists = 0 THEN
+            EXECUTE IMMEDIATE 'CREATE SEQUENCE ' || v_names(i) || ' START WITH 1 INCREMENT BY 1';
         END IF;
+    END LOOP;
 END;
         ]]></create>
         <drop>BEGIN NULL; END;</drop>
