@@ -10,7 +10,6 @@
     { "field": "AISLE", "label": "Aisle" },
     { "field": "X", "label": "X" },
     { "field": "Y", "label": "Y" },
-    { "field": "Z", "label": "Z" },
-    { "field": "LOAD_UNIT_ID", "label": "Load Unit", "lookup": { "entity": "LoadUnit" } }
+    { "field": "Z", "label": "Z" }
   ]
 }
