@@ -4,15 +4,37 @@
         "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
 <hibernate-mapping>
 
+    <!-- sequences: created only if missing and never dropped, so they keep their value on update -->
     <database-object>
-        <create>CREATE SEQUENCE LOADUNIT_SEQUENCE START WITH 1 INCREMENT BY 1</create>
-        <drop>DROP SEQUENCE LOADUNIT_SEQUENCE</drop>
+        <create><![CDATA[
+BEGIN
+    EXECUTE IMMEDIATE 'CREATE SEQUENCE LOADUNIT_SEQUENCE START WITH 1 INCREMENT BY 1';
+EXCEPTION
+    WHEN OTHERS THEN
+        IF SQLCODE != -955 THEN
+            RAISE;
+        END IF;
+END;
+        ]]></create>
+        <drop>BEGIN NULL; END;</drop>
     </database-object>
 
     <database-object>
-        <create>CREATE SEQUENCE TOTE_SEQUENCE START WITH 1 INCREMENT BY 1</create>
-        <drop>DROP SEQUENCE TOTE_SEQUENCE</drop>
+        <create><![CDATA[
+BEGIN
+    EXECUTE IMMEDIATE 'CREATE SEQUENCE TOTE_SEQUENCE START WITH 1 INCREMENT BY 1';
+EXCEPTION
+    WHEN OTHERS THEN
+        IF SQLCODE != -955 THEN
+            RAISE;
+        END IF;
+END;
+        ]]></create>
+        <drop>BEGIN NULL; END;</drop>
     </database-object>
+
+    <!-- trigger: dropped and created again on every start, it holds no data -->
+
 
     <database-object>
         <create><![CDATA[
