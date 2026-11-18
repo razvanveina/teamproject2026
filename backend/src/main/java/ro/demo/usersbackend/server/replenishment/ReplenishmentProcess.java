@@ -45,7 +45,7 @@ public class ReplenishmentProcess extends AbstractProcess {
 			// load unit-uri din HBW (culoar > 0) cu stoc rezervat si fara to deschis
 			List<Long> loadUnitIds = sessionFactory.fromTransaction(session -> session.createQuery("""
 					select distinct u.id from StorageLocation l
-					join l.loadUnit u
+					join l.loadUnits u
 					join u.stockItems s
 					where l.aisle > 0 and s.reservation is not null
 					and not exists (select t.id from TransportOrder t where t.loadUnit = u and t.status in :open)
@@ -107,7 +107,7 @@ public class ReplenishmentProcess extends AbstractProcess {
 	private static void store(Session session, LoadUnit loadUnit) {
 		StorageLocation target = session.createQuery("""
 				from StorageLocation l
-				where l.aisle > 0 and l.loadUnit is null
+				where l.aisle > 0 and l.loadUnits is empty
 				and l.id not in (select t.target.id from TransportOrder t where t.status in :open)
 				order by l.x asc
 				""", StorageLocation.class).setParameterList("open", OPEN).setMaxResults(1).uniqueResultOptional()
