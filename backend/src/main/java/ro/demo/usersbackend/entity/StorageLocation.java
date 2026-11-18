@@ -2,8 +2,6 @@ package ro.demo.usersbackend.entity;
 
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
 
 @Entity
 @DiscriminatorValue("STORAGE")
@@ -15,10 +13,6 @@ public class StorageLocation extends Location {
 	private int z;
 
 	private int aisle;
-
-	@OneToOne
-	@JoinColumn(name = "loadUnit_id", unique = true)
-	private LoadUnit loadUnit;
 
 	public StorageLocation() {
 		super();
@@ -70,13 +64,5 @@ public class StorageLocation extends Location {
 
 	public void setAisle(int aisle) {
 		this.aisle = aisle;
-	}
-
-	public LoadUnit getLoadUnit() {
-		return loadUnit;
-	}
-
-	public void setLoadUnit(LoadUnit loadUnit) {
-		this.loadUnit = loadUnit;
 	}
 }
