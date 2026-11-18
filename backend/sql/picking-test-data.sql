@@ -12,7 +12,6 @@ DELETE FROM retrieval_order;
 DELETE FROM receiving_order_line;
 DELETE FROM receiving_order;
 DELETE FROM transport_order;
-UPDATE location SET load_unit_id = NULL;
 DELETE FROM load_unit;
 DELETE FROM article_picking_location;
 DELETE FROM article_packaging_unit_type;
@@ -91,7 +90,6 @@ INSERT INTO load_unit (barcode, type, location_id) VALUES ('10000003', 'PALLET',
 INSERT INTO load_unit (barcode, type, location_id) VALUES ('T0001', 'TOTE', (SELECT id FROM location WHERE name = 'DECANTING'));
 INSERT INTO load_unit (barcode, type, location_id) VALUES ('T0002', 'TOTE', (SELECT id FROM location WHERE name = 'DECANTING'));
 --    only the storage places hold a pallet; picking places stay free, so totes can be transported there
-UPDATE location l SET load_unit_id = (SELECT id FROM load_unit u WHERE u.location_id = l.id) WHERE name LIKE 'HBW%';
 
 --    which picking place belongs to which article (used by the tote transport)
 INSERT INTO article_picking_location (article_id, location_id) VALUES ((SELECT id FROM article WHERE barcode = '1001'), (SELECT id FROM location WHERE name = 'PICK00101'));
