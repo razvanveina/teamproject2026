@@ -29,7 +29,8 @@ public class TelegramHandling {
 			Map.entry(Constants.DP1, new DP1Handler()), Map.entry(Constants.DP2, new DP2Handler()),
 			Map.entry(Constants.DP3, new DP3Handler()), Map.entry(Constants.PTTS1, new PTTS1Handler()),
 			Map.entry(Constants.PTTT1, new PTTT1Handler()), Map.entry(Constants.OUT, new OUTHandler()),
-			Map.entry(Constants.EMPTY, new EMPTYHandler()));
+			Map.entry(Constants.EMPTY, new EMPTYHandler()), Map.entry(Constants.IP3, new IP3Handler()),
+			Map.entry(Constants.TPS2, new TPS2Handler()));
 
 	// ia ca parametrii punctul si telegrama lui
 	// gaseste handleru punctului si ii paseaza telegrama
