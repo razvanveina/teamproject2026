@@ -155,7 +155,9 @@ public class SimWindow extends JPanel {
 		drawConveyor(g, "C01", 58, 440, 560, 300, 120, 300, 120, 560);
 		drawConveyor(g, "C10", 325, 605, 120, 560, 560, 560);
 		drawConveyor(g, "C02", 654, 524, 560, 560, 768, 560);
-		drawConveyor(g, "C03", 1216, 440, 768, 560, 1180, 560, 1180, 300, 768, 300);
+		drawConveyor(g, "C03", 960, 605, 768, 560, 1180, 560, 1180, 430);
+		drawConveyor(g, "C15", 960, 345, 1180, 430, 1180, 300, 768, 300);
+		drawConveyor(g, "C14", 1290, 392, 1440, 430, 1180, 430);
 		drawConveyor(g, "C04", 654, 345, 768, 300, 560, 300);
 		drawConveyor(g, "C05", 804, 220, 768, 300, 768, 130);
 		drawConveyor(g, "C07", 498, 630, 560, 560, 560, 690, 664, 690);
@@ -176,6 +178,8 @@ public class SimWindow extends JPanel {
 		point(g, "PTTS1", 664, 690);
 		point(g, "PTTT1", 664, 770);
 		point(g, "OUT", 1480, 770);
+		point(g, Constants.IP3, 1180, 430);
+		point(g, Constants.TPS2, 1440, 430);
 
 		drawZone(g, Constants.PICKING_ZONE_LABEL, 620, 640, 88, 172);
 		g.dispose();
@@ -301,7 +305,7 @@ public class SimWindow extends JPanel {
 				POINT - borderWidth));
 		g.setFont(NAME);
 		int nameWidth = g.getFontMetrics().stringWidth(name);
-		if (name.equals("EMPTY") || name.equals("DP3")) {
+		if (name.equals("EMPTY") || name.equals("DP3") || name.equals(Constants.IP3)) {
 			g.drawString(name, x - h - 4 - nameWidth, y + 4);
 		} else if (name.equals("IP1") || name.equals("DP2")) {
 			g.drawString(name, x - nameWidth / 2, y + h + 13);
