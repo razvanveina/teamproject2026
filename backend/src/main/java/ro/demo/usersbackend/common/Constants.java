@@ -70,6 +70,7 @@ public final class Constants {
 	public static final Color TOTE_COLOR = new Color(120, 165, 215);
 	public static final Color CARTON_COLOR = new Color(185, 140, 100);
 	public static final String PICKING_ZONE_LABEL = "Picking Zone";
+	public static final String DECANTING_ZONE_LABEL = "Decanting Zone";
 
 	// printing
 	public static final String PDF_OUTPUT_FOLDER = "prints";

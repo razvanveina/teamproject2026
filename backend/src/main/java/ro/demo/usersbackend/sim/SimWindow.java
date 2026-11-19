@@ -182,6 +182,7 @@ public class SimWindow extends JPanel {
 		point(g, Constants.TPS2, 1440, 430);
 
 		drawZone(g, Constants.PICKING_ZONE_LABEL, 620, 640, 88, 172);
+		drawZone(g, Constants.DECANTING_ZONE_LABEL, 1396, 380, 88, 92);
 		g.dispose();
 	}
 
