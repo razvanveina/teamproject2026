@@ -41,7 +41,8 @@ public class SimpleInitialDataCreator {
 
 	private void createSimulatorData() {
 		for (String name : List.of(Constants.IP1, Constants.IP2, Constants.EMPTY, Constants.DP1, Constants.DP2,
-				Constants.DP3, Constants.TPS1, Constants.TPT1, Constants.PTTS1, Constants.PTTT1)) {
+				Constants.DP3, Constants.TPS1, Constants.TPT1, Constants.PTTS1, Constants.PTTT1, Constants.TPS2,
+				Constants.IP3)) {
 			createTransitLocation(name);
 		}
 	}

@@ -29,8 +29,10 @@ public final class Constants {
 	public static final String EMPTY = "EMPTY";
 	public static final String PTTS1 = "PTTS1";
 	public static final String PTTT1 = "PTTT1";
+	public static final String TPS2 = "TPS2"; // intrarea pe banda de la decanting
+	public static final String IP3 = "IP3"; // pe C03, anunta ca tote-ul de la decanting a ajuns pe banda
 	public static final List<String> CONVEYOR_POINTS = List.of(TPS1, TPT1, IP1, IP2, DP1, DP2, DP3, EMPTY, PTTS1,
-			PTTT1);
+			PTTT1, TPS2, IP3);
 
 	// location names
 	public static final String PICK_PREFIX = "PICK";
