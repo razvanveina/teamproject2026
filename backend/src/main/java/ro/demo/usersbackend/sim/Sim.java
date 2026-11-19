@@ -39,7 +39,8 @@ public class Sim {
 	public static void main(String[] args) throws IOException {
 		Sim sim = new Sim();
 		sim.run();
-		SimWindow.open(sim.getEntities());
+		SimWindow window = new SimWindow(sim.getEntities());
+		window.open();
 
 		sim.initComms();
 		new Thread(sim::listen).start();

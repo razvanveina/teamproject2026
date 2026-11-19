@@ -45,17 +45,18 @@ public class SimWindow extends JPanel {
 
 	private static final double MAX_ZOOM = 8;
 
+	private TimeKeeper timeKeeper = TimeKeeper.getInstance();
 	private final Map<String, Entity> byName;
 	private double zoom = 1;
 	private double panX;
 	private double panY;
 	private Point last;
 
-	public static void open(List<Entity> entities) {
+	public void open() {
 		SwingUtilities.invokeLater(() -> {
 			JFrame frame = new JFrame("Simulator GUI");
 			frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-			frame.add(new SimWindow(entities));
+			frame.add(this);
 			frame.pack();
 			Rectangle screen = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
 			frame.setSize(Math.min(frame.getWidth(), screen.width), Math.min(frame.getHeight(), screen.height));
@@ -64,18 +65,18 @@ public class SimWindow extends JPanel {
 		});
 	}
 
-	private SimWindow(List<Entity> entities) {
+	SimWindow(List<Entity> entities) {
 		byName = entities.stream().collect(Collectors.toMap(Entity::getName, Function.identity()));
 		setPreferredSize(new Dimension((int) (DESIGN_W * K), (int) (DESIGN_H * K)));
 		setBackground(Color.WHITE);
 		new Timer(50, e -> repaint()).start();
 
 		setLayout(new FlowLayout(FlowLayout.LEFT, 16, 16));
-		JButton pause = new JButton(Entity.isPaused() ? "Resume" : "Pause");
+		JButton pause = new JButton(timeKeeper.isPaused() ? "Resume" : "Pause");
 		pause.setFocusPainted(false);
 		pause.addActionListener(e -> {
-			Entity.togglePause();
-			pause.setText(Entity.isPaused() ? "Resume" : "Pause");
+			timeKeeper.togglePause();
+			pause.setText(timeKeeper.isPaused() ? "Resume" : "Pause");
 		});
 		add(pause);
 

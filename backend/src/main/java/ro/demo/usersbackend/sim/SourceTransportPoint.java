@@ -5,7 +5,6 @@ import jakarta.jms.JMSContext;
 import jakarta.jms.JMSException;
 import jakarta.jms.Message;
 import jakarta.jms.TextMessage;
-import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.packagemessaging.MfsMessages;
 import ro.demo.usersbackend.packagemessaging.MfsMessages.AckGet;
 import ro.demo.usersbackend.packagemessaging.MfsMessages.Get;
@@ -15,6 +14,7 @@ public class SourceTransportPoint extends ServerPoint {
 	private long loadedAt;
 	private boolean acknowledged;
 	private JMSConsumer consumer;
+	private TimeKeeper timeKeeper = TimeKeeper.getInstance();
 
 	public SourceTransportPoint(String name) {
 		super(name);
@@ -32,7 +32,7 @@ public class SourceTransportPoint extends ServerPoint {
 	public synchronized void get(SimLoadUnit requestedLoadUnit, Long transportOrderId) {
 		this.loadUnit = requestedLoadUnit;
 		this.setTransportOrderId(transportOrderId);
-		loadedAt = currentSimulationTime();
+		loadedAt = timeKeeper.currentSimulationTime();
 		acknowledged = false;
 		System.out.println(requestedLoadUnit.barcode() + " (" + requestedLoadUnit.type() + ") loaded");
 	}
@@ -50,7 +50,7 @@ public class SourceTransportPoint extends ServerPoint {
 		}
 
 		synchronized (this) {
-			if (loadUnit != null && !acknowledged && currentSimulationTime() - loadedAt >= Constants.TPS1_ACK_DELAY) {
+			if (loadUnit != null && !acknowledged && timeKeeper.currentSimulationTime() - loadedAt >= 2000) {
 				acknowledged = true;
 				put(MfsMessages.toJson(new AckGet("ACK_GET", getTransportOrderId(), loadUnit.barcode())));
 				announceLU(loadUnit);
@@ -80,7 +80,7 @@ public class SourceTransportPoint extends ServerPoint {
 	@Override
 	public synchronized void restore(EntityState state) {
 		super.restore(state);
-		loadedAt = currentSimulationTime();
+		loadedAt = timeKeeper.currentSimulationTime();
 		acknowledged = state.ready();
 	}
 }

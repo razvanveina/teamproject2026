@@ -41,12 +41,12 @@ public class TransportOrderService {
 						"Cannot find location with the name " + Constants.DECANTING));
 	}
 
-	private static boolean isTote(TransportOrder order) {
+	private boolean isTote(TransportOrder order) {
 		String source = order.getSource().getName();
 		return Constants.DECANTING.equals(source) || Constants.TPT1.equals(source);
 	}
 
-	private static boolean isAutomatic(TransportOrder order) {
+	private boolean isAutomatic(TransportOrder order) {
 		return Constants.CONVEYOR.equals(order.getTarget().getName());
 	}
 
@@ -55,7 +55,7 @@ public class TransportOrderService {
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Transport order not found"));
 	}
 
-	private static Comparator<TransportOrder> activeFirst() {
+	private Comparator<TransportOrder> activeFirst() {
 		return Comparator.comparing((TransportOrder o) -> o.getStatus() != TransportOrderStatus.ACTIVE);
 	}
 

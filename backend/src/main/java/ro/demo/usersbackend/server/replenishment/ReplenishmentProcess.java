@@ -67,7 +67,7 @@ public class ReplenishmentProcess extends AbstractProcess {
 		}
 	}
 
-	private static void process(SessionFactory sessionFactory, Long loadUnitId, boolean toDecanting) {
+	private void process(SessionFactory sessionFactory, Long loadUnitId, boolean toDecanting) {
 		try {
 			sessionFactory.inTransaction(session -> {
 				LoadUnit loadUnit = session.find(LoadUnit.class, loadUnitId);
@@ -82,7 +82,7 @@ public class ReplenishmentProcess extends AbstractProcess {
 		}
 	}
 
-	private static void replenish(Session session, LoadUnit loadUnit) {
+	private void replenish(Session session, LoadUnit loadUnit) {
 		Location decanting = session.createNamedQuery("Location.findByName", Location.class)
 				.setParameter("name", Constants.DECANTING).uniqueResultOptional().orElse(null);
 		if (decanting == null) {
@@ -96,7 +96,7 @@ public class ReplenishmentProcess extends AbstractProcess {
 	}
 
 	// prima locatie libera din HBW spre care nu vine niciun to deschis
-	private static void store(Session session, LoadUnit loadUnit) {
+	private void store(Session session, LoadUnit loadUnit) {
 		StorageLocation target = session
 				.createNamedQuery("StorageLocation.findFreeStorageLocations", StorageLocation.class)
 				.setParameterList("open", Constants.OPEN_TRANSPORT_STATUSES).setMaxResults(1).uniqueResultOptional()

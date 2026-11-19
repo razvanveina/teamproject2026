@@ -40,7 +40,7 @@ public class CustomHttpServer {
 	public void closeServer() {
 		server.stop(0);
 	}
-//	private static void handleRequest(HttpExchange exchange) throws IOException {
+//	private void handleRequest(HttpExchange exchange) throws IOException {
 //		if ("POST".equals(exchange.getRequestMethod())) {
 //			String body = new String(exchange.getRequestBody().readAllBytes());
 //

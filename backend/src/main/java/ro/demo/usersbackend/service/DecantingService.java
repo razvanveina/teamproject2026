@@ -163,7 +163,7 @@ public class DecantingService {
 		return List.copyOf(byBarcode.values());
 	}
 
-	private static ResponseStatusException badRequest(String message) {
+	private ResponseStatusException badRequest(String message) {
 		return new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
 	}
 }
