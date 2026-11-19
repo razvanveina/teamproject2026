@@ -10,6 +10,6 @@ import ro.demo.usersbackend.entity.Location;
 public interface LocationRepository extends JpaRepository<Location, Integer> {
 
 	@Query(name = "Location.findByName")
-	Optional<Location> findByName(String string);
+	Optional<Location> findByName(String name);
 
 }
