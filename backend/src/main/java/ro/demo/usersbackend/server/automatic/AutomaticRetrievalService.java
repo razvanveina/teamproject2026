@@ -14,7 +14,6 @@ import jakarta.jms.JMSConsumer;
 import jakarta.jms.JMSContext;
 import jakarta.jms.JMSException;
 import jakarta.jms.Message;
-import jakarta.jms.Queue;
 import jakarta.jms.TextMessage;
 import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.entity.LoadUnit;
@@ -93,15 +92,19 @@ public class AutomaticRetrievalService extends AbstractProcess {
 						.setParameter("status", TransportOrderStatus.NEW).setParameter("target", Constants.PTTS1)
 						.getResultList());
 
-		Queue requests = context.createQueue(MfsMessages.REQUEST_QUEUE);
 		for (Long orderId : orderIds) {
 			try {
 				sessionFactory.inTransaction(session -> {
 					TransportOrder order = session.find(TransportOrder.class, orderId);
 					Get message = new Get("GET", orderId, order.getLoadUnit().getBarcode(),
 							order.getLoadUnit().getType().toString(), order.getSource().getName());
-					context.createProducer().send(requests, MfsMessages.toJson(message));
-					mfsLog.info("SERVER -> SIM [{}] {}", MfsMessages.REQUEST_QUEUE, MfsMessages.toJson(message));
+					// de la decanting tote-ul intra pe banda prin TPS2, restul prin TPS1
+					String queueName = MfsMessages.REQUEST_QUEUE;
+					if (Constants.DECANTING.equals(order.getSource().getName())) {
+						queueName = MfsMessages.DECANTING_REQUEST_QUEUE;
+					}
+					context.createProducer().send(context.createQueue(queueName), MfsMessages.toJson(message));
+					mfsLog.info("SERVER -> SIM [{}] {}", queueName, MfsMessages.toJson(message));
 					order.setStatus(TransportOrderStatus.ACTIVE);
 					log.info("Automatic retrieval: sent {}", MfsMessages.toJson(message));
 				});
