@@ -5,12 +5,11 @@ import jakarta.jms.JMSContext;
 import jakarta.jms.JMSException;
 import jakarta.jms.Message;
 import jakarta.jms.TextMessage;
+import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.packagemessaging.MfsMessages;
 import ro.demo.usersbackend.packagemessaging.MfsMessages.AckGet;
 
 public class DecisionPoint extends ServerPoint {
-
-	private static final long TIMEOUT = 30000;
 
 	private Entity decision;
 	private long askedAt;
@@ -42,7 +41,7 @@ public class DecisionPoint extends ServerPoint {
 				String reply = text.getText().trim();
 				decision = getTarget().get(toIndex(reply));
 				System.out.println(name + ": " + barcode + " reply " + reply + ", goes to " + decision.getName());
-			} else if (currentSimulationTime() - askedAt >= TIMEOUT) {
+			} else if (currentSimulationTime() - askedAt >= Constants.DECISION_TIMEOUT) {
 				decision = getTarget().get(0);
 				System.out.println(name + ": " + barcode + " no reply, goes to " + decision.getName());
 			}

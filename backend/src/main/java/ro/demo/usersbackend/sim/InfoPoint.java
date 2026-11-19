@@ -1,8 +1,8 @@
 package ro.demo.usersbackend.sim;
 
-public class InfoPoint extends ServerPoint {
+import ro.demo.usersbackend.common.Constants;
 
-	private static final long DWELL_TIME = 1000;
+public class InfoPoint extends ServerPoint {
 
 	private long arrivedAt;
 
@@ -38,7 +38,7 @@ public class InfoPoint extends ServerPoint {
 
 	@Override
 	public synchronized String getAvailableLU() {
-		if (currentSimulationTime() - arrivedAt < DWELL_TIME) {
+		if (currentSimulationTime() - arrivedAt < Constants.INFO_POINT_DWELL) {
 			return null;
 		}
 		String s = barcode;
