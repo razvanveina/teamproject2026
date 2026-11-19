@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.dto.InventoryLoadUnitResponse;
 import ro.demo.usersbackend.dto.InventoryOrderLineResponse;
 import ro.demo.usersbackend.dto.InventoryOrderLineStartRequest;
@@ -167,13 +168,8 @@ public class InventoryOrderService {
 			throw new ResponseStatusException(HttpStatus.CONFLICT,
 					"The current inventory line must have a non-transit location.");
 		}
-		LoadUnit foundLoadUnit = loadUnitRepository.findByBarcode(request.loadUnitBarcode()).orElseGet(() -> {
-			LoadUnit created = new LoadUnit();
-			created.setBarcode(request.loadUnitBarcode());
-			created.setType(LoadUnitType.PALLET);
-			created.setLocation(location);
-			return loadUnitRepository.save(created);
-		});
+		LoadUnit foundLoadUnit = loadUnitRepository.findByBarcode(request.loadUnitBarcode())
+				.orElseGet(() -> createPalletAt(request.loadUnitBarcode(), location));
 		LoadUnit loadUnit = findEligibleLoadUnit(foundLoadUnit.getBarcode());
 		if (loadUnit.getLocation().getId() != location.getId()) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "Load unit " + loadUnit.getBarcode()
@@ -597,6 +593,21 @@ public class InventoryOrderService {
 		inventoryDifference.setReasonMessage(StockAdjustmentReason.INVENTORY);
 
 		return inventoryDifference;
+	}
+
+	private LoadUnit createPalletAt(String barcode, Location location) {
+		Location in = locationRepository.findByName(Constants.IN).orElseThrow(
+				() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot find location " + Constants.IN));
+		for (LoadUnit old : loadUnitRepository.findByLocationOrderByIdAsc(location)) {
+			old.setLocation(in);
+		}
+		loadUnitRepository.flush();
+
+		LoadUnit created = new LoadUnit();
+		created.setBarcode(barcode);
+		created.setType(LoadUnitType.PALLET);
+		created.setLocation(location);
+		return loadUnitRepository.save(created);
 	}
 
 	private ArticlePackagingUnitType findArticlePackagingUnitType(Article article,
