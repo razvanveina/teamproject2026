@@ -134,7 +134,7 @@ public class ToteTransportService extends AbstractProcess {
 	// nu facem al doilea transport order pentru un tote care are deja unul NEW sau
 	// ACTIVE
 	private boolean hasOpenTransport(Session session, LoadUnit tote) {
-		Long open = session.createNamedQuery("TransportOrder.countActiveByTarget", Long.class)
+		Long open = session.createNamedQuery("TransportOrder.countOpenByLoadUnit", Long.class)
 				.setParameter("tote", tote).setParameterList("open", Constants.OPEN_TRANSPORT_STATUSES)
 				.getSingleResult();
 		return open > 0;

@@ -56,6 +56,12 @@
 	        where t.target = :location and t.status in :open
 	    ]]>
 	</query>
+	
+	<query name="TransportOrder.countOpenByLoadUnit">
+		<![CDATA[
+	        select count(t) from TransportOrder t where t.loadUnit = :tote and t.status in :open
+	    ]]>
+	</query>
 
 	<query name="StorageLocation.findFreePickingLocations">
 	    <![CDATA[
