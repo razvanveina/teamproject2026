@@ -13,6 +13,8 @@ public final class MfsMessages {
 	public static final String FRONTEND_REQUEST_QUEUE = "MFS_REQUEST_FRONTEND";
 	// simulator -> frontend
 	public static final String FRONTEND_RESPONSE_QUEUE = "MFS_RESPONSE_FRONTEND";
+	// server -> simulator, doar pentru intrarea de la decanting (TPS2)
+	public static final String DECANTING_REQUEST_QUEUE = "MFS_REQUEST_DECANTING";
 
 	private static final ObjectMapper MAPPER = new ObjectMapper();
 

@@ -150,7 +150,7 @@ public class Sim {
 	public void run() {
 		Conveyor c1 = add(new Conveyor("C01", 10000, 10));
 		Conveyor c2 = add(new Conveyor("C02", 3000, 3));
-		Conveyor c3 = add(new Conveyor("C03", 20000, 20));
+		Conveyor c3 = add(new Conveyor("C03", 10000, 10));
 		Conveyor c4 = add(new Conveyor("C04", 3000, 3));
 		Conveyor c5 = add(new Conveyor("C05", 2000, 2));
 		Conveyor c6 = add(new Conveyor("C06", 2000, 2));
@@ -161,16 +161,20 @@ public class Sim {
 		Conveyor c11 = add(new Conveyor("C11", 3000, 3));
 		Conveyor c12 = add(new Conveyor("C12", 10000, 10));
 		Conveyor c13 = add(new Conveyor("C13", 25000, 25));
+		Conveyor c14 = add(new Conveyor("C14", 30000, 30));
+		Conveyor c15 = add(new Conveyor("C15", 10000, 10));
 
 		InfoPoint ip1 = add(new InfoPoint(Constants.IP1));
 		InfoPoint ip2 = add(new InfoPoint(Constants.IP2));
+		InfoPoint ip3 = add(new InfoPoint(Constants.IP3));
 		InfoPoint e = add(new InfoPoint(Constants.EMPTY));
 
 		DecisionPoint dp1 = add(new DecisionPoint(Constants.DP1));
 		DecisionPoint dp2 = add(new DecisionPoint(Constants.DP2));
 		DecisionPoint dp3 = add(new DecisionPoint(Constants.DP3));
 
-		SourceTransportPoint tps1 = add(new SourceTransportPoint(Constants.TPS1));
+		SourceTransportPoint tps1 = add(new SourceTransportPoint(Constants.TPS1, MfsMessages.REQUEST_QUEUE));
+		SourceTransportPoint tps2 = add(new SourceTransportPoint(Constants.TPS2, MfsMessages.DECANTING_REQUEST_QUEUE));
 
 		TargetTransportPoint tpt1 = add(new TargetTransportPoint(Constants.TPT1));
 
@@ -202,7 +206,12 @@ public class Sim {
 		ip2.getSource().add(c8);
 
 		c3.getSource().add(ip2);
-		dp2.getSource().add(c3);
+		// IP3 pe C03: primeste de pe C03 (bucla) si de pe C14 (decanting)
+		ip3.getSource().add(c3);
+		ip3.getSource().add(c14);
+		c14.getSource().add(tps2);
+		c15.getSource().add(ip3);
+		dp2.getSource().add(c15);
 
 		// DP2: 0 = C5 spre TPT1 (default), 1 = C4 spre IP1 (bucla)
 		dp2.getTarget().add(c5);

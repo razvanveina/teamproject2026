@@ -15,14 +15,17 @@ public class SourceTransportPoint extends ServerPoint {
 	private boolean acknowledged;
 	private JMSConsumer consumer;
 	private TimeKeeper timeKeeper = TimeKeeper.getInstance();
+	// coada din care punctul isi ia GET-urile, fiecare intrare are coada ei
+	private final String requestQueue;
 
-	public SourceTransportPoint(String name) {
+	public SourceTransportPoint(String name, String requestQueue) {
 		super(name);
+		this.requestQueue = requestQueue;
 	}
 
 	@Override
 	protected void connected(JMSContext context) {
-		consumer = context.createConsumer(context.createQueue(MfsMessages.REQUEST_QUEUE));
+		consumer = context.createConsumer(context.createQueue(requestQueue));
 	}
 
 	public synchronized void get(SimLoadUnit requestedLoadUnit) {
