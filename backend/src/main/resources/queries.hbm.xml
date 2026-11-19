@@ -247,5 +247,27 @@
             SELECT LOADUNIT_SEQUENCE.NEXTVAL FROM DUAL
         ]]>
     </sql-query>
+    
+	    <query name="Printer.findByType">
+	    <![CDATA[
+	        from Printer p where p.type = :printerType order by p.id
+	    ]]>
+	</query>
+	
+	<query name="PrintJob.findNewIdsByPrinterType">
+	    <![CDATA[
+	        select j.id from PrintJob j
+	        where j.status = :status and j.printer.type = :printerType
+	    ]]>
+	</query>
+	
+	<sql-query name="PrintJob.findLatestByOrderId">
+	    <return class="ro.demo.usersbackend.entity.PrintJob"/>
+	    <![CDATA[
+	        select * from print_job
+	        where json_value(data, '$.orderId') = :orderId
+	        order by id desc fetch first 1 rows only
+	    ]]>
+	</sql-query>
 
 </hibernate-mapping>

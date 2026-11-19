@@ -195,6 +195,8 @@ public class SimWindow extends JPanel {
 		g.setColor(Color.GRAY);
 		g.setStroke(new BasicStroke(1.75f));
 
+		arrow(g, xy);
+
 		g.setColor(Color.BLACK);
 		g.setFont(CONV_LABEL);
 		g.drawString(name, labelX, labelY);
@@ -302,5 +304,23 @@ public class SimWindow extends JPanel {
 		if (!lus.isEmpty()) {
 			tote(g, lus.get(0), x, y);
 		}
+	}
+
+	private void arrow(Graphics2D g, int[] xy) {
+		int best = 0;
+		double bestLen = -1;
+		for (int i = 0; i + 3 < xy.length; i += 2) {
+			double len = Math.hypot(xy[i + 2] - xy[i], xy[i + 3] - xy[i + 1]);
+			if (len > bestLen) {
+				bestLen = len;
+				best = i;
+			}
+		}
+		double mx = (xy[best] + xy[best + 2]) / 2.0;
+		double my = (xy[best + 1] + xy[best + 3]) / 2.0;
+		double a = Math.atan2(xy[best + 3] - xy[best + 1], xy[best + 2] - xy[best]);
+		int len = 12;
+		g.drawLine((int) mx, (int) my, (int) (mx - len * Math.cos(a - 0.6)), (int) (my - len * Math.sin(a - 0.6)));
+		g.drawLine((int) mx, (int) my, (int) (mx - len * Math.cos(a + 0.6)), (int) (my - len * Math.sin(a + 0.6)));
 	}
 }

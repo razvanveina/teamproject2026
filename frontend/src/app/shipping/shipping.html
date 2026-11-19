@@ -7,6 +7,9 @@
             @if (carton()) {
             <p>Carton: <b>{{ carton() }}</b></p>
             }
+            @if (scannedLabel()) {
+            <p>Label: <b>{{ scannedLabel() }}</b></p>
+            }
             <table>
                 <thead>
                     <tr>
@@ -37,7 +40,7 @@
 
     <div [class.left]="!error()" [class.error]="error()">
         <div>
-            <p>{{instructions}}</p>
+            <p>{{ instructions() }}</p>
         </div>
     </div>
 
@@ -47,6 +50,7 @@
 
     <div class="bottom">
         <button (click)=onCancel() class="cancel">Cancel</button>
+        <button (click)=onReprint() [disabled]="shippingStep() !== 'label'" class="confirm">RePrint</button>
         <button (click)=onConfirm() [disabled]="confirmDisabled()" class="confirm">Confirm</button>
     </div>
 </div>
