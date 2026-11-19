@@ -1,8 +1,8 @@
 package ro.demo.usersbackend.server.mfs;
 
 import ro.demo.usersbackend.common.Constants;
-import ro.demo.usersbackend.packagemessaging.MfsMessages;
-import ro.demo.usersbackend.packagemessaging.MfsMessages.Arrived;
+import ro.demo.usersbackend.messaging.MfsMessages;
+import ro.demo.usersbackend.messaging.MfsMessages.Arrived;
 import ro.demo.usersbackend.server.session.ServerSessionFactory;
 
 public class OUTHandler extends PointHandler {
@@ -21,7 +21,7 @@ public class OUTHandler extends PointHandler {
 
 		if (reserved == 0) {
 			log.warn("{}: tote {} has nothing to ship, released", Constants.OUT, barcode);
-			StationControl.release(Constants.OUT);
+			StationControl.getInstance().release(Constants.OUT);
 		} else {
 			log.info("{}: tote {} waits for shipping", Constants.OUT, barcode);
 		}

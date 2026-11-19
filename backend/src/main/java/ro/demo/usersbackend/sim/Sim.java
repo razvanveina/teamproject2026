@@ -22,8 +22,8 @@ import jakarta.jms.Message;
 import jakarta.jms.Queue;
 import jakarta.jms.TextMessage;
 import ro.demo.usersbackend.common.Constants;
-import ro.demo.usersbackend.packagemessaging.Broker;
-import ro.demo.usersbackend.packagemessaging.MfsMessages;
+import ro.demo.usersbackend.messaging.Broker;
+import ro.demo.usersbackend.messaging.MfsMessages;
 
 public class Sim {
 
@@ -40,7 +40,7 @@ public class Sim {
 		Sim sim = new Sim();
 		sim.run();
 		SimWindow window = new SimWindow(sim.getEntities());
-		window.open();
+		window.open(sim::save);
 
 		sim.initComms();
 		new Thread(sim::listen).start();

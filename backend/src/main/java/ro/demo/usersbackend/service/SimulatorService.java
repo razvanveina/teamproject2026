@@ -14,8 +14,8 @@ import jakarta.jms.Queue;
 import jakarta.jms.TextMessage;
 import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.entity.LoadUnitType;
-import ro.demo.usersbackend.packagemessaging.Broker;
-import ro.demo.usersbackend.packagemessaging.MfsMessages;
+import ro.demo.usersbackend.messaging.Broker;
+import ro.demo.usersbackend.messaging.MfsMessages;
 
 @Service
 public class SimulatorService {

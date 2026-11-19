@@ -69,7 +69,7 @@ public class ShippingController {
 
 		if (releaseOut) {
 			try {
-				StationControl.release(Constants.OUT);
+				StationControl.getInstance().release(Constants.OUT);
 				log.info("Shipping: tote {} released from {}", barcode, Constants.OUT);
 			} catch (Exception e) {
 				log.error("Shipping: tote {} not released from {} {}", barcode, Constants.OUT, e.toString());

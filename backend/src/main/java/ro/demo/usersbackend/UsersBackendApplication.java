@@ -9,8 +9,7 @@ import org.springframework.context.annotation.FilterType;
 import ro.demo.usersbackend.init.DemoTestDataCreator;
 import ro.demo.usersbackend.init.InitialDataCreator;
 import ro.demo.usersbackend.init.InitialDataCreatorApplication;
-import ro.demo.usersbackend.packagemessaging.Broker;
-import ro.demo.usersbackend.packagemessaging.Consumer;
+import ro.demo.usersbackend.messaging.Broker;
 import ro.demo.usersbackend.server.process.ProcessManager;
 
 @SpringBootApplication
@@ -19,8 +18,7 @@ import ro.demo.usersbackend.server.process.ProcessManager;
 public class UsersBackendApplication {
 	public static void main(String[] args) throws Exception {
 		Broker.start();
-		Consumer.start();
 		SpringApplication.run(UsersBackendApplication.class, args);
-		ProcessManager.startAll();
+		ProcessManager.getInstance().startAll();
 	}
 }

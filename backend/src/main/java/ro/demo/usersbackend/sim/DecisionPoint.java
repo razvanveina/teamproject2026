@@ -6,8 +6,8 @@ import jakarta.jms.JMSException;
 import jakarta.jms.Message;
 import jakarta.jms.TextMessage;
 import ro.demo.usersbackend.common.Constants;
-import ro.demo.usersbackend.packagemessaging.MfsMessages;
-import ro.demo.usersbackend.packagemessaging.MfsMessages.AckGet;
+import ro.demo.usersbackend.messaging.MfsMessages;
+import ro.demo.usersbackend.messaging.MfsMessages.AckGet;
 
 public class DecisionPoint extends ServerPoint {
 

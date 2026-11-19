@@ -14,6 +14,8 @@ import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.util.Arrays;
@@ -52,12 +54,18 @@ public class SimWindow extends JPanel {
 	private double panY;
 	private Point last;
 
-	public void open() {
+	public void open(Runnable action) {
 		SwingUtilities.invokeLater(() -> {
 			JFrame frame = new JFrame("Simulator GUI");
-			frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 			frame.add(this);
 			frame.pack();
+			frame.addWindowListener(new WindowAdapter() {
+				@Override
+				public void windowClosing(WindowEvent e) {
+					action.run();
+				}
+			});
 			Rectangle screen = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
 			frame.setSize(Math.min(frame.getWidth(), screen.width), Math.min(frame.getHeight(), screen.height));
 			frame.setLocationRelativeTo(null);

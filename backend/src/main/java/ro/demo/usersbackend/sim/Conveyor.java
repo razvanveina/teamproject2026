@@ -14,7 +14,7 @@ public class Conveyor extends Entity {
 	public record ToteOnBelt(SimLoadUnit loadUnit, double progress) {
 	}
 
-	private static final class Tote {
+	private final class Tote {
 		private final SimLoadUnit loadUnit;
 		private int slotIndex;
 		private double startPosition;

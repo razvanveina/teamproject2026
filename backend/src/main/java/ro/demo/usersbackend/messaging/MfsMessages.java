@@ -1,4 +1,4 @@
-package ro.demo.usersbackend.packagemessaging;
+package ro.demo.usersbackend.messaging;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,7 +8,7 @@ public final class MfsMessages {
 	public static final String REQUEST_QUEUE = "MFS_REQUEST";
 	// simulator -> server
 	public static final String RESPONSE_QUEUE = "MFS_RESPONSE";
-	
+
 	// frontend -> simulator
 	public static final String FRONTEND_REQUEST_QUEUE = "MFS_REQUEST_FRONTEND";
 	// simulator -> frontend
@@ -19,14 +19,15 @@ public final class MfsMessages {
 	private MfsMessages() {
 	}
 
-	// de ex {"type":"GET","transportOrderId":1,"loadUnit":"00001","loadUnitType":"TOTE","location":"HBW010010101"}
+	// de ex
+	// {"type":"GET","transportOrderId":1,"loadUnit":"00001","loadUnitType":"TOTE","location":"HBW010010101"}
 	public record Get(String type, Long transportOrderId, String loadUnit, String loadUnitType, String location) {
 	}
 
 	// de ex {"type":"ACK_GET","transportOrderId":1,"loadUnit":"00001"}
 	public record AckGet(String type, Long transportOrderId, String loadUnit) {
 	}
-	
+
 	// de ex {"type":"ARRIVED","point":"IP1","loadUnit":"00001"}
 	public record Arrived(String type, String point, String loadUnit) {
 	}

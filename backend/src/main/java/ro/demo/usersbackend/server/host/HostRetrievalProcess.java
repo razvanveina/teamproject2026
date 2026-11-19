@@ -58,7 +58,7 @@ public class HostRetrievalProcess extends AbstractProcess {
 
 	}
 
-	private static String readFolder() throws Exception {
+	private String readFolder() throws Exception {
 		String value = loadProperties("/config.ini").getProperty("host_retrieval_folder");
 		if (value == null) {
 			throw new IllegalStateException("host_retrieval_folder is missing in config.ini");
@@ -66,7 +66,7 @@ public class HostRetrievalProcess extends AbstractProcess {
 		return value.trim();
 	}
 
-	private static Properties loadProperties(String resource) throws Exception {
+	private Properties loadProperties(String resource) throws Exception {
 		Properties properties = new Properties();
 		try (InputStream in = HostRetrievalProcess.class.getResourceAsStream(resource)) {
 			if (in == null) {
@@ -77,7 +77,7 @@ public class HostRetrievalProcess extends AbstractProcess {
 		return properties;
 	}
 
-	private static void process(SessionFactory sessionFactory, Path file) {
+	private void process(SessionFactory sessionFactory, Path file) {
 		String name = file.getFileName().toString();
 		try {
 			Document xml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file.toFile());
@@ -154,7 +154,7 @@ public class HostRetrievalProcess extends AbstractProcess {
 		}
 	}
 
-	private static String value(Element parent, String tag) {
+	private String value(Element parent, String tag) {
 		NodeList nodes = parent.getElementsByTagName(tag);
 		if (nodes.getLength() == 0) {
 			throw new IllegalArgumentException("missing <" + tag + "> element");
@@ -163,7 +163,7 @@ public class HostRetrievalProcess extends AbstractProcess {
 	}
 
 	// <automatic>true</automatic> din xml daca lipseste, orderul e manual
-	private static boolean isAutomatic(Element parent) {
+	private boolean isAutomatic(Element parent) {
 		NodeList nodes = parent.getElementsByTagName("automatic");
 		return nodes.getLength() > 0 && Boolean.parseBoolean(nodes.item(0).getTextContent().trim());
 	}

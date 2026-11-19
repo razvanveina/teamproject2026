@@ -1,4 +1,4 @@
-package ro.demo.usersbackend.packagemessaging;
+package ro.demo.usersbackend.messaging;
 
 import org.apache.activemq.broker.BrokerService;
 import org.apache.logging.log4j.LogManager;

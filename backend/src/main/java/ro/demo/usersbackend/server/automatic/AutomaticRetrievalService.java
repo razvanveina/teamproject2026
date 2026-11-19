@@ -22,10 +22,10 @@ import ro.demo.usersbackend.entity.LoadUnitType;
 import ro.demo.usersbackend.entity.Location;
 import ro.demo.usersbackend.entity.TransportOrder;
 import ro.demo.usersbackend.entity.TransportOrderStatus;
-import ro.demo.usersbackend.packagemessaging.Broker;
-import ro.demo.usersbackend.packagemessaging.MfsMessages;
-import ro.demo.usersbackend.packagemessaging.MfsMessages.AckGet;
-import ro.demo.usersbackend.packagemessaging.MfsMessages.Get;
+import ro.demo.usersbackend.messaging.Broker;
+import ro.demo.usersbackend.messaging.MfsMessages;
+import ro.demo.usersbackend.messaging.MfsMessages.AckGet;
+import ro.demo.usersbackend.messaging.MfsMessages.Get;
 import ro.demo.usersbackend.server.mfs.TelegramHandling;
 import ro.demo.usersbackend.server.process.AbstractProcess;
 import ro.demo.usersbackend.server.session.ServerSessionFactory;
@@ -66,7 +66,7 @@ public class AutomaticRetrievalService extends AbstractProcess {
 					AckGet ack = MfsMessages.fromJson(text, AckGet.class);
 					sessionFactory.inTransaction(session -> finishTransportOrder(session, ack));
 				} else {
-					TelegramHandling.route(node.path("point").asText(), text);
+					TelegramHandling.getInstance().route(node.path("point").asText(), text);
 				}
 			} catch (Exception e) {
 				log.error("Automatic retrieval: reply not processed {}", e.toString());
@@ -74,7 +74,7 @@ public class AutomaticRetrievalService extends AbstractProcess {
 		}
 	}
 
-	private static void finishTransportOrder(Session session, AckGet ack) {
+	private void finishTransportOrder(Session session, AckGet ack) {
 		TransportOrder order = session.find(TransportOrder.class, ack.transportOrderId());
 		if (order == null || order.getStatus() != TransportOrderStatus.ACTIVE) {
 			log.warn("Automatic retrieval: ACK_GET for order {} ignored", ack.transportOrderId());
@@ -129,7 +129,7 @@ public class AutomaticRetrievalService extends AbstractProcess {
 		}
 	}
 
-	private static void createTransportOrder(Session session, Long loadUnitId) {
+	private void createTransportOrder(Session session, Long loadUnitId) {
 		Location conveyor = session.createNamedQuery("Location.findByName", Location.class)
 				.setParameter("name", Constants.CONVEYOR).uniqueResultOptional().orElse(null);
 		if (conveyor == null) {

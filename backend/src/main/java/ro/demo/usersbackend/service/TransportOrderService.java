@@ -166,7 +166,7 @@ public class TransportOrderService {
 
 	private void releaseTPT1() {
 		try {
-			StationControl.release(Constants.TPT1);
+			StationControl.getInstance().release(Constants.TPT1);
 		} catch (Exception e) {
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
 					"cannot release " + Constants.TPT1 + ": " + e.getMessage());

@@ -57,7 +57,7 @@ public class HostReceivingProcess extends AbstractProcess {
 		}
 	}
 
-	private static String readFolder() throws Exception {
+	private String readFolder() throws Exception {
 		String value = loadProperties("/config.ini").getProperty("host_receiving_folder");
 		if (value == null) {
 			throw new IllegalStateException("host_receiving_folder is missing in config.ini");
@@ -65,7 +65,7 @@ public class HostReceivingProcess extends AbstractProcess {
 		return value.trim();
 	}
 
-	private static Properties loadProperties(String resource) throws Exception {
+	private Properties loadProperties(String resource) throws Exception {
 		Properties properties = new Properties();
 		try (InputStream in = HostReceivingProcess.class.getResourceAsStream(resource)) {
 			if (in == null) {
@@ -76,7 +76,7 @@ public class HostReceivingProcess extends AbstractProcess {
 		return properties;
 	}
 
-	private static void process(SessionFactory sessionFactory, Path file) {
+	private void process(SessionFactory sessionFactory, Path file) {
 		String name = file.getFileName().toString();
 		try {
 			Document xml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file.toFile());
@@ -144,7 +144,7 @@ public class HostReceivingProcess extends AbstractProcess {
 		}
 	}
 
-	private static String value(Element parent, String tag) {
+	private String value(Element parent, String tag) {
 		NodeList nodes = parent.getElementsByTagName(tag);
 		if (nodes.getLength() == 0) {
 			throw new IllegalArgumentException("missing <" + tag + "> element");
