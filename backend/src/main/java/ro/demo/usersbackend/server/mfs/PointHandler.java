@@ -5,8 +5,8 @@ import org.apache.logging.log4j.Logger;
 
 import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.Location;
-import ro.demo.usersbackend.packagemessaging.MfsMessages;
-import ro.demo.usersbackend.packagemessaging.MfsMessages.Arrived;
+import ro.demo.usersbackend.messaging.MfsMessages;
+import ro.demo.usersbackend.messaging.MfsMessages.Arrived;
 import ro.demo.usersbackend.server.session.ServerSessionFactory;
 
 public abstract class PointHandler implements TelegramHandler {

@@ -5,8 +5,8 @@ import org.apache.activemq.ActiveMQConnectionFactory;
 import jakarta.jms.JMSConsumer;
 import jakarta.jms.JMSContext;
 import jakarta.jms.Queue;
-import ro.demo.usersbackend.packagemessaging.Broker;
-import ro.demo.usersbackend.packagemessaging.MfsMessages;
+import ro.demo.usersbackend.messaging.Broker;
+import ro.demo.usersbackend.messaging.MfsMessages;
 
 public class FrontendCommunicationLayer {
 

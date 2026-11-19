@@ -47,7 +47,7 @@ public class ReservationService extends AbstractProcess {
 		}
 	}
 
-	private static void process(SessionFactory sessionFactory, String orderId) {
+	private void process(SessionFactory sessionFactory, String orderId) {
 		try {
 			List<String> items = new ArrayList<>();
 			boolean reserved = sessionFactory.fromTransaction(session -> {
@@ -64,7 +64,7 @@ public class ReservationService extends AbstractProcess {
 		}
 	}
 
-	private static boolean reserve(Session session, RetrievalOrder order, List<String> items) {
+	private boolean reserve(Session session, RetrievalOrder order, List<String> items) {
 		for (RetrievalOrderLine line : order.getLines()) {
 			int available = findAvailableStock(session, line.getArticle()).stream()
 					.mapToInt(StockItem::getTotalQuantity).sum();
@@ -84,7 +84,7 @@ public class ReservationService extends AbstractProcess {
 		return true;
 	}
 
-	private static void reserveLine(Session session, RetrievalOrderLine line, List<String> items) {
+	private void reserveLine(Session session, RetrievalOrderLine line, List<String> items) {
 		int remaining = missingPieces(line);
 
 		for (StockItem item : findReservableStock(session, line)) {
@@ -118,7 +118,7 @@ public class ReservationService extends AbstractProcess {
 		line.setStatus(RetrievalOrderLineStatus.ACTIVE);
 	}
 
-	private static int missingPieces(RetrievalOrderLine line) {
+	private int missingPieces(RetrievalOrderLine line) {
 		int reserved = 0;
 		for (Reservation reservation : line.getReservations()) {
 			reserved = reserved + reservation.getStockItem().getTotalQuantity();
@@ -126,7 +126,7 @@ public class ReservationService extends AbstractProcess {
 		return line.getQuantity() - reserved;
 	}
 
-	private static void reservePieces(Session session, StockItem item, int pieces, RetrievalOrderLine line,
+	private void reservePieces(Session session, StockItem item, int pieces, RetrievalOrderLine line,
 			List<String> items) {
 		int packages = pieces / packageSize(item);
 		Article article = line.getArticle();
@@ -142,7 +142,7 @@ public class ReservationService extends AbstractProcess {
 		}
 	}
 
-	private static StockItem openPackage(Session session, StockItem item) {
+	private StockItem openPackage(Session session, StockItem item) {
 		ArticlePackagingUnitType piece = findPiecePackaging(session, item.getArticlePackagingUnitType().getArticle());
 		int size = packageSize(item);
 
@@ -158,14 +158,14 @@ public class ReservationService extends AbstractProcess {
 		return opened;
 	}
 
-	private static ArticlePackagingUnitType findPiecePackaging(Session session, Article article) {
+	private ArticlePackagingUnitType findPiecePackaging(Session session, Article article) {
 		return session
 				.createNamedQuery("ArticlePackagingUnitType.findSingleUnitByArticle", ArticlePackagingUnitType.class)
 				.setParameter("article", article).setMaxResults(1).uniqueResultOptional().orElseThrow(
 						() -> new IllegalStateException("article " + article.getBarcode() + " has no piece packaging"));
 	}
 
-	private static void reserveItem(Session session, StockItem item, RetrievalOrderLine line) {
+	private void reserveItem(Session session, StockItem item, RetrievalOrderLine line) {
 		Reservation reservation = new Reservation();
 		reservation.setStockItem(item);
 		reservation.setRetrievalOrderLine(line);
@@ -173,15 +173,15 @@ public class ReservationService extends AbstractProcess {
 		item.setReservation(reservation);
 	}
 
-	private static List<StockItem> findReservableStock(Session session, RetrievalOrderLine line) {
+	private List<StockItem> findReservableStock(Session session, RetrievalOrderLine line) {
 		List<StockItem> stock = findAvailableStock(session, line.getArticle());
 		if (reservablePieces(stock, missingPieces(line)) == missingPieces(line)) {
 			return stock;
 		}
-		return stock.stream().sorted(Comparator.comparingInt(ReservationService::packageSize).reversed()).toList();
+		return stock.stream().sorted(Comparator.comparingInt(this::packageSize).reversed()).toList();
 	}
 
-	private static int reservablePieces(List<StockItem> stock, int quantity) {
+	private int reservablePieces(List<StockItem> stock, int quantity) {
 		int remaining = quantity;
 		for (StockItem item : stock) {
 			remaining -= wholePackagePieces(item, remaining);
@@ -189,17 +189,17 @@ public class ReservationService extends AbstractProcess {
 		return quantity - remaining;
 	}
 
-	private static int wholePackagePieces(StockItem item, int quantity) {
+	private int wholePackagePieces(StockItem item, int quantity) {
 		int size = packageSize(item);
 		return Math.min(item.getTotalQuantity(), quantity) / size * size;
 	}
 
-	private static int packageSize(StockItem item) {
+	private int packageSize(StockItem item) {
 		return item.getArticlePackagingUnitType().getPackagingUnitType().getQuantity();
 	}
 
 	// stocul liber al articolului, cu cel din locatiile de picking primul
-	private static List<StockItem> findAvailableStock(Session session, Article article) {
+	private List<StockItem> findAvailableStock(Session session, Article article) {
 		return session.createNamedQuery("StockItem.findFreeByArticle", StockItem.class).setParameter("article", article)
 				.setParameter("pick", Constants.PICK_PREFIX + "%").getResultList();
 	}

@@ -5,6 +5,7 @@ import ro.demo.usersbackend.common.Constants;
 public class InfoPoint extends ServerPoint {
 
 	private long arrivedAt;
+	private TimeKeeper timeKeeper = TimeKeeper.getInstance();
 
 	public InfoPoint(String name) {
 		super(name);
@@ -24,7 +25,7 @@ public class InfoPoint extends ServerPoint {
 			if (arrivingLoadUnit != null) {
 				synchronized (this) {
 					loadUnit = arrivingLoadUnit;
-					arrivedAt = currentSimulationTime();
+					arrivedAt = timeKeeper.currentSimulationTime();
 				}
 				announceLU(arrivingLoadUnit);
 				return;
@@ -39,7 +40,7 @@ public class InfoPoint extends ServerPoint {
 	@Override
 
 	public synchronized SimLoadUnit getAvailableLU() {
-		if (currentSimulationTime() - arrivedAt < Constants.INFO_POINT_DWELL) {
+		if (timeKeeper.currentSimulationTime() - arrivedAt < Constants.INFO_POINT_DWELL) {
 			return null;
 		}
 		SimLoadUnit leavingLoadUnit = loadUnit;

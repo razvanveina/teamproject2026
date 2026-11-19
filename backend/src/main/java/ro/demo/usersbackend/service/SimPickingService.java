@@ -127,7 +127,7 @@ public class SimPickingService {
 	// daca nu merge, exceptia anuleaza si mutarea stocului (tranzactia se intoarce)
 	private void release(String point) {
 		try {
-			StationControl.release(point);
+			StationControl.getInstance().release(point);
 		} catch (Exception e) {
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
 					"Cannot release " + point + ": " + e.getMessage());

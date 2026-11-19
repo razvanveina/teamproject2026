@@ -5,9 +5,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import jakarta.jms.JMSContext;
-import ro.demo.usersbackend.packagemessaging.Broker;
-import ro.demo.usersbackend.packagemessaging.MfsMessages;
-import ro.demo.usersbackend.packagemessaging.MfsMessages.Arrived;
+import ro.demo.usersbackend.messaging.Broker;
+import ro.demo.usersbackend.messaging.MfsMessages;
+import ro.demo.usersbackend.messaging.MfsMessages.Arrived;
 
 public abstract class DecisionPointHandler extends PointHandler {
 	private static final Logger mfsLog = LogManager.getLogger("mfsMessages");

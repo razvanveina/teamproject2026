@@ -7,9 +7,9 @@ import org.apache.activemq.ActiveMQConnectionFactory;
 
 import jakarta.jms.JMSContext;
 import jakarta.jms.Queue;
-import ro.demo.usersbackend.packagemessaging.Broker;
-import ro.demo.usersbackend.packagemessaging.MfsMessages;
-import ro.demo.usersbackend.packagemessaging.MfsMessages.Arrived;
+import ro.demo.usersbackend.messaging.Broker;
+import ro.demo.usersbackend.messaging.MfsMessages;
+import ro.demo.usersbackend.messaging.MfsMessages.Arrived;
 
 public abstract class ServerPoint extends Entity {
 
@@ -17,6 +17,7 @@ public abstract class ServerPoint extends Entity {
 	private Long transportOrderId;
 	private JMSContext context;
 	private Queue outQueue;
+	private TimeKeeper timeKeeper = TimeKeeper.getInstance();
 
 	public ServerPoint(String name) {
 		super(name);
@@ -40,7 +41,7 @@ public abstract class ServerPoint extends Entity {
 			connected(context);
 
 			while (true) {
-				if (isPaused()) {
+				if (timeKeeper.isPaused()) {
 					Thread.sleep(50);
 					continue;
 				}
@@ -83,7 +84,7 @@ public abstract class ServerPoint extends Entity {
 	public void setTransportOrderId(Long transportOrderId) {
 		this.transportOrderId = transportOrderId;
 	}
-	
+
 	// anuntam serveru ca lu a ajuns intr o anumita locatie
 	protected void announceLU(SimLoadUnit arrivedLoadUnit) {
 		put(MfsMessages.toJson(new Arrived("ARRIVED", name, arrivedLoadUnit.barcode())));

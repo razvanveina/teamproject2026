@@ -14,6 +14,8 @@ import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.util.Arrays;
@@ -45,18 +47,25 @@ public class SimWindow extends JPanel {
 
 	private static final double MAX_ZOOM = 8;
 
+	private TimeKeeper timeKeeper = TimeKeeper.getInstance();
 	private final Map<String, Entity> byName;
 	private double zoom = 1;
 	private double panX;
 	private double panY;
 	private Point last;
 
-	public static void open(List<Entity> entities) {
+	public void open(Runnable action) {
 		SwingUtilities.invokeLater(() -> {
 			JFrame frame = new JFrame("Simulator GUI");
-			frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-			frame.add(new SimWindow(entities));
+			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+			frame.add(this);
 			frame.pack();
+			frame.addWindowListener(new WindowAdapter() {
+				@Override
+				public void windowClosing(WindowEvent e) {
+					action.run();
+				}
+			});
 			Rectangle screen = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
 			frame.setSize(Math.min(frame.getWidth(), screen.width), Math.min(frame.getHeight(), screen.height));
 			frame.setLocationRelativeTo(null);
@@ -64,18 +73,18 @@ public class SimWindow extends JPanel {
 		});
 	}
 
-	private SimWindow(List<Entity> entities) {
+	SimWindow(List<Entity> entities) {
 		byName = entities.stream().collect(Collectors.toMap(Entity::getName, Function.identity()));
 		setPreferredSize(new Dimension((int) (DESIGN_W * K), (int) (DESIGN_H * K)));
 		setBackground(Color.WHITE);
 		new Timer(50, e -> repaint()).start();
 
 		setLayout(new FlowLayout(FlowLayout.LEFT, 16, 16));
-		JButton pause = new JButton(Entity.isPaused() ? "Resume" : "Pause");
+		JButton pause = new JButton(timeKeeper.isPaused() ? "Resume" : "Pause");
 		pause.setFocusPainted(false);
 		pause.addActionListener(e -> {
-			Entity.togglePause();
-			pause.setText(Entity.isPaused() ? "Resume" : "Pause");
+			timeKeeper.togglePause();
+			pause.setText(timeKeeper.isPaused() ? "Resume" : "Pause");
 		});
 		add(pause);
 
@@ -194,6 +203,8 @@ public class SimWindow extends JPanel {
 		g.setColor(Color.GRAY);
 		g.setStroke(new BasicStroke(1.75f));
 
+		arrow(g, xy);
+
 		g.setColor(Color.BLACK);
 		g.setFont(CONV_LABEL);
 		g.drawString(name, labelX, labelY);
@@ -301,5 +312,23 @@ public class SimWindow extends JPanel {
 		if (!lus.isEmpty()) {
 			tote(g, lus.get(0), x, y);
 		}
+	}
+
+	private void arrow(Graphics2D g, int[] xy) {
+		int best = 0;
+		double bestLen = -1;
+		for (int i = 0; i + 3 < xy.length; i += 2) {
+			double len = Math.hypot(xy[i + 2] - xy[i], xy[i + 3] - xy[i + 1]);
+			if (len > bestLen) {
+				bestLen = len;
+				best = i;
+			}
+		}
+		double mx = (xy[best] + xy[best + 2]) / 2.0;
+		double my = (xy[best + 1] + xy[best + 3]) / 2.0;
+		double a = Math.atan2(xy[best + 3] - xy[best + 1], xy[best + 2] - xy[best]);
+		int len = 12;
+		g.drawLine((int) mx, (int) my, (int) (mx - len * Math.cos(a - 0.6)), (int) (my - len * Math.sin(a - 0.6)));
+		g.drawLine((int) mx, (int) my, (int) (mx - len * Math.cos(a + 0.6)), (int) (my - len * Math.sin(a + 0.6)));
 	}
 }

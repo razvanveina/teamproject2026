@@ -19,6 +19,18 @@ export class ShippingService {
         return this.httpClient.put<any>(`${this.url}/${loadUnitBarcode}/finish${params}`, {})
     }
 
+    getLabelStatus(cartonBarcode: string) {
+        return this.httpClient.get<{ status: string }>(`${this.url}/${cartonBarcode}/label`)
+    }
+
+    confirmLabel(cartonBarcode: string, scannedLabel: string) {
+        return this.httpClient.put<void>(`${this.url}/${cartonBarcode}/label?label=${encodeURIComponent(scannedLabel)}`, {})
+    }
+
+    reprintLabel(cartonBarcode: string) {
+        return this.httpClient.put<void>(`${this.url}/${cartonBarcode}/reprint`, {})
+    }
+
     releaseLoadUnit(loadUnitBarcode: string) {
         return this.httpClient.put<void>(`${this.url}/${loadUnitBarcode}/release`, {})
     }

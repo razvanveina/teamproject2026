@@ -14,7 +14,7 @@ public class Conveyor extends Entity {
 	public record ToteOnBelt(SimLoadUnit loadUnit, double progress) {
 	}
 
-	private static final class Tote {
+	private final class Tote {
 		private final SimLoadUnit loadUnit;
 		private int slotIndex;
 		private double startPosition;
@@ -35,6 +35,7 @@ public class Conveyor extends Entity {
 	private long slotTravelTime;
 	private Deque<Tote> totes;
 	private volatile boolean ready;
+	private TimeKeeper timeKeeper = TimeKeeper.getInstance();
 
 	public Conveyor(String name, long travelTime, int capacity) {
 		super(name);
@@ -54,7 +55,7 @@ public class Conveyor extends Entity {
 	}
 
 	public synchronized void createLU(SimLoadUnit createdLoadUnit) {
-		if (isSlotFree(0, currentSimulationTime())) {
+		if (isSlotFree(0, timeKeeper.currentSimulationTime())) {
 			enterFirstSlot(createdLoadUnit);
 		}
 	}
@@ -67,7 +68,7 @@ public class Conveyor extends Entity {
 			}
 
 			while (true) {
-				if (isPaused()) {
+				if (timeKeeper.isPaused()) {
 					Thread.sleep(50);
 					continue;
 				}
@@ -86,9 +87,10 @@ public class Conveyor extends Entity {
 	}
 
 	private synchronized void advanceTotes() {
-		long currentTime = currentSimulationTime();
+		long currentTime = timeKeeper.currentSimulationTime();
 		for (Tote tote : totes) {
-			if (hasArrived(tote, currentTime) && tote.slotIndex < capacity - 1 && isSlotFree(tote.slotIndex + 1, currentTime)) {
+			if (hasArrived(tote, currentTime) && tote.slotIndex < capacity - 1
+					&& isSlotFree(tote.slotIndex + 1, currentTime)) {
 				tote.startPosition = slotPosition(tote.slotIndex);
 				tote.slotIndex++;
 				tote.moveStartedAt = currentTime;
@@ -99,7 +101,7 @@ public class Conveyor extends Entity {
 
 	private void pull() {
 		synchronized (this) {
-			if (!isSlotFree(0, currentSimulationTime())) {
+			if (!isSlotFree(0, timeKeeper.currentSimulationTime())) {
 				return;
 			}
 		}
@@ -117,7 +119,7 @@ public class Conveyor extends Entity {
 
 	private void enterFirstSlot(SimLoadUnit enteringLoadUnit) {
 		long entryDuration = capacity > 1 ? 0 : travelTime;
-		totes.addLast(new Tote(enteringLoadUnit, 0, 0.0, currentSimulationTime(), entryDuration));
+		totes.addLast(new Tote(enteringLoadUnit, 0, 0.0, timeKeeper.currentSimulationTime(), entryDuration));
 	}
 
 	private boolean isSlotFree(int slotIndex, long currentTime) {
@@ -152,7 +154,7 @@ public class Conveyor extends Entity {
 	@Override
 	public synchronized SimLoadUnit getAvailableLU() {
 		Tote first = totes.peekFirst();
-		if (first == null || first.slotIndex < capacity - 1 || !hasArrived(first, currentSimulationTime())) {
+		if (first == null || first.slotIndex < capacity - 1 || !hasArrived(first, timeKeeper.currentSimulationTime())) {
 			return null;
 		}
 		totes.pollFirst();
@@ -165,7 +167,7 @@ public class Conveyor extends Entity {
 	}
 
 	public synchronized List<ToteOnBelt> getTotesOnBelt() {
-		long currentTime = currentSimulationTime();
+		long currentTime = timeKeeper.currentSimulationTime();
 		return totes.stream().map(tote -> new ToteOnBelt(tote.loadUnit, currentPosition(tote, currentTime))).toList();
 	}
 
@@ -173,14 +175,14 @@ public class Conveyor extends Entity {
 	public synchronized void restore(EntityState state) {
 		List<SimLoadUnit> loadUnits = state.loadUnits();
 		int restoredCount = Math.min(loadUnits.size(), capacity);
-		long currentTime = currentSimulationTime();
+		long currentTime = timeKeeper.currentSimulationTime();
 		for (int toteIndex = 0; toteIndex < restoredCount; toteIndex++) {
 			int slotIndex = capacity - 1 - toteIndex;
 			totes.addLast(new Tote(loadUnits.get(toteIndex), slotIndex, slotPosition(slotIndex), currentTime, 0));
 		}
 		if (loadUnits.size() > capacity) {
-			log.warn("{}: snapshot has {} totes but capacity is {}, not restored: {}", name, loadUnits.size(),
-					capacity, loadUnits.subList(capacity, loadUnits.size()));
+			log.warn("{}: snapshot has {} totes but capacity is {}, not restored: {}", name, loadUnits.size(), capacity,
+					loadUnits.subList(capacity, loadUnits.size()));
 		}
 	}
 }

@@ -10,6 +10,18 @@ import ro.demo.usersbackend.common.Constants;
 public class TelegramHandling {
 	public static final Logger log = LogManager.getLogger("application");
 
+	private static TelegramHandling instance;
+
+	private TelegramHandling() {
+	}
+
+	public static TelegramHandling getInstance() {
+		if (instance == null) {
+			instance = new TelegramHandling();
+		}
+		return instance;
+	}
+
 	// punctul de pe banda -> handlerul care ii proceseaza telegramele
 	private static final Map<String, TelegramHandler> HANDLERS = Map.ofEntries(
 			Map.entry(Constants.TPS1, new TPS1Handler()), Map.entry(Constants.TPT1, new TPT1Handler()),
@@ -21,7 +33,7 @@ public class TelegramHandling {
 
 	// ia ca parametrii punctul si telegrama lui
 	// gaseste handleru punctului si ii paseaza telegrama
-	public static void route(String point, String telegram) throws Exception {
+	public void route(String point, String telegram) throws Exception {
 		TelegramHandler handler = HANDLERS.get(point);
 		if (handler == null) {
 			log.warn("TelegramHandling: no telegram for point {}", point);

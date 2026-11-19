@@ -6,14 +6,15 @@ import jakarta.jms.JMSException;
 import jakarta.jms.Message;
 import jakarta.jms.TextMessage;
 import ro.demo.usersbackend.common.Constants;
-import ro.demo.usersbackend.packagemessaging.MfsMessages;
-import ro.demo.usersbackend.packagemessaging.MfsMessages.AckGet;
+import ro.demo.usersbackend.messaging.MfsMessages;
+import ro.demo.usersbackend.messaging.MfsMessages.AckGet;
 
 public class DecisionPoint extends ServerPoint {
 
 	private Entity decision;
 	private long askedAt;
 	private JMSConsumer consumer;
+	private TimeKeeper timeKeeper = TimeKeeper.getInstance();
 
 	public DecisionPoint(String name) {
 		super(name);
@@ -40,8 +41,9 @@ public class DecisionPoint extends ServerPoint {
 			if (message instanceof TextMessage text) {
 				String reply = text.getText().trim();
 				decision = getTarget().get(toIndex(reply));
-				System.out.println(name + ": " + loadUnit.barcode() + " reply " + reply + ", goes to " + decision.getName());
-			} else if (currentSimulationTime() - askedAt >= Constants.DECISION_TIMEOUT) {
+				System.out.println(
+						name + ": " + loadUnit.barcode() + " reply " + reply + ", goes to " + decision.getName());
+			} else if (timeKeeper.currentSimulationTime() - askedAt >= Constants.DECISION_TIMEOUT) {
 				decision = getTarget().get(0);
 				System.out.println(name + ": " + loadUnit.barcode() + " no reply, goes to " + decision.getName());
 			}
@@ -67,7 +69,7 @@ public class DecisionPoint extends ServerPoint {
 				synchronized (this) {
 					loadUnit = arrivingLoadUnit;
 					decision = null;
-					askedAt = currentSimulationTime();
+					askedAt = timeKeeper.currentSimulationTime();
 				}
 				announceLU(arrivingLoadUnit);
 				System.out.println(arrivingLoadUnit.barcode() + " arrived at " + name);
@@ -101,6 +103,6 @@ public class DecisionPoint extends ServerPoint {
 	public synchronized void restore(EntityState state) {
 		super.restore(state);
 		decision = null;
-		askedAt = currentSimulationTime();
+		askedAt = timeKeeper.currentSimulationTime();
 	}
 }

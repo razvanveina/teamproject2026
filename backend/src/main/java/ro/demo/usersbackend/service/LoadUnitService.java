@@ -24,6 +24,8 @@ import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.LoadUnitType;
 import ro.demo.usersbackend.entity.Location;
 import ro.demo.usersbackend.entity.PackagingUnitType;
+import ro.demo.usersbackend.entity.PrintJob;
+import ro.demo.usersbackend.entity.PrintJobStatus;
 import ro.demo.usersbackend.entity.RetrievalOrder;
 import ro.demo.usersbackend.entity.RetrievalOrderLine;
 import ro.demo.usersbackend.entity.RetrievalOrderLineStatus;
@@ -47,6 +49,7 @@ public class LoadUnitService {
 	private final DestinationToGateRepository destinationToGateRepository;
 	private final ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository;
 	private final TransportOrderService transportOrderService;
+	private final PrintJobService printJobService;
 
 	private RetrievalOrder orderOf(LoadUnit loadUnit) {
 		return loadUnit.getStockItems().stream().filter(s -> s.getReservation() != null)
@@ -65,7 +68,7 @@ public class LoadUnitService {
 			LoadUnitRepository loadUnitRepository, LocationRepository locationRepository,
 			DestinationToGateRepository destinationToGateRepository,
 			ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository,
-			TransportOrderService transportOrderService) {
+			TransportOrderService transportOrderService, PrintJobService printJobService) {
 		super();
 		this.entityManager = entityManager;
 		this.stockItemRepository = stockItemRepository;
@@ -74,6 +77,7 @@ public class LoadUnitService {
 		this.destinationToGateRepository = destinationToGateRepository;
 		this.articlePackagingUnitTypeRepository = articlePackagingUnitTypeRepository;
 		this.transportOrderService = transportOrderService;
+		this.printJobService = printJobService;
 	}
 
 	// Deletes a load unit together with its stock items (and their reservations).
@@ -256,11 +260,15 @@ public class LoadUnitService {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Order status must be PICKED");
 		}
 
-		DestinationToGate destinationToGate = destinationToGateRepository
-				.findByDestinationName(order.getDestination().getName())
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-						"Could not find a DestinationToGate object from the name: "
-								+ order.getDestination().getName()));
+		findGateForOrder(order);
+
+		if (isOrderPacked(order)) {
+			PrintJob latestPrintJob = printJobService.findLatestPrintJobForOrder(order.getOrderId());
+			if (latestPrintJob == null || latestPrintJob.getStatus() == PrintJobStatus.ERROR) {
+				printJobService.createShippingLabel(order);
+			}
+			return false;
+		}
 
 		LoadUnit carton = loadUnit;
 		if (loadUnit.getType() == LoadUnitType.TOTE) {
@@ -284,8 +292,7 @@ public class LoadUnitService {
 		}
 
 		if (lineCount == 0) {
-			order.setStatus(RetrievalOrderStatus.FINISHED);
-			carton.setLocation(destinationToGate.getGate());
+			printJobService.createShippingLabel(order);
 			if (loadUnit.getType() == LoadUnitType.TOTE) {
 				if (order.isAutomatic()) {
 					return true; // tote de pe banda, deci controllerul il elibereaza din OUT dupa commit
@@ -297,6 +304,81 @@ public class LoadUnitService {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
 					"All lines status must be PICKED. There are " + lineCount + " lines with a different status");
 		}
+	}
+
+	public String getLabelStatus(String barcode, String user) {
+		LoadUnit carton = findLoadUnit(barcode);
+		RetrievalOrder order = orderOf(carton);
+		checkOwner(order, user, barcode);
+
+		PrintJob latestPrintJob = printJobService.findLatestPrintJobForOrder(order.getOrderId());
+		return latestPrintJob == null ? Constants.STATUS_MISSING : latestPrintJob.getStatus().toString();
+	}
+
+	public void confirmLabelAndSendCartonToGate(String barcode, String scannedLabel, String user) {
+		LoadUnit carton = findLoadUnit(barcode);
+		RetrievalOrder order = findOrderOfPackedCarton(carton, barcode, user);
+
+		PrintJob latestPrintJob = printJobService.findLatestPrintJobForOrder(order.getOrderId());
+		if (latestPrintJob == null || latestPrintJob.getStatus() != PrintJobStatus.PRINTED) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+					"The label for order " + order.getOrderId() + " is not printed yet");
+		}
+
+		if (scannedLabel == null || !scannedLabel.trim().equals(order.getOrderId())) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+					"Label " + scannedLabel + " does not belong to carton " + barcode + ". Scan the printed label");
+		}
+
+		order.setStatus(RetrievalOrderStatus.FINISHED);
+		carton.setLocation(findGateForOrder(order));
+	}
+
+	public void reprintLabel(String barcode, String user) {
+		LoadUnit carton = findLoadUnit(barcode);
+		RetrievalOrder order = findOrderOfPackedCarton(carton, barcode, user);
+
+		PrintJob latestPrintJob = printJobService.findLatestPrintJobForOrder(order.getOrderId());
+		if (latestPrintJob == null) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+					"There is no label to reprint for order " + order.getOrderId());
+		}
+		if (latestPrintJob.getStatus() == PrintJobStatus.NEW) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+					"The label for order " + order.getOrderId() + " is still printing");
+		}
+
+		printJobService.resetPrintJobForReprint(latestPrintJob);
+	}
+
+	private RetrievalOrder findOrderOfPackedCarton(LoadUnit carton, String barcode, String user) {
+		if (carton.getType() != LoadUnitType.CARTON) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+					"Load unit " + barcode + " is a " + carton.getType() + ". Only a carton gets a label");
+		}
+		checkLocation(carton, Constants.OUT);
+		RetrievalOrder order = orderOf(carton);
+		checkOwner(order, user, barcode);
+
+		if (order.getStatus() != RetrievalOrderStatus.PICKED || !isOrderPacked(order)) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+					"Confirm the items of carton " + barcode + " first");
+		}
+		return order;
+	}
+
+	private boolean isOrderPacked(RetrievalOrder order) {
+		return order.getLines().stream()
+				.allMatch(orderLine -> orderLine.getStatus() == RetrievalOrderLineStatus.FINISHED);
+	}
+
+	private Location findGateForOrder(RetrievalOrder order) {
+		DestinationToGate destinationToGate = destinationToGateRepository
+				.findByDestinationName(order.getDestination().getName())
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+						"Could not find a DestinationToGate object from the name: "
+								+ order.getDestination().getName()));
+		return destinationToGate.getGate();
 	}
 
 	public void releaseLoadUnit(String barcode, String user) {

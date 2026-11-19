@@ -18,6 +18,8 @@ import ro.demo.usersbackend.entity.Destination;
 import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.Location;
 import ro.demo.usersbackend.entity.PackagingUnitType;
+import ro.demo.usersbackend.entity.PrintJob;
+import ro.demo.usersbackend.entity.Printer;
 import ro.demo.usersbackend.entity.ReceivingOrder;
 import ro.demo.usersbackend.entity.ReceivingOrderLine;
 import ro.demo.usersbackend.entity.Reservation;
@@ -69,6 +71,7 @@ public final class ServerSessionFactory {
 				.addAnnotatedClass(RetrievalOrderLine.class).addAnnotatedClass(ReceivingOrder.class)
 				.addAnnotatedClass(ReceivingOrderLine.class).addAnnotatedClass(Destination.class)
 				.addAnnotatedClass(TransportOrder.class).addAnnotatedClass(ArticlePickingLocation.class)
-				.addResource("queries.hbm.xml").buildMetadata().buildSessionFactory();
+				.addAnnotatedClass(Printer.class).addAnnotatedClass(PrintJob.class).addResource("queries.hbm.xml")
+				.buildMetadata().buildSessionFactory();
 	}
 }

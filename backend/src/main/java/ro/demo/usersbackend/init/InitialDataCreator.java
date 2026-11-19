@@ -10,6 +10,8 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.entity.Destination;
+import ro.demo.usersbackend.entity.Printer;
+import ro.demo.usersbackend.entity.PrinterType;
 import ro.demo.usersbackend.entity.StorageLocation;
 import ro.demo.usersbackend.entity.TransitLocation;
 
@@ -26,10 +28,15 @@ public class InitialDataCreator implements CommandLineRunner {
 		createTransitLocations();
 		createPickingLocations();
 		createDestinations();
+		createPrinters();
 		createSimulatorData();
 //		createArticles();
 //		createPackagingUnitTypes();
 //		createStock();
+	}
+
+	private void createPrinters() {
+		entityManager.persist(new Printer("PRINTER1", "192.168.0.100", PrinterType.PDF));
 	}
 
 	private void createDestinations() {

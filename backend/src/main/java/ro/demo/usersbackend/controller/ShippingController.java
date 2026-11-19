@@ -1,5 +1,7 @@
 package ro.demo.usersbackend.controller;
 
+import java.util.Map;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
@@ -67,13 +69,54 @@ public class ShippingController {
 
 		if (releaseOut) {
 			try {
-				StationControl.release(Constants.OUT);
+				StationControl.getInstance().release(Constants.OUT);
 				log.info("Shipping: tote {} released from {}", barcode, Constants.OUT);
 			} catch (Exception e) {
 				log.error("Shipping: tote {} not released from {} {}", barcode, Constants.OUT, e.toString());
 				throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Order shipped, but tote " + barcode
 						+ " could not be released from " + Constants.OUT + ": " + e.getMessage());
 			}
+		}
+	}
+
+	@GetMapping("/{barcode}/label")
+	public Map<String, String> getLabelStatus(@PathVariable String barcode, Authentication authentication) {
+		synchronized (SHIPPING_LOCK) {
+			return Map.of("status", loadUnitService.getLabelStatus(barcode, authentication.getName()));
+		}
+	}
+
+	@PutMapping("/{barcode}/label")
+	public void confirmLabel(@PathVariable String barcode, @RequestParam("label") String scannedLabel,
+			Authentication authentication) {
+		log.info("Shipping: {} scanned label {} for carton {}", authentication.getName(), scannedLabel, barcode);
+		try {
+			synchronized (SHIPPING_LOCK) {
+				loadUnitService.confirmLabelAndSendCartonToGate(barcode, scannedLabel, authentication.getName());
+			}
+			log.info("Shipping: carton {} sent to the gate", barcode);
+		} catch (ResponseStatusException e) {
+			log.warn("Shipping: label rejected {}", e.getReason());
+			throw e;
+		} catch (Exception e) {
+			log.error("Shipping: exception: {}", e.getMessage());
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+		}
+	}
+
+	@PutMapping("/{barcode}/reprint")
+	public void reprintLabel(@PathVariable String barcode, Authentication authentication) {
+		log.info("Shipping: {} reprints the label for carton {}", authentication.getName(), barcode);
+		try {
+			synchronized (SHIPPING_LOCK) {
+				loadUnitService.reprintLabel(barcode, authentication.getName());
+			}
+		} catch (ResponseStatusException e) {
+			log.warn("Shipping: reprint rejected {}", e.getReason());
+			throw e;
+		} catch (Exception e) {
+			log.error("Shipping: exception: {}", e.getMessage());
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
 		}
 	}
 
