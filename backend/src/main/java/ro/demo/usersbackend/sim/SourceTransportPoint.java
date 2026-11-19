@@ -5,6 +5,7 @@ import jakarta.jms.JMSContext;
 import jakarta.jms.JMSException;
 import jakarta.jms.Message;
 import jakarta.jms.TextMessage;
+import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.packagemessaging.MfsMessages;
 import ro.demo.usersbackend.packagemessaging.MfsMessages.AckGet;
 import ro.demo.usersbackend.packagemessaging.MfsMessages.Get;
@@ -49,7 +50,7 @@ public class SourceTransportPoint extends ServerPoint {
 		}
 
 		synchronized (this) {
-			if (loadUnit != null && !acknowledged && currentSimulationTime() - loadedAt >= 2000) {
+			if (loadUnit != null && !acknowledged && currentSimulationTime() - loadedAt >= Constants.TPS1_ACK_DELAY) {
 				acknowledged = true;
 				put(MfsMessages.toJson(new AckGet("ACK_GET", getTransportOrderId(), loadUnit.barcode())));
 				announceLU(loadUnit);

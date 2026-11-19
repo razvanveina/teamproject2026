@@ -79,14 +79,15 @@ public class Sim {
 				Message message = consumer.receive();
 				if (message instanceof TextMessage text) {
 					String request = text.getText();
-					if (request.equals("getEntities")) {
+					if (request.equals(Constants.GET_ENTITIES)) {
 						String response = entities.stream().map(Entity::getName).collect(Collectors.joining(","));
 						put(response);
-					} else if (request.startsWith("createLU")) {
+					} else if (request.startsWith(Constants.CREATE_LU)) {
 						String[] s = request.split(" ");
 						entities.forEach(e -> {
 							if (e.getName().equals(s[2]) && e.getClass() == Conveyor.class) {
-								((Conveyor) e).createLU(new SimLoadUnit(s[1], s.length > 3 ? s[3] : Constants.TOTE_TYPE));
+								((Conveyor) e)
+										.createLU(new SimLoadUnit(s[1], s.length > 3 ? s[3] : Constants.TOTE_TYPE));
 							}
 						});
 					}
@@ -160,21 +161,21 @@ public class Sim {
 		Conveyor c12 = add(new Conveyor("C12", 10000, 10));
 		Conveyor c13 = add(new Conveyor("C13", 25000, 25));
 
-		InfoPoint ip1 = add(new InfoPoint("IP1"));
-		InfoPoint ip2 = add(new InfoPoint("IP2"));
-		InfoPoint e = add(new InfoPoint("EMPTY"));
+		InfoPoint ip1 = add(new InfoPoint(Constants.IP1));
+		InfoPoint ip2 = add(new InfoPoint(Constants.IP2));
+		InfoPoint e = add(new InfoPoint(Constants.EMPTY));
 
-		DecisionPoint dp1 = add(new DecisionPoint("DP1"));
-		DecisionPoint dp2 = add(new DecisionPoint("DP2"));
-		DecisionPoint dp3 = add(new DecisionPoint("DP3"));
+		DecisionPoint dp1 = add(new DecisionPoint(Constants.DP1));
+		DecisionPoint dp2 = add(new DecisionPoint(Constants.DP2));
+		DecisionPoint dp3 = add(new DecisionPoint(Constants.DP3));
 
-		SourceTransportPoint tps1 = add(new SourceTransportPoint("TPS1"));
+		SourceTransportPoint tps1 = add(new SourceTransportPoint(Constants.TPS1));
 
-		TargetTransportPoint tpt1 = add(new TargetTransportPoint("TPT1"));
+		TargetTransportPoint tpt1 = add(new TargetTransportPoint(Constants.TPT1));
 
-		StationPoint ptts1 = add(new StationPoint("PTTS1"));
-		StationPoint pttt1 = add(new StationPoint("PTTT1"));
-		StationPoint out = add(new StationPoint("OUT"));
+		StationPoint ptts1 = add(new StationPoint(Constants.PTTS1));
+		StationPoint pttt1 = add(new StationPoint(Constants.PTTT1));
+		StationPoint out = add(new StationPoint(Constants.OUT));
 
 		c6.getSource().add(tps1);
 		ip1.getSource().add(c6);
