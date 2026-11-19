@@ -13,6 +13,7 @@ import jakarta.jms.Message;
 import jakarta.jms.Queue;
 import jakarta.jms.TextMessage;
 import ro.demo.usersbackend.common.Constants;
+import ro.demo.usersbackend.entity.LoadUnitType;
 import ro.demo.usersbackend.packagemessaging.Broker;
 import ro.demo.usersbackend.packagemessaging.MfsMessages;
 
@@ -51,7 +52,7 @@ public class SimulatorService {
 		return entities;
 	}
 
-	public void createLU(String barcode, String locationName) {
-		context.createProducer().send(outQueue, Constants.CREATE_LU + " " + barcode + " " + locationName);
+	public void createLU(String barcode, String locationName, LoadUnitType type) {
+		context.createProducer().send(outQueue, Constants.CREATE_LU + " " + barcode + " " + locationName + " " + type.name());
 	}
 }

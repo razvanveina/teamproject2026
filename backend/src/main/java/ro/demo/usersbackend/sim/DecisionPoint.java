@@ -40,10 +40,10 @@ public class DecisionPoint extends ServerPoint {
 			if (message instanceof TextMessage text) {
 				String reply = text.getText().trim();
 				decision = getTarget().get(toIndex(reply));
-				System.out.println(name + ": " + barcode + " reply " + reply + ", goes to " + decision.getName());
+				System.out.println(name + ": " + loadUnit.barcode() + " reply " + reply + ", goes to " + decision.getName());
 			} else if (currentSimulationTime() - askedAt >= Constants.DECISION_TIMEOUT) {
 				decision = getTarget().get(0);
-				System.out.println(name + ": " + barcode + " no reply, goes to " + decision.getName());
+				System.out.println(name + ": " + loadUnit.barcode() + " no reply, goes to " + decision.getName());
 			}
 		}
 	}
@@ -62,38 +62,38 @@ public class DecisionPoint extends ServerPoint {
 
 	private void pull() {
 		for (Entity e : getSource()) {
-			String s = e.getAvailableLU(this);
-			if (s != null) {
+			SimLoadUnit arrivingLoadUnit = e.getAvailableLU(this);
+			if (arrivingLoadUnit != null) {
 				synchronized (this) {
-					barcode = s;
+					loadUnit = arrivingLoadUnit;
 					decision = null;
 					askedAt = currentSimulationTime();
 				}
-				announceLU(s);
-				System.out.println(s + " arrived at " + name);
-				put(MfsMessages.toJson(new AckGet("DECIDE", null, s)));
+				announceLU(arrivingLoadUnit);
+				System.out.println(arrivingLoadUnit.barcode() + " arrived at " + name);
+				put(MfsMessages.toJson(new AckGet("DECIDE", null, arrivingLoadUnit.barcode())));
 				return;
 			}
 		}
 	}
 
 	private synchronized boolean isEmpty() {
-		return barcode == null;
+		return loadUnit == null;
 	}
 
 	@Override
-	public synchronized String getAvailableLU(Entity asking) {
-		if (barcode == null || decision == null || asking != decision) {
+	public synchronized SimLoadUnit getAvailableLU(Entity asking) {
+		if (loadUnit == null || decision == null || asking != decision) {
 			return null;
 		}
-		String s = barcode;
-		barcode = null;
+		SimLoadUnit leavingLoadUnit = loadUnit;
+		loadUnit = null;
 		decision = null;
-		return s;
+		return leavingLoadUnit;
 	}
 
 	@Override
-	public String getAvailableLU() {
+	public SimLoadUnit getAvailableLU() {
 		return null;
 	}
 

@@ -19,8 +19,8 @@ public final class MfsMessages {
 	private MfsMessages() {
 	}
 
-	// de ex {"type":"GET","transportOrderId":1,"loadUnit":"00001","location":"HBW010010101"}
-	public record Get(String type, Long transportOrderId, String loadUnit, String location) {
+	// de ex {"type":"GET","transportOrderId":1,"loadUnit":"00001","loadUnitType":"TOTE","location":"HBW010010101"}
+	public record Get(String type, Long transportOrderId, String loadUnit, String loadUnitType, String location) {
 	}
 
 	// de ex {"type":"ACK_GET","transportOrderId":1,"loadUnit":"00001"}

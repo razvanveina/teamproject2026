@@ -24,16 +24,16 @@ public class SourceTransportPoint extends ServerPoint {
 		consumer = context.createConsumer(context.createQueue(MfsMessages.REQUEST_QUEUE));
 	}
 
-	public synchronized void get(String barcode) {
-		get(barcode, null);
+	public synchronized void get(SimLoadUnit requestedLoadUnit) {
+		get(requestedLoadUnit, null);
 	}
 
-	public synchronized void get(String barcode, Long transportOrderId) {
-		this.barcode = barcode;
+	public synchronized void get(SimLoadUnit requestedLoadUnit, Long transportOrderId) {
+		this.loadUnit = requestedLoadUnit;
 		this.setTransportOrderId(transportOrderId);
 		loadedAt = currentSimulationTime();
 		acknowledged = false;
-		System.out.println(barcode + " loaded");
+		System.out.println(requestedLoadUnit.barcode() + " (" + requestedLoadUnit.type() + ") loaded");
 	}
 
 	@Override
@@ -42,33 +42,33 @@ public class SourceTransportPoint extends ServerPoint {
 			Message message = consumer.receive(100);
 			if (message instanceof TextMessage text) {
 				Get request = MfsMessages.fromJson(text.getText(), Get.class);
-				get(request.loadUnit(), request.transportOrderId());
+				get(new SimLoadUnit(request.loadUnit(), request.loadUnitType()), request.transportOrderId());
 			}
 		} else {
 			Thread.sleep(100);
 		}
 
 		synchronized (this) {
-			if (barcode != null && !acknowledged && currentSimulationTime() - loadedAt >= 2000) {
+			if (loadUnit != null && !acknowledged && currentSimulationTime() - loadedAt >= 2000) {
 				acknowledged = true;
-				put(MfsMessages.toJson(new AckGet("ACK_GET", getTransportOrderId(), barcode)));
-				announceLU(barcode);
+				put(MfsMessages.toJson(new AckGet("ACK_GET", getTransportOrderId(), loadUnit.barcode())));
+				announceLU(loadUnit);
 			}
 		}
 	}
 
 	private synchronized boolean isEmpty() {
-		return barcode == null;
+		return loadUnit == null;
 	}
 
 	@Override
-	public synchronized String getAvailableLU() {
-		if (barcode == null || !acknowledged) {
+	public synchronized SimLoadUnit getAvailableLU() {
+		if (loadUnit == null || !acknowledged) {
 			return null;
 		}
-		String s = barcode;
-		barcode = null;
-		return s;
+		SimLoadUnit leavingLoadUnit = loadUnit;
+		loadUnit = null;
+		return leavingLoadUnit;
 	}
 
 	@Override

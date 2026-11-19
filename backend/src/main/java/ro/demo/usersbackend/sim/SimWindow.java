@@ -28,6 +28,8 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
+import ro.demo.usersbackend.common.Constants;
+
 public class SimWindow extends JPanel {
 
 	private static final long serialVersionUID = 1L;
@@ -143,7 +145,7 @@ public class SimWindow extends JPanel {
 		drawConveyor(g, "C06", 498, 220, 560, 130, 560, 300);
 		drawConveyor(g, "C01", 58, 440, 560, 300, 120, 300, 120, 560);
 		drawConveyor(g, "C10", 325, 605, 120, 560, 560, 560);
-		drawConveyor(g, "C02", 654, 615, 560, 560, 768, 560);
+		drawConveyor(g, "C02", 654, 524, 560, 560, 768, 560);
 		drawConveyor(g, "C03", 1216, 440, 768, 560, 1180, 560, 1180, 300, 768, 300);
 		drawConveyor(g, "C04", 654, 345, 768, 300, 560, 300);
 		drawConveyor(g, "C05", 804, 220, 768, 300, 768, 130);
@@ -165,7 +167,19 @@ public class SimWindow extends JPanel {
 		point(g, "PTTS1", 664, 690);
 		point(g, "PTTT1", 664, 770);
 		point(g, "OUT", 1480, 770);
+
+		drawZone(g, Constants.PICKING_ZONE_LABEL, 620, 640, 88, 172);
 		g.dispose();
+	}
+
+	// for picking zone rectangle
+	private void drawZone(Graphics2D g, String label, int left, int top, int width, int height) {
+		g.setColor(Color.DARK_GRAY);
+		g.setStroke(new BasicStroke(2f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10f, new float[] { 6f, 4f }, 0f));
+		g.drawRect(left, top, width, height);
+		g.setFont(CONV_LABEL);
+		int labelWidth = g.getFontMetrics().stringWidth(label);
+		g.drawString(label, left + (width - labelWidth) / 2, top - 6);
 	}
 
 	private void drawConveyor(Graphics2D g, String name, int labelX, int labelY, int... xy) {
@@ -189,7 +203,7 @@ public class SimWindow extends JPanel {
 		double usable = length(xy) - 2 * margin;
 		for (Conveyor.ToteOnBelt toteOnBelt : conveyor.getTotesOnBelt()) {
 			double[] totePosition = pointAt(xy, margin + toteOnBelt.progress() * usable);
-			tote(g, toteOnBelt.barcode(), totePosition[0], totePosition[1]);
+			tote(g, toteOnBelt.loadUnit(), totePosition[0], totePosition[1]);
 		}
 	}
 
@@ -239,10 +253,11 @@ public class SimWindow extends JPanel {
 		return new double[] { xy[0], xy[1] };
 	}
 
-	private void tote(Graphics2D g, String barcode, double x, double y) {
+	private void tote(Graphics2D g, SimLoadUnit loadUnit, double x, double y) {
+		String barcode = loadUnit.barcode();
 		int tx = (int) (x - TOTE / 2.0);
 		int ty = (int) (y - TOTE / 2.0);
-		g.setColor(Color.ORANGE);
+		g.setColor(isCarton(loadUnit) ? Constants.CARTON_COLOR : Constants.TOTE_COLOR);
 		g.fillRect(tx, ty, TOTE, TOTE);
 		g.setColor(Color.BLACK);
 		g.setStroke(new BasicStroke(1.75f));
@@ -256,6 +271,10 @@ public class SimWindow extends JPanel {
 		}
 		int w = g.getFontMetrics().stringWidth(barcode);
 		g.drawString(barcode, (int) x - w / 2, (int) y + 3);
+	}
+
+	private boolean isCarton(SimLoadUnit loadUnit) {
+		return Constants.CARTON_TYPE.equals(loadUnit.type());
 	}
 
 	private void point(Graphics2D g, String name, int x, int y) {
@@ -278,7 +297,7 @@ public class SimWindow extends JPanel {
 		} else {
 			g.drawString(name, x - nameWidth / 2, y - h - 4);
 		}
-		List<String> lus = byName.get(name).getLoadUnits();
+		List<SimLoadUnit> lus = byName.get(name).getLoadUnits();
 		if (!lus.isEmpty()) {
 			tote(g, lus.get(0), x, y);
 		}

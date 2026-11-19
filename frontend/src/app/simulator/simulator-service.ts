@@ -11,8 +11,8 @@ export class SimulatorService {
         return this.http.post(`${this.url}/sendEvent`, { name: input })
     }
 
-    createLU(barcode: string, location: string){
-        return this.http.post(`${this.url}/createLU?barcode=${barcode}&location=${location}`, {})
+    createLU(barcode: string, location: string, type: string){
+        return this.http.post(`${this.url}/createLU?barcode=${barcode}&location=${location}&type=${type}`, {})
     }
 
     getEntities() {

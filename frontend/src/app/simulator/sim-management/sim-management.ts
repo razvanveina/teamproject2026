@@ -16,6 +16,8 @@ export class SimManagement {
   private service = inject(SimulatorService);
   private eventSource!: EventSource;
   private selectedEntity = '';
+  readonly loadUnitTypes = ['TOTE', 'CARTON'];
+  selectedType = 'TOTE';
   entities = signal<string[]>([]);
 
   @ViewChild('barcode')
@@ -50,8 +52,8 @@ export class SimManagement {
       return;
     }
 
-    this.log.action(`User created LU with barcode: ${barcode} | On location: ${this.selectedEntity}`);
-    this.service.createLU(barcode, this.selectedEntity).subscribe({
+    this.log.action(`User created ${this.selectedType} with barcode: ${barcode} | On location: ${this.selectedEntity}`);
+    this.service.createLU(barcode, this.selectedEntity, this.selectedType).subscribe({
       next: () => {
         this.barcodeInput.nativeElement.value = '';
       },

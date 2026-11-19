@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import ro.demo.usersbackend.entity.LoadUnitType;
 import ro.demo.usersbackend.service.LoadUnitService;
 import ro.demo.usersbackend.service.SimulatorService;
 
@@ -70,10 +71,10 @@ public class SimulatorController {
 	}
 
 	@PostMapping("/createLU")
-	public ResponseEntity<Void> createLU(@RequestParam String barcode, @RequestParam String location) {
-		System.out.println("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-		simulatorService.createLU(barcode, location);
-		loadUnitService.createEmptyTote(barcode);
+	public ResponseEntity<Void> createLU(@RequestParam String barcode, @RequestParam String location,
+			@RequestParam LoadUnitType type) {
+		simulatorService.createLU(barcode, location, type);
+		loadUnitService.createEmptyLoadUnit(barcode, type);
 
 		return ResponseEntity.ok().build();
 	}

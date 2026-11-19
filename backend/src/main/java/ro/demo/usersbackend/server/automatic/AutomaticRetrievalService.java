@@ -101,7 +101,7 @@ public class AutomaticRetrievalService extends AbstractProcess {
 				sessionFactory.inTransaction(session -> {
 					TransportOrder order = session.find(TransportOrder.class, orderId);
 					Get message = new Get("GET", orderId, order.getLoadUnit().getBarcode(),
-							order.getSource().getName());
+							order.getLoadUnit().getType().toString(), order.getSource().getName());
 					context.createProducer().send(requests, MfsMessages.toJson(message));
 					mfsLog.info("SERVER -> SIM [{}] {}", MfsMessages.REQUEST_QUEUE, MfsMessages.toJson(message));
 					order.setStatus(TransportOrderStatus.ACTIVE);

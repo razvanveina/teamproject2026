@@ -13,7 +13,7 @@ import ro.demo.usersbackend.packagemessaging.MfsMessages.Arrived;
 
 public abstract class ServerPoint extends Entity {
 
-	protected String barcode;
+	protected SimLoadUnit loadUnit;
 	private Long transportOrderId;
 	private JMSContext context;
 	private Queue outQueue;
@@ -57,8 +57,8 @@ public abstract class ServerPoint extends Entity {
 	}
 
 	@Override
-	public synchronized List<String> getLoadUnits() {
-		return barcode == null ? List.of() : List.of(barcode);
+	public synchronized List<SimLoadUnit> getLoadUnits() {
+		return loadUnit == null ? List.of() : List.of(loadUnit);
 	}
 
 	protected boolean isReady() {
@@ -72,7 +72,7 @@ public abstract class ServerPoint extends Entity {
 
 	@Override
 	public synchronized void restore(EntityState state) {
-		barcode = state.loadUnits().isEmpty() ? null : state.loadUnits().get(0);
+		loadUnit = state.loadUnits().isEmpty() ? null : state.loadUnits().get(0);
 		transportOrderId = state.transportOrderId();
 	}
 
@@ -85,7 +85,7 @@ public abstract class ServerPoint extends Entity {
 	}
 	
 	// anuntam serveru ca lu a ajuns intr o anumita locatie
-	protected void announceLU(String barcode) {
-		put(MfsMessages.toJson(new Arrived("ARRIVED", name, barcode)));
+	protected void announceLU(SimLoadUnit arrivedLoadUnit) {
+		put(MfsMessages.toJson(new Arrived("ARRIVED", name, arrivedLoadUnit.barcode())));
 	}
 }

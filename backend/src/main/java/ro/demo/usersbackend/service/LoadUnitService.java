@@ -162,7 +162,7 @@ public class LoadUnitService {
 		return loadUnitRepository.save(carton);
 	}
 
-	public LoadUnit createEmptyTote(String barcode) {
+	public LoadUnit createEmptyLoadUnit(String barcode, LoadUnitType type) {
 		LoadUnit loadUnit = new LoadUnit();
 
 		Location loc = locationRepository.findByName(Constants.IP1).orElseThrow(
@@ -170,7 +170,7 @@ public class LoadUnitService {
 
 		loadUnit.setLocation(loc);
 		loadUnit.setBarcode(barcode);
-		loadUnit.setType(LoadUnitType.TOTE);
+		loadUnit.setType(type);
 
 		loadUnitRepository.save(loadUnit);
 

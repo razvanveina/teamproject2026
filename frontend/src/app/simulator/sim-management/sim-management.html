@@ -9,5 +9,13 @@
         }
     </select>
 
+    <select [(ngModel)]="selectedType">
+        @for (type of loadUnitTypes; track type) {
+        <option [value]="type">
+            {{ type }}
+        </option>
+        }
+    </select>
+
     <button (click)=createLU(barcode.value)>Create LU</button>
 </div>

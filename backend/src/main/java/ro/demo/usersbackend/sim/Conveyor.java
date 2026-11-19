@@ -11,18 +11,18 @@ public class Conveyor extends Entity {
 
 	private static final Logger log = LogManager.getLogger("application");
 
-	public record ToteOnBelt(String barcode, double progress) {
+	public record ToteOnBelt(SimLoadUnit loadUnit, double progress) {
 	}
 
 	private static final class Tote {
-		private final String barcode;
+		private final SimLoadUnit loadUnit;
 		private int slotIndex;
 		private double startPosition;
 		private long moveStartedAt;
 		private long moveDuration;
 
-		private Tote(String barcode, int slotIndex, double startPosition, long moveStartedAt, long moveDuration) {
-			this.barcode = barcode;
+		private Tote(SimLoadUnit loadUnit, int slotIndex, double startPosition, long moveStartedAt, long moveDuration) {
+			this.loadUnit = loadUnit;
 			this.slotIndex = slotIndex;
 			this.startPosition = startPosition;
 			this.moveStartedAt = moveStartedAt;
@@ -53,9 +53,9 @@ public class Conveyor extends Entity {
 		return capacity;
 	}
 
-	public synchronized void createLU(String barcode) {
+	public synchronized void createLU(SimLoadUnit createdLoadUnit) {
 		if (isSlotFree(0, currentSimulationTime())) {
-			enterFirstSlot(barcode);
+			enterFirstSlot(createdLoadUnit);
 		}
 	}
 
@@ -105,19 +105,19 @@ public class Conveyor extends Entity {
 		}
 
 		for (Entity e : getSource()) {
-			String barcode = e.getAvailableLU(this);
-			if (barcode != null) {
+			SimLoadUnit arrivingLoadUnit = e.getAvailableLU(this);
+			if (arrivingLoadUnit != null) {
 				synchronized (this) {
-					enterFirstSlot(barcode);
+					enterFirstSlot(arrivingLoadUnit);
 				}
 				return;
 			}
 		}
 	}
 
-	private void enterFirstSlot(String barcode) {
+	private void enterFirstSlot(SimLoadUnit enteringLoadUnit) {
 		long entryDuration = capacity > 1 ? 0 : travelTime;
-		totes.addLast(new Tote(barcode, 0, 0.0, currentSimulationTime(), entryDuration));
+		totes.addLast(new Tote(enteringLoadUnit, 0, 0.0, currentSimulationTime(), entryDuration));
 	}
 
 	private boolean isSlotFree(int slotIndex, long currentTime) {
@@ -150,28 +150,28 @@ public class Conveyor extends Entity {
 	}
 
 	@Override
-	public synchronized String getAvailableLU() {
+	public synchronized SimLoadUnit getAvailableLU() {
 		Tote first = totes.peekFirst();
 		if (first == null || first.slotIndex < capacity - 1 || !hasArrived(first, currentSimulationTime())) {
 			return null;
 		}
 		totes.pollFirst();
-		return first.barcode;
+		return first.loadUnit;
 	}
 
 	@Override
-	public synchronized List<String> getLoadUnits() {
-		return totes.stream().map(tote -> tote.barcode).toList();
+	public synchronized List<SimLoadUnit> getLoadUnits() {
+		return totes.stream().map(tote -> tote.loadUnit).toList();
 	}
 
 	public synchronized List<ToteOnBelt> getTotesOnBelt() {
 		long currentTime = currentSimulationTime();
-		return totes.stream().map(tote -> new ToteOnBelt(tote.barcode, currentPosition(tote, currentTime))).toList();
+		return totes.stream().map(tote -> new ToteOnBelt(tote.loadUnit, currentPosition(tote, currentTime))).toList();
 	}
 
 	@Override
 	public synchronized void restore(EntityState state) {
-		List<String> loadUnits = state.loadUnits();
+		List<SimLoadUnit> loadUnits = state.loadUnits();
 		int restoredCount = Math.min(loadUnits.size(), capacity);
 		long currentTime = currentSimulationTime();
 		for (int toteIndex = 0; toteIndex < restoredCount; toteIndex++) {

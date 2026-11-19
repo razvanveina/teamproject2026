@@ -50,11 +50,11 @@ public abstract class Entity implements Runnable {
 	}
 
 	public String toJSON(int id) {
-		List<String> loadUnits = getLoadUnits().stream().map(lu -> "\"" + lu + "\"").toList();
+		List<String> loadUnits = getLoadUnits().stream().map(lu -> "\"" + lu.barcode() + "\"").toList();
 		return "{\"id\":" + id + ",\"name\":\"" + name + "\",\"loadUnits\":[" + String.join(",", loadUnits) + "]}";
 	}
 
-	public List<String> getLoadUnits() {
+	public List<SimLoadUnit> getLoadUnits() {
 		return List.of();
 	}
 
@@ -82,9 +82,9 @@ public abstract class Entity implements Runnable {
 		this.target = target;
 	}
 
-	public abstract String getAvailableLU();
+	public abstract SimLoadUnit getAvailableLU();
 
-	public String getAvailableLU(Entity asking) {
+	public SimLoadUnit getAvailableLU(Entity asking) {
 		return getAvailableLU();
 	}
 

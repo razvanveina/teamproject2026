@@ -24,39 +24,39 @@ public class StationPoint extends ServerPoint {
 		Message message = consumer.receive(100);
 
 		synchronized (this) {
-			if (barcode == null) {
+			if (loadUnit == null) {
 				pull();
 				return;
 			}
 			if (message != null && !released) {
 				released = true;
-				System.out.println(name + ": " + barcode + " released");
+				System.out.println(name + ": " + loadUnit.barcode() + " released");
 			}
 		}
 	}
 
 	private void pull() {
 		for (Entity e : getSource()) {
-			String s = e.getAvailableLU(this);
-			if (s != null) {
-				barcode = s;
+			SimLoadUnit arrivingLoadUnit = e.getAvailableLU(this);
+			if (arrivingLoadUnit != null) {
+				loadUnit = arrivingLoadUnit;
 				released = false;
-				System.out.println(s + " arrived at " + name);
-				announceLU(s);
+				System.out.println(arrivingLoadUnit.barcode() + " arrived at " + name);
+				announceLU(arrivingLoadUnit);
 				return;
 			}
 		}
 	}
 
 	@Override
-	public synchronized String getAvailableLU() {
-		if (barcode == null || !released) {
+	public synchronized SimLoadUnit getAvailableLU() {
+		if (loadUnit == null || !released) {
 			return null;
 		}
-		String s = barcode;
-		barcode = null;
+		SimLoadUnit leavingLoadUnit = loadUnit;
+		loadUnit = null;
 		released = false;
-		return s;
+		return leavingLoadUnit;
 	}
 
 	@Override

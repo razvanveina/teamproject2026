@@ -20,29 +20,30 @@ public class InfoPoint extends ServerPoint {
 
 	private void pull() {
 		for (Entity e : getSource()) {
-			String s = e.getAvailableLU(this);
-			if (s != null) {
+			SimLoadUnit arrivingLoadUnit = e.getAvailableLU(this);
+			if (arrivingLoadUnit != null) {
 				synchronized (this) {
-					barcode = s;
+					loadUnit = arrivingLoadUnit;
 					arrivedAt = currentSimulationTime();
 				}
-				announceLU(s);
+				announceLU(arrivingLoadUnit);
 				return;
 			}
 		}
 	}
 
 	private synchronized boolean isEmpty() {
-		return barcode == null;
+		return loadUnit == null;
 	}
 
 	@Override
-	public synchronized String getAvailableLU() {
+
+	public synchronized SimLoadUnit getAvailableLU() {
 		if (currentSimulationTime() - arrivedAt < Constants.INFO_POINT_DWELL) {
 			return null;
 		}
-		String s = barcode;
-		barcode = null;
-		return s;
+		SimLoadUnit leavingLoadUnit = loadUnit;
+		loadUnit = null;
+		return leavingLoadUnit;
 	}
 }

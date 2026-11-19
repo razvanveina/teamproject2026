@@ -26,28 +26,28 @@ public class TargetTransportPoint extends ServerPoint {
 
 		if (consumer.receive(100) != null) {
 			synchronized (this) {
-				barcode = null;
+				loadUnit = null;
 			}
 		}
 	}
 
 	private synchronized boolean isEmpty() {
-		return barcode == null;
+		return loadUnit == null;
 	}
 
 	private synchronized void pull() {
 		for (Entity e : getSource()) {
-			String s = e.getAvailableLU(this);
-			if (s != null) {
-				barcode = s;
-				announceLU(s);
+			SimLoadUnit arrivingLoadUnit = e.getAvailableLU(this);
+			if (arrivingLoadUnit != null) {
+				loadUnit = arrivingLoadUnit;
+				announceLU(arrivingLoadUnit);
 				return;
 			}
 		}
 	}
 
 	@Override
-	public String getAvailableLU() {
+	public SimLoadUnit getAvailableLU() {
 		return null;
 	}
 }

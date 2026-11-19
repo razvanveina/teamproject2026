@@ -1,5 +1,6 @@
 package ro.demo.usersbackend.common;
 
+import java.awt.Color;
 import java.util.List;
 
 import ro.demo.usersbackend.entity.TransportOrderStatus;
@@ -56,4 +57,13 @@ public final class Constants {
 	public static final long INFO_POINT_DWELL = 1000; // cat sta un tote pe un info point
 	public static final long TPS1_ACK_DELAY = 2000; // TPS1 confirma GET dupa asta
 	public static final long ACK_GET_WAIT = 1000; // cat asteapta sv pentru urmatorul reply
+
+	// load unit types din sim
+	public static final String TOTE_TYPE = "TOTE";
+	public static final String CARTON_TYPE = "CARTON";
+
+	// sim window
+	public static final Color TOTE_COLOR = new Color(120, 165, 215);
+	public static final Color CARTON_COLOR = new Color(185, 140, 100);
+	public static final String PICKING_ZONE_LABEL = "Picking Zone";
 }

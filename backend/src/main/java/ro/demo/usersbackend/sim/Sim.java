@@ -21,6 +21,7 @@ import jakarta.jms.JMSContext;
 import jakarta.jms.Message;
 import jakarta.jms.Queue;
 import jakarta.jms.TextMessage;
+import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.packagemessaging.Broker;
 import ro.demo.usersbackend.packagemessaging.MfsMessages;
 
@@ -85,7 +86,7 @@ public class Sim {
 						String[] s = request.split(" ");
 						entities.forEach(e -> {
 							if (e.getName().equals(s[2]) && e.getClass() == Conveyor.class) {
-								((Conveyor) e).createLU(s[1]);
+								((Conveyor) e).createLU(new SimLoadUnit(s[1], s.length > 3 ? s[3] : Constants.TOTE_TYPE));
 							}
 						});
 					}
