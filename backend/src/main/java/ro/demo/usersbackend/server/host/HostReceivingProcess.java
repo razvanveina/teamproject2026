@@ -85,8 +85,7 @@ public class HostReceivingProcess extends AbstractProcess {
 			List<String> items = new ArrayList<>();
 
 			boolean created = sessionFactory.fromTransaction(session -> {
-				Long existing = session
-						.createQuery("select count(o) from ReceivingOrder o where o.orderId = :id", Long.class)
+				Long existing = session.createNamedQuery("ReceivingOrder.countByOrderId", Long.class)
 						.setParameter("id", orderId).getSingleResult();
 				if (existing > 0) {
 					return false;
@@ -101,8 +100,7 @@ public class HostReceivingProcess extends AbstractProcess {
 					Element line = (Element) lines.item(i);
 					String barcode = value(line, "article");
 
-					List<Article> found = session
-							.createQuery("from Article a where a.barcode = :barcode", Article.class)
+					List<Article> found = session.createNamedQuery("Article.findByBarcode", Article.class)
 							.setParameter("barcode", barcode).getResultList();
 
 					if (found.isEmpty()) {
@@ -127,8 +125,8 @@ public class HostReceivingProcess extends AbstractProcess {
 					orderLine.setQuantity(Integer.parseInt(value(line, "quantity")));
 					orderLine.setStatus(ReceivingOrderLineStatus.NEW);
 					session.persist(orderLine);
-					items.add("received " + article.getDescription() + " with id " + article.getBarcode() + " and quantity "
-							+ orderLine.getQuantity());
+					items.add("received " + article.getDescription() + " with id " + article.getBarcode()
+							+ " and quantity " + orderLine.getQuantity());
 				}
 				return true;
 			});

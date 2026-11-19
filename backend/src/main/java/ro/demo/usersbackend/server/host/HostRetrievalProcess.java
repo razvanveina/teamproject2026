@@ -86,8 +86,7 @@ public class HostRetrievalProcess extends AbstractProcess {
 			List<String> items = new ArrayList<>();
 
 			boolean created = sessionFactory.fromTransaction(session -> {
-				Long existing = session
-						.createQuery("select count(o) from RetrievalOrder o where o.orderId = :id", Long.class)
+				Long existing = session.createNamedQuery("RetrievalOrder.findByOrderId", Long.class)
 						.setParameter("id", orderId).getSingleResult();
 				if (existing > 0) {
 					return false;
@@ -97,8 +96,7 @@ public class HostRetrievalProcess extends AbstractProcess {
 
 				String destinationName = value(xml.getDocumentElement(), "destination");
 
-				Destination destination = session
-						.createQuery("from Destination d where d.name = :name", Destination.class)
+				Destination destination = session.createNamedQuery("Destination.findByName", Destination.class)
 						.setParameter("name", destinationName).getSingleResult();
 
 				order.setOrderId(orderId);
@@ -112,8 +110,7 @@ public class HostRetrievalProcess extends AbstractProcess {
 					Element line = (Element) lines.item(i);
 					String barcode = value(line, "article");
 
-					List<Article> found = session
-							.createQuery("from Article a where a.barcode = :barcode", Article.class)
+					List<Article> found = session.createNamedQuery("Article.findByBarcode", Article.class)
 							.setParameter("barcode", barcode).getResultList();
 
 					if (found.isEmpty()) {
@@ -138,8 +135,8 @@ public class HostRetrievalProcess extends AbstractProcess {
 					orderLine.setQuantity(Integer.parseInt(value(line, "quantity")));
 					orderLine.setStatus(RetrievalOrderLineStatus.NEW);
 					session.persist(orderLine);
-					items.add("requested " + article.getDescription() + " with id " + article.getBarcode() + " and quantity "
-							+ orderLine.getQuantity());
+					items.add("requested " + article.getDescription() + " with id " + article.getBarcode()
+							+ " and quantity " + orderLine.getQuantity());
 				}
 				return true;
 			});

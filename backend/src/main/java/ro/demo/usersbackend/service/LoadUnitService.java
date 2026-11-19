@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -48,7 +47,6 @@ public class LoadUnitService {
 	private final DestinationToGateRepository destinationToGateRepository;
 	private final ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository;
 	private final TransportOrderService transportOrderService;
-	private final JdbcTemplate jdbcTemplate;
 
 	private RetrievalOrder orderOf(LoadUnit loadUnit) {
 		return loadUnit.getStockItems().stream().filter(s -> s.getReservation() != null)
@@ -67,7 +65,7 @@ public class LoadUnitService {
 			LoadUnitRepository loadUnitRepository, LocationRepository locationRepository,
 			DestinationToGateRepository destinationToGateRepository,
 			ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository,
-			TransportOrderService transportOrderService, JdbcTemplate jdbcTemplate) {
+			TransportOrderService transportOrderService) {
 		super();
 		this.entityManager = entityManager;
 		this.stockItemRepository = stockItemRepository;
@@ -76,7 +74,6 @@ public class LoadUnitService {
 		this.destinationToGateRepository = destinationToGateRepository;
 		this.articlePackagingUnitTypeRepository = articlePackagingUnitTypeRepository;
 		this.transportOrderService = transportOrderService;
-		this.jdbcTemplate = jdbcTemplate;
 	}
 
 	// Deletes a load unit together with its stock items (and their reservations).
@@ -84,26 +81,19 @@ public class LoadUnitService {
 	// lose their link, so inventory orders and stock adjustments stay.
 	// Returns the refusal message, or null when the load unit was deleted.
 	public String deleteLoadUnit(Long id) {
-		Integer transports = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM transport_order WHERE load_unit_id = ?",
-				Integer.class, id);
+		Integer transports = ((Number) entityManager.createNamedQuery("TransportOrder.countByLoadUnitId")
+				.setParameter("loadUnitId", id).getSingleResult()).intValue();
 		if (transports != null && transports > 0) {
 			return "Cannot delete load unit " + id + ": it is still used in TRANSPORT_ORDER (" + transports + " rows)";
 		}
 
-		jdbcTemplate.update("""
-				UPDATE stock_item SET reservation_id = NULL WHERE reservation_id IN
-				(SELECT id FROM reservation WHERE stock_item_id IN
-				 (SELECT id FROM stock_item WHERE load_unit_id = ?))""", id);
+		entityManager.createNamedQuery("releaseReservationsForLoadUnit").setParameter("loadUnitId", id).executeUpdate();
+		entityManager.createNamedQuery("Reservation.deleteByLoadUnitId").setParameter("loadUnitId", id).executeUpdate();
+		entityManager.createNamedQuery("StockItem.deleteByLoadUnitId").setParameter("loadUnitId", id).executeUpdate();
+		entityManager.createNamedQuery("InvetoryOrderLine.deleteByLoadUnitId").setParameter("loadUnitId", id)
+				.executeUpdate();
+		entityManager.createNamedQuery("LoadUnit.deleteById").setParameter("id", id).executeUpdate();
 
-		jdbcTemplate.update("""
-				DELETE FROM reservation WHERE stock_item_id IN
-				(SELECT id FROM stock_item WHERE load_unit_id = ?)""", id);
-
-		jdbcTemplate.update("DELETE FROM stock_item WHERE load_unit_id = ?", id);
-
-		jdbcTemplate.update("UPDATE inventory_order_line SET load_unit_id = NULL WHERE load_unit_id = ?", id);
-
-		jdbcTemplate.update("DELETE FROM load_unit WHERE id = ?", id);
 		return null;
 	}
 
@@ -227,8 +217,7 @@ public class LoadUnitService {
 		}
 
 		List<RetrievalOrder> mine = entityManager
-				.createQuery("from RetrievalOrder o where o.shippingUser = :user and o.status = :status",
-						RetrievalOrder.class)
+				.createNamedQuery("RetrievalOrder.findOrderIdsByStatus", RetrievalOrder.class)
 				.setParameter("user", user).setParameter("status", RetrievalOrderStatus.PICKED).getResultList();
 		for (RetrievalOrder other : mine) {
 			if (!other.getId().equals(order.getId())) {

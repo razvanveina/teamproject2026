@@ -41,13 +41,9 @@ public class ReplenishmentProcess extends AbstractProcess {
 			SessionFactory sessionFactory = ServerSessionFactory.getInstance();
 
 			// load unit-uri din HBW (culoar > 0) cu stoc rezervat si fara to deschis
-			List<Long> loadUnitIds = sessionFactory.fromTransaction(session -> session.createQuery("""
-					select distinct u.id from StorageLocation l
-					join l.loadUnits u
-					join u.stockItems s
-					where l.aisle > 0 and s.reservation is not null
-					and not exists (select t.id from TransportOrder t where t.loadUnit = u and t.status in :open)
-					""", Long.class).setParameterList("open", Constants.OPEN_TRANSPORT_STATUSES).getResultList());
+			List<Long> loadUnitIds = sessionFactory.fromTransaction(
+					session -> session.createNamedQuery("LoadUnit.findReservedIdsInStorage", Long.class)
+							.setParameterList("open", Constants.OPEN_TRANSPORT_STATUSES).getResultList());
 
 			loadUnitIds.forEach(loadUnitId -> process(sessionFactory, loadUnitId, true));
 		} catch (Exception e) {
@@ -60,14 +56,10 @@ public class ReplenishmentProcess extends AbstractProcess {
 		try {
 			SessionFactory sessionFactory = ServerSessionFactory.getInstance();
 
-			List<Long> loadUnitIds = sessionFactory.fromTransaction(session -> session.createQuery("""
-					select u.id from LoadUnit u
-					where u.type = :pallet and u.location.name = :decanting
-					and not exists (select s.id from StockItem s where s.loadUnit = u and s.reservation is not null)
-					and not exists (select t.id from TransportOrder t where t.loadUnit = u and t.status in :open)
-					""", Long.class).setParameter("pallet", LoadUnitType.PALLET)
-					.setParameter("decanting", Constants.DECANTING)
-					.setParameterList("open", Constants.OPEN_TRANSPORT_STATUSES).getResultList());
+			List<Long> loadUnitIds = sessionFactory.fromTransaction(
+					session -> session.createNamedQuery("LoadUnit.findFreePalletIdsInDecanting", Long.class)
+							.setParameter("pallet", LoadUnitType.PALLET).setParameter("decanting", Constants.DECANTING)
+							.setParameterList("open", Constants.OPEN_TRANSPORT_STATUSES).getResultList());
 
 			loadUnitIds.forEach(loadUnitId -> process(sessionFactory, loadUnitId, false));
 		} catch (Exception e) {
@@ -91,7 +83,7 @@ public class ReplenishmentProcess extends AbstractProcess {
 	}
 
 	private static void replenish(Session session, LoadUnit loadUnit) {
-		Location decanting = session.createQuery("from Location l where l.name = :name", Location.class)
+		Location decanting = session.createNamedQuery("Location.findByName", Location.class)
 				.setParameter("name", Constants.DECANTING).uniqueResultOptional().orElse(null);
 		if (decanting == null) {
 			Log.error("location {} is missing", Constants.DECANTING);
@@ -105,13 +97,10 @@ public class ReplenishmentProcess extends AbstractProcess {
 
 	// prima locatie libera din HBW spre care nu vine niciun to deschis
 	private static void store(Session session, LoadUnit loadUnit) {
-		StorageLocation target = session.createQuery("""
-				from StorageLocation l
-				where l.aisle > 0 and l.loadUnits is empty
-				and l.id not in (select t.target.id from TransportOrder t where t.status in :open)
-				order by l.x asc
-				""", StorageLocation.class).setParameterList("open", Constants.OPEN_TRANSPORT_STATUSES).setMaxResults(1)
-				.uniqueResultOptional().orElse(null);
+		StorageLocation target = session
+				.createNamedQuery("StorageLocation.findFreeStorageLocations", StorageLocation.class)
+				.setParameterList("open", Constants.OPEN_TRANSPORT_STATUSES).setMaxResults(1).uniqueResultOptional()
+				.orElse(null);
 		if (target == null) {
 			Log.warn("no free HBW location, load unit {} stays in {}", loadUnit.getBarcode(), Constants.DECANTING);
 			return;

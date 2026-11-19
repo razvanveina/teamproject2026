@@ -36,8 +36,7 @@ public class ToteTransportService extends AbstractProcess {
 	}
 
 	private void moveTotes(Session session) {
-		List<LoadUnit> totes = session
-				.createQuery("from LoadUnit u where u.type = :type and u.location.name in :places", LoadUnit.class)
+		List<LoadUnit> totes = session.createNamedQuery("LoadUnit.findByTypeInDecantingOrTpt1", LoadUnit.class)
 				.setParameter("type", LoadUnitType.TOTE)
 				.setParameterList("places", List.of(Constants.DECANTING, Constants.TPT1)).getResultList();
 
@@ -55,7 +54,7 @@ public class ToteTransportService extends AbstractProcess {
 	private void sendToPicking(Session session, LoadUnit tote) {
 		Article article = tote.getStockItems().get(0).getArticlePackagingUnitType().getArticle();
 		List<ArticlePickingLocation> places = session
-				.createQuery("from ArticlePickingLocation a where a.article = :article", ArticlePickingLocation.class)
+				.createNamedQuery("ArticlePickingLocation.findByArticle", ArticlePickingLocation.class)
 				.setParameter("article", article).getResultList();
 
 		// daca articolul nu are inca niciun loc de picking, ii dam cel mai apropiat loc
@@ -95,10 +94,7 @@ public class ToteTransportService extends AbstractProcess {
 	// articol
 	private StorageLocation findNearestFreePlace(Session session, StorageLocation from) {
 		List<StorageLocation> free = session
-				.createQuery(
-						"from StorageLocation l where l.name like :pick and l.loadUnits is empty "
-								+ "and l.id not in (select a.location.id from ArticlePickingLocation a)",
-						StorageLocation.class)
+				.createNamedQuery("StorageLocation.findFreePickingLocations", StorageLocation.class)
 				.setParameter("pick", Constants.PICK_PREFIX + "%").getResultList();
 
 		StorageLocation nearest = null;
@@ -120,9 +116,7 @@ public class ToteTransportService extends AbstractProcess {
 	}
 
 	private boolean hasTransportTo(Session session, StorageLocation location) {
-		Long open = session
-				.createQuery("select count(t) from TransportOrder t where t.target = :location and t.status in :open",
-						Long.class)
+		Long open = session.createNamedQuery("TransportOrder.countActiveByTarget", Long.class)
 				.setParameter("location", location).setParameterList("open", Constants.OPEN_TRANSPORT_STATUSES)
 				.getSingleResult();
 		return open > 0;
@@ -140,9 +134,7 @@ public class ToteTransportService extends AbstractProcess {
 	// nu facem al doilea transport order pentru un tote care are deja unul NEW sau
 	// ACTIVE
 	private boolean hasOpenTransport(Session session, LoadUnit tote) {
-		Long open = session
-				.createQuery("select count(t) from TransportOrder t where t.loadUnit = :tote and t.status in :open",
-						Long.class)
+		Long open = session.createNamedQuery("TransportOrder.countActiveByTarget", Long.class)
 				.setParameter("tote", tote).setParameterList("open", Constants.OPEN_TRANSPORT_STATUSES)
 				.getSingleResult();
 		return open > 0;

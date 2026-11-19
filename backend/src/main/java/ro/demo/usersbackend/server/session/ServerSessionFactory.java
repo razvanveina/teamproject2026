@@ -68,7 +68,7 @@ public final class ServerSessionFactory {
 				.addAnnotatedClass(Reservation.class).addAnnotatedClass(RetrievalOrder.class)
 				.addAnnotatedClass(RetrievalOrderLine.class).addAnnotatedClass(ReceivingOrder.class)
 				.addAnnotatedClass(ReceivingOrderLine.class).addAnnotatedClass(Destination.class)
-				.addAnnotatedClass(TransportOrder.class).addAnnotatedClass(ArticlePickingLocation.class).buildMetadata()
-				.buildSessionFactory();
+				.addAnnotatedClass(TransportOrder.class).addAnnotatedClass(ArticlePickingLocation.class)
+				.addResource("queries.hbm.xml").buildMetadata().buildSessionFactory();
 	}
 }

@@ -25,7 +25,7 @@ public class SessionFactoryProvider {
 //        StandardServiceRegistryBuilder builder = new StandardServiceRegistryBuilder().applySettings(configuration.getProperties());
 //        factory = configuration.buildSessionFactory(builder.build());
 
-				factory = new Configuration().configure("hibernate.cfg.xml") //
+				factory = new Configuration().configure("hibernate.cfg.xml")//
 						.buildSessionFactory();
 				init();
 			} catch (Throwable ex) {

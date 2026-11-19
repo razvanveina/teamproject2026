@@ -36,7 +36,7 @@
     	<![CDATA[
         	select distinct u.id from LoadUnit u
         	join u.stockItems s
-        	where u.type = :tote and u.location.name like 'PICK%'
+        	where u.type = :tote and u.location.name like :pick
        		and s.reservation.retrievalOrderLine.order.automatic = true
         	and not exists (select t.id from TransportOrder t
                  			where t.loadUnit = u and t.status in :open)
@@ -53,14 +53,14 @@
 	<query name="TransportOrder.countActiveByTarget">
 	    <![CDATA[
 	        select count(t) from TransportOrder t
-	        where t.target = :location and t.status in (:new, :active)
+	        where t.target = :location and t.status in :open
 	    ]]>
 	</query>
 
 	<query name="StorageLocation.findFreePickingLocations">
 	    <![CDATA[
 	        from StorageLocation l
-	        where l.name like 'PICK%' and l.loadUnits is empty
+	        where l.name like :pick and l.loadUnits is empty
 	        and l.id not in (select a.location.id from ArticlePickingLocation a)
 	    ]]>
 	</query>
@@ -75,9 +75,11 @@
 	<query name="LoadUnit.findByTypeInDecantingOrTpt1">
     	<![CDATA[
         	from LoadUnit u
-        	where u.type = :type and u.location.name in ('DECANTING', 'TPT1')
+        	where u.type = :type and u.location.name in :places
     	]]>
 	</query>
+	
+	<!--('DECANTING', 'TPT1')-->
 	
 	<query name="StockItem.findFreeByArticle">
 	    <![CDATA[
@@ -239,10 +241,5 @@
             SELECT LOADUNIT_SEQUENCE.NEXTVAL FROM DUAL
         ]]>
     </sql-query>
-
-    <database-object>
-        <create>CREATE SEQUENCE LOADUNIT_SEQUENCE START WITH 1 INCREMENT BY 1</create>
-        <drop>DROP SEQUENCE LOADUNIT_SEQUENCE</drop>
-    </database-object>
 
 </hibernate-mapping>

@@ -15,9 +15,9 @@ public class OUTHandler extends PointHandler {
 		super.handle(telegram);
 
 		String barcode = MfsMessages.fromJson(telegram, Arrived.class).loadUnit();
-		long reserved = ServerSessionFactory.getInstance().fromTransaction(session -> session.createQuery(
-				"select count(s) from StockItem s where s.loadUnit.barcode = :barcode and s.reservation is not null",
-				Long.class).setParameter("barcode", barcode).getSingleResult());
+		long reserved = ServerSessionFactory.getInstance().fromTransaction(
+				session -> session.createNamedQuery("StockItem.countReservedByLoadUnitBarcode", Long.class)
+						.setParameter("barcode", barcode).getSingleResult());
 
 		if (reserved == 0) {
 			log.warn("{}: tote {} has nothing to ship, released", Constants.OUT, barcode);

@@ -90,10 +90,10 @@ public class AutomaticRetrievalService extends AbstractProcess {
 
 	// to-urile new trimise spre conveyor trimit GET si sunt trecute pe active
 	private void sendRequests(SessionFactory sessionFactory, JMSContext context) {
-		List<Long> orderIds = sessionFactory.fromTransaction(session -> session.createQuery(
-				"select t.id from TransportOrder t where t.status = :status and t.target.name = :target order by t.id",
-				Long.class).setParameter("status", TransportOrderStatus.NEW).setParameter("target", Constants.CONVEYOR)
-				.getResultList());
+		List<Long> orderIds = sessionFactory.fromTransaction(
+				session -> session.createNamedQuery("TransportOrder.findIdsByStatusAndTargetName", Long.class)
+						.setParameter("status", TransportOrderStatus.NEW).setParameter("target", Constants.CONVEYOR)
+						.getResultList());
 
 		Queue requests = context.createQueue(MfsMessages.REQUEST_QUEUE);
 		for (Long orderId : orderIds) {
@@ -115,15 +115,10 @@ public class AutomaticRetrievalService extends AbstractProcess {
 
 	// totes din PICKING cu stoc rezervat pentru ro automat, fara to deschis
 	private void createTransportOrders(SessionFactory sessionFactory) {
-		List<Long> loadUnitIds = sessionFactory.fromTransaction(session -> session.createQuery("""
-				select distinct u.id from LoadUnit u
-				join u.stockItems s
-				where u.type = :tote and u.location.name like :pick
-				and s.reservation.retrievalOrderLine.order.automatic = true
-				and not exists (select t.id from TransportOrder t where t.loadUnit = u and t.status in :open)
-				""", Long.class).setParameter("tote", LoadUnitType.TOTE)
-				.setParameter("pick", Constants.PICK_PREFIX + "%")
-				.setParameterList("open", Constants.OPEN_TRANSPORT_STATUSES).getResultList());
+		List<Long> loadUnitIds = sessionFactory.fromTransaction(
+				session -> session.createNamedQuery("LoadUnit.findPickingTotesForAutomaticOrders", Long.class)
+						.setParameter("tote", LoadUnitType.TOTE).setParameter("pick", Constants.PICK_PREFIX + "%")
+						.setParameterList("open", Constants.OPEN_TRANSPORT_STATUSES).getResultList());
 
 		for (Long loadUnitId : loadUnitIds) {
 			try {
@@ -135,7 +130,7 @@ public class AutomaticRetrievalService extends AbstractProcess {
 	}
 
 	private static void createTransportOrder(Session session, Long loadUnitId) {
-		Location conveyor = session.createQuery("from Location l where l.name = :name", Location.class)
+		Location conveyor = session.createNamedQuery("Location.findByName", Location.class)
 				.setParameter("name", Constants.CONVEYOR).uniqueResultOptional().orElse(null);
 		if (conveyor == null) {
 			log.error("Automatic retrieval: location {} is missing", Constants.CONVEYOR);

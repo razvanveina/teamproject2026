@@ -13,8 +13,7 @@ public class DP3Handler extends DecisionPointHandler {
 	@Override
 	protected int decide(String loadUnit) throws Exception {
 		long stockItems = ServerSessionFactory.getInstance()
-				.fromTransaction(session -> session
-						.createQuery("select count(s) from StockItem s where s.loadUnit.barcode = :barcode", Long.class)
+				.fromTransaction(session -> session.createNamedQuery("StockItem.countByLoadUnitBarcode", Long.class)
 						.setParameter("barcode", loadUnit).getSingleResult());
 		return stockItems == 0 ? 1 : 0;
 	}

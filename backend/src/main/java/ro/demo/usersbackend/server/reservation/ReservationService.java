@@ -37,9 +37,9 @@ public class ReservationService extends AbstractProcess {
 		try {
 			SessionFactory sessionFactory = ServerSessionFactory.getInstance();
 
-			List<String> orderIds = sessionFactory.fromTransaction(session -> session
-					.createQuery("select o.orderId from RetrievalOrder o where o.status = :status", String.class)
-					.setParameter("status", RetrievalOrderStatus.NEW).getResultList());
+			List<String> orderIds = sessionFactory.fromTransaction(
+					session -> session.createNamedQuery("RetrievalOrder.findOrderIdsByStatus", String.class)
+							.setParameter("status", RetrievalOrderStatus.NEW).getResultList());
 
 			orderIds.forEach(orderId -> process(sessionFactory, orderId));
 		} catch (Exception e) {
@@ -51,8 +51,7 @@ public class ReservationService extends AbstractProcess {
 		try {
 			List<String> items = new ArrayList<>();
 			boolean reserved = sessionFactory.fromTransaction(session -> {
-				RetrievalOrder order = session
-						.createQuery("from RetrievalOrder o where o.orderId = :id", RetrievalOrder.class)
+				RetrievalOrder order = session.createNamedQuery("RetrievalOrder.findByOrderId", RetrievalOrder.class)
 						.setParameter("id", orderId).getSingleResult();
 				return reserve(session, order, items);
 			});
@@ -160,12 +159,9 @@ public class ReservationService extends AbstractProcess {
 	}
 
 	private static ArticlePackagingUnitType findPiecePackaging(Session session, Article article) {
-		return session.createQuery("""
-				from ArticlePackagingUnitType p
-				where p.article = :article and p.packagingUnitType.quantity = 1
-				order by p.id
-				""", ArticlePackagingUnitType.class).setParameter("article", article).setMaxResults(1)
-				.uniqueResultOptional().orElseThrow(
+		return session
+				.createNamedQuery("ArticlePackagingUnitType.findSingleUnitByArticle", ArticlePackagingUnitType.class)
+				.setParameter("article", article).setMaxResults(1).uniqueResultOptional().orElseThrow(
 						() -> new IllegalStateException("article " + article.getBarcode() + " has no piece packaging"));
 	}
 
@@ -204,14 +200,7 @@ public class ReservationService extends AbstractProcess {
 
 	// stocul liber al articolului, cu cel din locatiile de picking primul
 	private static List<StockItem> findAvailableStock(Session session, Article article) {
-		return session.createQuery("""
-				select s from StockItem s
-				join s.loadUnit u
-				join u.location l
-				join s.articlePackagingUnitType p
-				where p.article = :article and s.reservation is null and type(l) = StorageLocation
-				order by case when l.name like :pick then 0 else 1 end, s.id
-				""", StockItem.class).setParameter("article", article).setParameter("pick", Constants.PICK_PREFIX + "%")
-				.getResultList();
+		return session.createNamedQuery("StockItem.findFreeByArticle", StockItem.class).setParameter("article", article)
+				.setParameter("pick", Constants.PICK_PREFIX + "%").getResultList();
 	}
 }

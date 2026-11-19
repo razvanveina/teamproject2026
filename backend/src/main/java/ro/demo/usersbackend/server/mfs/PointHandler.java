@@ -24,16 +24,16 @@ public abstract class PointHandler implements TelegramHandler {
 		Arrived arrived = MfsMessages.fromJson(telegram, Arrived.class);
 
 		ServerSessionFactory.getInstance().inTransaction(session -> {
-			Location location = session.createQuery("from Location l where l.name = :name", Location.class)
+			Location location = session.createNamedQuery("Location.findByName", Location.class)
 					.setParameter("name", point).uniqueResultOptional().orElse(null);
-			LoadUnit loadUnit = session.createQuery("from LoadUnit lu where lu.barcode = :barcode", LoadUnit.class)
+			LoadUnit loadUnit = session.createNamedQuery("LoadUnit.findByBarcode", LoadUnit.class)
 					.setParameter("barcode", arrived.loadUnit()).uniqueResultOptional().orElse(null);
-			
+
 			if (location == null || loadUnit == null) {
 				log.warn("{}: load unit {} or location not found", point, arrived.loadUnit());
 				return;
 			}
-			
+
 			loadUnit.setLocation(location);
 			log.info("{}: load unit {} arrived", point, loadUnit.getBarcode());
 		});

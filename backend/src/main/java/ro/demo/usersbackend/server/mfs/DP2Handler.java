@@ -12,14 +12,10 @@ public class DP2Handler extends DecisionPointHandler {
 	@Override
 	protected int decide(String loadUnit) throws Exception {
 		return ServerSessionFactory.getInstance().fromTransaction(session -> {
-			long stockItems = session
-					.createQuery("select count(s) from StockItem s where s.loadUnit.barcode = :barcode", Long.class)
+			long stockItems = session.createNamedQuery("StockItem.countReservedByLoadUnitBarcode", Long.class)
 					.setParameter("barcode", loadUnit).getSingleResult();
-			long automatic = session.createQuery("""
-					select count(s) from StockItem s
-					where s.loadUnit.barcode = :barcode
-					and s.reservation.retrievalOrderLine.order.automatic = true
-					""", Long.class).setParameter("barcode", loadUnit).getSingleResult();
+			long automatic = session.createNamedQuery("StockItem.countAutomaticByLoadUnitBarcode", Long.class)
+					.setParameter("barcode", loadUnit).getSingleResult();
 			return (stockItems == 0 || automatic > 0) ? 1 : 0;
 		});
 	}
