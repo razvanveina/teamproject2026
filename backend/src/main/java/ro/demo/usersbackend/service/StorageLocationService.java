@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.entity.Location;
 import ro.demo.usersbackend.repository.StorageLocationRepository;
 
@@ -18,7 +19,7 @@ public class StorageLocationService {
 	}
 
 	public Location findClosestEmptyX() {
-		return storageLocationRepository.findFirstFreeByX(Limit.of(1)).orElseThrow(
+		return storageLocationRepository.findFirstFreeByX(Constants.OPEN_TRANSPORT_STATUSES, Limit.of(1)).orElseThrow(
 				() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "No free storage location available"));
 	}
 }
