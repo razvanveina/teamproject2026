@@ -66,4 +66,16 @@ public final class Constants {
 	public static final Color TOTE_COLOR = new Color(120, 165, 215);
 	public static final Color CARTON_COLOR = new Color(185, 140, 100);
 	public static final String PICKING_ZONE_LABEL = "Picking Zone";
+
+	// printing
+	public static final String PDF_OUTPUT_FOLDER = "prints";
+	public static final String PREFIX = "Shipping_Document_";
+	public static final String STATUS_MISSING = "MISSING";
+
+	// campurile din json-ul etichetei
+	public static final String ORDER_ID = "orderId";
+	public static final String DESTINATION = "destination";
+	public static final String LINES = "lines";
+	public static final String ARTICLE = "article";
+	public static final String QUANTITY = "quantity";
 }

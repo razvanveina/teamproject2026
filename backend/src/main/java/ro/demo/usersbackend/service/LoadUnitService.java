@@ -312,23 +312,12 @@ public class LoadUnitService {
 		checkOwner(order, user, barcode);
 
 		PrintJob latestPrintJob = printJobService.findLatestPrintJobForOrder(order.getOrderId());
-		return latestPrintJob == null ? "MISSING" : latestPrintJob.getStatus().toString();
+		return latestPrintJob == null ? Constants.STATUS_MISSING : latestPrintJob.getStatus().toString();
 	}
 
 	public void confirmLabelAndSendCartonToGate(String barcode, String scannedLabel, String user) {
 		LoadUnit carton = findLoadUnit(barcode);
-		if (carton.getType() != LoadUnitType.CARTON) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-					"Load unit " + barcode + " is a " + carton.getType() + ". Only a carton gets a label");
-		}
-		checkLocation(carton, "OUT");
-		RetrievalOrder order = orderOf(carton);
-		checkOwner(order, user, barcode);
-
-		if (order.getStatus() != RetrievalOrderStatus.PICKED || !isOrderPacked(order)) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-					"Confirm the items of carton " + barcode + " first");
-		}
+		RetrievalOrder order = findOrderOfPackedCarton(carton, barcode, user);
 
 		PrintJob latestPrintJob = printJobService.findLatestPrintJobForOrder(order.getOrderId());
 		if (latestPrintJob == null || latestPrintJob.getStatus() != PrintJobStatus.PRINTED) {
@@ -347,18 +336,7 @@ public class LoadUnitService {
 
 	public void reprintLabel(String barcode, String user) {
 		LoadUnit carton = findLoadUnit(barcode);
-		if (carton.getType() != LoadUnitType.CARTON) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-					"Load unit " + barcode + " is a " + carton.getType() + ". Only a carton gets a label");
-		}
-		checkLocation(carton, "OUT");
-		RetrievalOrder order = orderOf(carton);
-		checkOwner(order, user, barcode);
-
-		if (order.getStatus() != RetrievalOrderStatus.PICKED || !isOrderPacked(order)) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-					"Confirm the items of carton " + barcode + " first");
-		}
+		RetrievalOrder order = findOrderOfPackedCarton(carton, barcode, user);
 
 		PrintJob latestPrintJob = printJobService.findLatestPrintJobForOrder(order.getOrderId());
 		if (latestPrintJob == null) {
@@ -371,6 +349,22 @@ public class LoadUnitService {
 		}
 
 		printJobService.resetPrintJobForReprint(latestPrintJob);
+	}
+
+	private RetrievalOrder findOrderOfPackedCarton(LoadUnit carton, String barcode, String user) {
+		if (carton.getType() != LoadUnitType.CARTON) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+					"Load unit " + barcode + " is a " + carton.getType() + ". Only a carton gets a label");
+		}
+		checkLocation(carton, Constants.OUT);
+		RetrievalOrder order = orderOf(carton);
+		checkOwner(order, user, barcode);
+
+		if (order.getStatus() != RetrievalOrderStatus.PICKED || !isOrderPacked(order)) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+					"Confirm the items of carton " + barcode + " first");
+		}
+		return order;
 	}
 
 	private boolean isOrderPacked(RetrievalOrder order) {

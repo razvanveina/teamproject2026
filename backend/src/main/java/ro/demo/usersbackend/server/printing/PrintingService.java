@@ -20,6 +20,7 @@ import com.lowagie.text.pdf.Barcode128;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
 
+import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.entity.PrintJob;
 import ro.demo.usersbackend.entity.PrintJobStatus;
 import ro.demo.usersbackend.entity.PrinterType;
@@ -28,8 +29,7 @@ import ro.demo.usersbackend.server.session.ServerSessionFactory;
 
 public class PrintingService extends AbstractProcess {
 	private static final Logger log = LogManager.getLogger("application");
-	private static final String PDF_OUTPUT_FOLDER = "prints";
-	private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
+	private final ObjectMapper jsonMapper = new ObjectMapper();
 
 	public PrintingService() {
 		super("printingService");
@@ -54,7 +54,7 @@ public class PrintingService extends AbstractProcess {
 		}
 	}
 
-	private static void printPdfJob(SessionFactory sessionFactory, Long printJobId) {
+	private void printPdfJob(SessionFactory sessionFactory, Long printJobId) {
 		try {
 			sessionFactory.inTransaction(session -> {
 				PrintJob printJob = session.find(PrintJob.class, printJobId);
@@ -74,11 +74,11 @@ public class PrintingService extends AbstractProcess {
 		}
 	}
 
-	private static Path writeShippingLabelPdf(PrintJob printJob) throws Exception {
-		JsonNode labelData = JSON_MAPPER.readTree(printJob.getData());
-		String orderId = labelData.get("orderId").asText();
+	private Path writeShippingLabelPdf(PrintJob printJob) throws Exception {
+		JsonNode labelData = jsonMapper.readTree(printJob.getData());
+		String orderId = labelData.get(Constants.ORDER_ID).asText();
 
-		Path pdfFile = Path.of(PDF_OUTPUT_FOLDER, "Shipping_Document" + "_" + orderId + ".pdf");
+		Path pdfFile = Path.of(Constants.PDF_OUTPUT_FOLDER, Constants.PREFIX + orderId + ".pdf");
 		Files.createDirectories(pdfFile.getParent());
 
 		try (OutputStream pdfOutputStream = Files.newOutputStream(pdfFile)) {
@@ -88,16 +88,16 @@ public class PrintingService extends AbstractProcess {
 
 			document.add(new Paragraph("Shipping Document", new Font(Font.HELVETICA, 18, Font.BOLD)));
 			document.add(new Paragraph("Order ID: " + orderId));
-			document.add(new Paragraph("Destination: " + labelData.get("destination").asText()));
+			document.add(new Paragraph("Destination: " + labelData.get(Constants.DESTINATION).asText()));
 
 			PdfPTable articleTable = new PdfPTable(2);
 			articleTable.setSpacingBefore(10);
 			articleTable.setSpacingAfter(20);
 			articleTable.addCell("Article");
 			articleTable.addCell("Quantity");
-			for (JsonNode labelLine : labelData.get("lines")) {
-				articleTable.addCell(labelLine.get("article").asText());
-				articleTable.addCell(labelLine.get("quantity").asText());
+			for (JsonNode labelLine : labelData.get(Constants.LINES)) {
+				articleTable.addCell(labelLine.get(Constants.ARTICLE).asText());
+				articleTable.addCell(labelLine.get(Constants.QUANTITY).asText());
 			}
 			document.add(articleTable);
 

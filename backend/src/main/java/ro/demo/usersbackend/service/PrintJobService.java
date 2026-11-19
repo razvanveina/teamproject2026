@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.entity.DocumentType;
 import ro.demo.usersbackend.entity.PrintJob;
 import ro.demo.usersbackend.entity.PrintJobStatus;
@@ -29,7 +30,7 @@ import ro.demo.usersbackend.entity.RetrievalOrderLine;
 @Transactional
 public class PrintJobService {
 	private static final Logger log = LogManager.getLogger("application");
-	private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
+	private final ObjectMapper jsonMapper = new ObjectMapper();
 
 	@PersistenceContext
 	private EntityManager entityManager;
@@ -47,19 +48,19 @@ public class PrintJobService {
 		List<Map<String, Object>> labelLines = new ArrayList<>();
 		for (RetrievalOrderLine orderLine : order.getLines()) {
 			Map<String, Object> labelLine = new LinkedHashMap<>();
-			labelLine.put("article", orderLine.getArticle().getBarcode());
-			labelLine.put("quantity", orderLine.getQuantity());
+			labelLine.put(Constants.ARTICLE, orderLine.getArticle().getBarcode());
+			labelLine.put(Constants.QUANTITY, orderLine.getQuantity());
 			labelLines.add(labelLine);
 		}
 
 		Map<String, Object> labelData = new LinkedHashMap<>();
-		labelData.put("orderId", order.getOrderId());
-		labelData.put("destination", order.getDestination().getName());
-		labelData.put("lines", labelLines);
+		labelData.put(Constants.ORDER_ID, order.getOrderId());
+		labelData.put(Constants.DESTINATION, order.getDestination().getName());
+		labelData.put(Constants.LINES, labelLines);
 
 		try {
 			PrintJob printJob = new PrintJob(pdfPrinter, DocumentType.SHIPPING_LABEL,
-					JSON_MAPPER.writeValueAsString(labelData));
+					jsonMapper.writeValueAsString(labelData));
 			entityManager.persist(printJob);
 			log.info("Printing: shipping label job created for order {} on {}", order.getOrderId(),
 					pdfPrinter.getName());
