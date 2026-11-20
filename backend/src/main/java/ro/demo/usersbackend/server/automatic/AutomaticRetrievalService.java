@@ -31,6 +31,9 @@ import ro.demo.usersbackend.server.process.AbstractProcess;
 public class AutomaticRetrievalService extends AbstractProcess {
 	public static final Logger log = LogManager.getLogger("automaticRetrieval");
 	private static final Logger mfsLog = LogManager.getLogger("mfsMessages");
+
+	// conexiunea la broker si consumerul de raspunsuri traiesc cat procesul, nu le
+	// refacem la fiecare tura
 	private final JMSContext context;
 	private final JMSConsumer replies;
 
@@ -62,7 +65,7 @@ public class AutomaticRetrievalService extends AbstractProcess {
 				JsonNode node = MfsMessages.fromJson(text, JsonNode.class);
 				if ("ACK_GET".equals(node.path("type").asText())) {
 					AckGet ack = MfsMessages.fromJson(text, AckGet.class);
-					new WithSessionAndTransaction<Void>() {
+					new WithSessionAndTransaction<>() {
 						@Override
 						protected void executeBusinessLogic(Session session) {
 							confirmGet(session, ack);
@@ -141,7 +144,7 @@ public class AutomaticRetrievalService extends AbstractProcess {
 
 		for (Long loadUnitId : loadUnitIds) {
 			try {
-				new WithSessionAndTransaction<Void>() {
+				new WithSessionAndTransaction<>() {
 					@Override
 					protected void executeBusinessLogic(Session session) {
 						createTransportOrder(session, loadUnitId);
