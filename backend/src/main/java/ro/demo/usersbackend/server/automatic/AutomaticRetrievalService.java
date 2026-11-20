@@ -6,7 +6,6 @@ import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hibernate.Session;
-import org.hibernate.SessionFactory;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -16,6 +15,7 @@ import jakarta.jms.JMSException;
 import jakarta.jms.Message;
 import jakarta.jms.TextMessage;
 import ro.demo.usersbackend.common.Constants;
+import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
 import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.LoadUnitType;
 import ro.demo.usersbackend.entity.Location;
@@ -27,25 +27,25 @@ import ro.demo.usersbackend.messaging.MfsMessages.AckGet;
 import ro.demo.usersbackend.messaging.MfsMessages.Get;
 import ro.demo.usersbackend.server.mfs.TelegramHandling;
 import ro.demo.usersbackend.server.process.AbstractProcess;
-import ro.demo.usersbackend.server.session.ServerSessionFactory;
 
 public class AutomaticRetrievalService extends AbstractProcess {
 	public static final Logger log = LogManager.getLogger("automaticRetrieval");
 	private static final Logger mfsLog = LogManager.getLogger("mfsMessages");
+	private final JMSContext context;
+	private final JMSConsumer replies;
 
 	public AutomaticRetrievalService() {
 		super("automaticRetrievalService");
+		context = new ActiveMQConnectionFactory(Broker.URL).createContext();
+		replies = context.createConsumer(context.createQueue(MfsMessages.RESPONSE_QUEUE));
 	}
 
 	@Override
 	protected void doAction() {
 		try {
-			SessionFactory sessionFactory = ServerSessionFactory.getInstance();
-			createTransportOrders(sessionFactory);
-			try (JMSContext context = new ActiveMQConnectionFactory(Broker.URL).createContext()) {
-				sendRequests(sessionFactory, context);
-				receiveReplies(sessionFactory, context);
-			}
+			createTransportOrders();
+			sendRequests();
+			receiveReplies();
 		} catch (Exception e) {
 			log.error("Automatic retrieval: {}", e.toString());
 		}
@@ -53,17 +53,21 @@ public class AutomaticRetrievalService extends AbstractProcess {
 
 	// ACK_GET confirma ca TPS1 a luat tote-ul, restul telegramelor (ARRIVED) merg
 	// la handlerul punctului
-	private void receiveReplies(SessionFactory sessionFactory, JMSContext context) throws JMSException {
-		JMSConsumer consumer = context.createConsumer(context.createQueue(MfsMessages.RESPONSE_QUEUE));
+	private void receiveReplies() throws JMSException {
 		Message message;
-		while ((message = consumer.receive(Constants.ACK_GET_WAIT)) != null) {
+		while ((message = replies.receive(Constants.ACK_GET_WAIT)) != null) {
 			try {
 				String text = ((TextMessage) message).getText();
 				mfsLog.info("SIM -> SERVER [{}] {}", MfsMessages.RESPONSE_QUEUE, text);
 				JsonNode node = MfsMessages.fromJson(text, JsonNode.class);
 				if ("ACK_GET".equals(node.path("type").asText())) {
 					AckGet ack = MfsMessages.fromJson(text, AckGet.class);
-					sessionFactory.inTransaction(session -> confirmGet(session, ack));
+					new WithSessionAndTransaction<Void>() {
+						@Override
+						protected void executeBusinessLogic(Session session) {
+							confirmGet(session, ack);
+						}
+					}.run();
 				} else {
 					TelegramHandling.getInstance().route(node.path("point").asText(), text);
 				}
@@ -85,46 +89,65 @@ public class AutomaticRetrievalService extends AbstractProcess {
 				order.getLoadUnit().getBarcode(), order.getTarget().getName());
 	}
 
-	// to-urile NEW spre PTTS1 (din picking) trimit GET si sunt trecute pe ACTIVE
-	private void sendRequests(SessionFactory sessionFactory, JMSContext context) {
-		List<Long> orderIds = sessionFactory.fromTransaction(
-				session -> session.createNamedQuery("TransportOrder.findIdsByStatusAndTargetName", Long.class)
+	// to-urile NEW spre PTTS1: in tranzactie le trecem pe ACTIVE si pregatim
+	// GET-ul,
+	// dupa commit trimitem GET-ul (in afara tranzactiei)
+	private void sendRequests() {
+		List<Long> orderIds = new WithSessionAndTransaction<List<Long>>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				setReturnValue(session.createNamedQuery("TransportOrder.findIdsByStatusAndTargetName", Long.class)
 						.setParameter("status", TransportOrderStatus.NEW).setParameter("target", Constants.PTTS1)
 						.getResultList());
+			}
+		}.run();
 
 		for (Long orderId : orderIds) {
 			try {
-				sessionFactory.inTransaction(session -> {
-					TransportOrder order = session.find(TransportOrder.class, orderId);
-					Get message = new Get("GET", orderId, order.getLoadUnit().getBarcode(),
-							order.getLoadUnit().getType().toString(), order.getSource().getName());
-					// de la decanting tote-ul intra pe banda prin TPS2, restul prin TPS1
-					String queueName = MfsMessages.REQUEST_QUEUE;
-					if (Constants.DECANTING.equals(order.getSource().getName())) {
-						queueName = MfsMessages.DECANTING_REQUEST_QUEUE;
+				Get message = new WithSessionAndTransaction<Get>() {
+					@Override
+					protected void executeBusinessLogic(Session session) {
+						TransportOrder order = session.find(TransportOrder.class, orderId);
+						order.setStatus(TransportOrderStatus.ACTIVE);
+						setReturnValue(new Get("GET", orderId, order.getLoadUnit().getBarcode(),
+								order.getLoadUnit().getType().toString(), order.getSource().getName()));
 					}
-					context.createProducer().send(context.createQueue(queueName), MfsMessages.toJson(message));
-					mfsLog.info("SERVER -> SIM [{}] {}", queueName, MfsMessages.toJson(message));
-					order.setStatus(TransportOrderStatus.ACTIVE);
-					log.info("Automatic retrieval: sent {}", MfsMessages.toJson(message));
-				});
-			} catch (Exception e) {
+				}.run();
+
+				// de la decanting tote-ul intra pe banda prin TPS2, restul prin TPS1
+				String queueName = MfsMessages.REQUEST_QUEUE;
+				if (Constants.DECANTING.equals(message.location())) {
+					queueName = MfsMessages.DECANTING_REQUEST_QUEUE;
+				}
+				context.createProducer().send(context.createQueue(queueName), MfsMessages.toJson(message));
+				mfsLog.info("SERVER -> SIM [{}] {}", queueName, MfsMessages.toJson(message));
+				log.info("Automatic retrieval: sent {}", MfsMessages.toJson(message));
+			} catch (RuntimeException e) {
 				log.error("Automatic retrieval: order {} not sent {}", orderId, e.toString());
 			}
 		}
 	}
 
 	// totes din PICKING cu stoc rezervat pentru ro automat, fara to deschis
-	private void createTransportOrders(SessionFactory sessionFactory) {
-		List<Long> loadUnitIds = sessionFactory.fromTransaction(
-				session -> session.createNamedQuery("LoadUnit.findPickingTotesForAutomaticOrders", Long.class)
+	private void createTransportOrders() {
+		List<Long> loadUnitIds = new WithSessionAndTransaction<List<Long>>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				setReturnValue(session.createNamedQuery("LoadUnit.findPickingTotesForAutomaticOrders", Long.class)
 						.setParameter("tote", LoadUnitType.TOTE).setParameter("pick", Constants.PICK_PREFIX + "%")
 						.setParameterList("open", Constants.OPEN_TRANSPORT_STATUSES).getResultList());
+			}
+		}.run();
 
 		for (Long loadUnitId : loadUnitIds) {
 			try {
-				sessionFactory.inTransaction(session -> createTransportOrder(session, loadUnitId));
-			} catch (Exception e) {
+				new WithSessionAndTransaction<Void>() {
+					@Override
+					protected void executeBusinessLogic(Session session) {
+						createTransportOrder(session, loadUnitId);
+					}
+				}.run();
+			} catch (RuntimeException e) {
 				log.error("Automatic retrieval: load unit {} not processed {}", loadUnitId, e.toString());
 			}
 		}
