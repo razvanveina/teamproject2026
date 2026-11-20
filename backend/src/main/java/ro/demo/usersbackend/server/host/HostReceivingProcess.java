@@ -13,18 +13,18 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.hibernate.SessionFactory;
+import org.hibernate.Session;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
 import ro.demo.usersbackend.entity.Article;
 import ro.demo.usersbackend.entity.ReceivingOrder;
 import ro.demo.usersbackend.entity.ReceivingOrderLine;
 import ro.demo.usersbackend.entity.ReceivingOrderLineStatus;
 import ro.demo.usersbackend.entity.ReceivingOrderStatus;
 import ro.demo.usersbackend.server.process.AbstractProcess;
-import ro.demo.usersbackend.server.session.ServerSessionFactory;
 
 public class HostReceivingProcess extends AbstractProcess {
 	private static final Logger Log = LogManager.getLogger("hostReceiving");
@@ -47,10 +47,9 @@ public class HostReceivingProcess extends AbstractProcess {
 				folder = Path.of(readFolder());
 				Log.info("watching path {}", folder.toAbsolutePath());
 			}
-			SessionFactory sessionFactory = ServerSessionFactory.getInstance();
 
 			try (Stream<Path> files = Files.list(folder)) {
-				files.filter(f -> f.toString().endsWith(".xml")).forEach(f -> process(sessionFactory, f));
+				files.filter(f -> f.toString().endsWith(".xml")).forEach(f -> process(f));
 			}
 		} catch (Exception e) {
 			Log.error("cannot scan {}: {}", folder.toAbsolutePath(), e.toString());
@@ -76,7 +75,7 @@ public class HostReceivingProcess extends AbstractProcess {
 		return properties;
 	}
 
-	private void process(SessionFactory sessionFactory, Path file) {
+	private void process(Path file) {
 		String name = file.getFileName().toString();
 		try {
 			Document xml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file.toFile());
@@ -84,52 +83,57 @@ public class HostReceivingProcess extends AbstractProcess {
 			NodeList lines = xml.getElementsByTagName("line");
 			List<String> items = new ArrayList<>();
 
-			boolean created = sessionFactory.fromTransaction(session -> {
-				Long existing = session.createNamedQuery("ReceivingOrder.countByOrderId", Long.class)
-						.setParameter("id", orderId).getSingleResult();
-				if (existing > 0) {
-					return false;
+			boolean created = new WithSessionAndTransaction<Boolean>() {
+
+				@Override
+				protected void executeBusinessLogic(Session session) {
+					Long existing = session.createNamedQuery("ReceivingOrder.countByOrderId", Long.class)
+							.setParameter("id", orderId).getSingleResult();
+					if (existing > 0) {
+						setReturnValue(false);
+					}
+
+					ReceivingOrder order = new ReceivingOrder();
+					order.setOrderId(orderId);
+					order.setStatus(ReceivingOrderStatus.NEW);
+					session.persist(order);
+
+					for (int i = 0; i < lines.getLength(); i++) {
+						Element line = (Element) lines.item(i);
+						String barcode = value(line, "article");
+
+						List<Article> found = session.createNamedQuery("Article.findByBarcode", Article.class)
+								.setParameter("barcode", barcode).getResultList();
+
+						if (found.isEmpty()) {
+							throw new IllegalArgumentException("article " + barcode + " doesn't exist");
+						}
+						if (found.size() > 1) {
+							Log.warn("in {} with barcode {} matches {} articles", name, barcode, found.size());
+						}
+						Article article;
+						if (found.isEmpty()) {
+							article = new Article();
+							article.setBarcode(barcode);
+							article.setDescription(barcode);
+							session.persist(article);
+						} else {
+							article = found.get(0);
+						}
+
+						ReceivingOrderLine orderLine = new ReceivingOrderLine();
+						orderLine.setOrder(order);
+						orderLine.setArticle(article);
+						orderLine.setQuantity(Integer.parseInt(value(line, "quantity")));
+						orderLine.setStatus(ReceivingOrderLineStatus.NEW);
+						session.persist(orderLine);
+						items.add("received " + article.getDescription() + " with id " + article.getBarcode()
+								+ " and quantity " + orderLine.getQuantity());
+					}
+					setReturnValue(true);
 				}
+			}.run();
 
-				ReceivingOrder order = new ReceivingOrder();
-				order.setOrderId(orderId);
-				order.setStatus(ReceivingOrderStatus.NEW);
-				session.persist(order);
-
-				for (int i = 0; i < lines.getLength(); i++) {
-					Element line = (Element) lines.item(i);
-					String barcode = value(line, "article");
-
-					List<Article> found = session.createNamedQuery("Article.findByBarcode", Article.class)
-							.setParameter("barcode", barcode).getResultList();
-
-					if (found.isEmpty()) {
-						throw new IllegalArgumentException("article " + barcode + " doesn't exist");
-					}
-					if (found.size() > 1) {
-						Log.warn("in {} with barcode {} matches {} articles", name, barcode, found.size());
-					}
-					Article article;
-					if (found.isEmpty()) {
-						article = new Article();
-						article.setBarcode(barcode);
-						article.setDescription(barcode);
-						session.persist(article);
-					} else {
-						article = found.get(0);
-					}
-
-					ReceivingOrderLine orderLine = new ReceivingOrderLine();
-					orderLine.setOrder(order);
-					orderLine.setArticle(article);
-					orderLine.setQuantity(Integer.parseInt(value(line, "quantity")));
-					orderLine.setStatus(ReceivingOrderLineStatus.NEW);
-					session.persist(orderLine);
-					items.add("received " + article.getDescription() + " with id " + article.getBarcode()
-							+ " and quantity " + orderLine.getQuantity());
-				}
-				return true;
-			});
 			if (created) {
 				Log.info("in {}, order {} created", name, orderId);
 				items.forEach(item -> Log.info(item));

@@ -13,11 +13,12 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.hibernate.SessionFactory;
+import org.hibernate.Session;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
 import ro.demo.usersbackend.entity.Article;
 import ro.demo.usersbackend.entity.Destination;
 import ro.demo.usersbackend.entity.RetrievalOrder;
@@ -25,7 +26,6 @@ import ro.demo.usersbackend.entity.RetrievalOrderLine;
 import ro.demo.usersbackend.entity.RetrievalOrderLineStatus;
 import ro.demo.usersbackend.entity.RetrievalOrderStatus;
 import ro.demo.usersbackend.server.process.AbstractProcess;
-import ro.demo.usersbackend.server.session.ServerSessionFactory;
 
 public class HostRetrievalProcess extends AbstractProcess {
 	private static final Logger Log = LogManager.getLogger("hostRetrieval");
@@ -47,10 +47,8 @@ public class HostRetrievalProcess extends AbstractProcess {
 				folder = Path.of(readFolder());
 				Log.info("watching path {}", folder.toAbsolutePath());
 			}
-			SessionFactory sessionFactory = ServerSessionFactory.getInstance();
-
 			try (Stream<Path> files = Files.list(folder)) {
-				files.filter(f -> f.toString().endsWith(".xml")).forEach(f -> process(sessionFactory, f));
+				files.filter(f -> f.toString().endsWith(".xml")).forEach(f -> process(f));
 			}
 		} catch (Exception e) {
 			Log.error("cannot scan {}: {}", folder.toAbsolutePath(), e.toString());
@@ -77,7 +75,7 @@ public class HostRetrievalProcess extends AbstractProcess {
 		return properties;
 	}
 
-	private void process(SessionFactory sessionFactory, Path file) {
+	private void process(Path file) {
 		String name = file.getFileName().toString();
 		try {
 			Document xml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file.toFile());
@@ -85,61 +83,65 @@ public class HostRetrievalProcess extends AbstractProcess {
 			NodeList lines = xml.getElementsByTagName("line");
 			List<String> items = new ArrayList<>();
 
-			boolean created = sessionFactory.fromTransaction(session -> {
-				Long existing = session.createNamedQuery("RetrievalOrder.findByOrderId", Long.class)
-						.setParameter("id", orderId).getSingleResult();
-				if (existing > 0) {
-					return false;
+			boolean created = new WithSessionAndTransaction<Boolean>() {
+
+				@Override
+				protected void executeBusinessLogic(Session session) {
+					Long existing = session.createNamedQuery("RetrievalOrder.findByOrderId", Long.class)
+							.setParameter("id", orderId).getSingleResult();
+					if (existing > 0) {
+						setReturnValue(false);
+					}
+
+					RetrievalOrder order = new RetrievalOrder();
+
+					String destinationName = value(xml.getDocumentElement(), "destination");
+
+					Destination destination = session.createNamedQuery("Destination.findByName", Destination.class)
+							.setParameter("name", destinationName).getSingleResult();
+
+					order.setOrderId(orderId);
+					order.setStatus(RetrievalOrderStatus.NEW);
+					order.setDestination(destination);
+					order.setAutomatic(isAutomatic(xml.getDocumentElement()));
+
+					session.persist(order);
+
+					for (int i = 0; i < lines.getLength(); i++) {
+						Element line = (Element) lines.item(i);
+						String barcode = value(line, "article");
+
+						List<Article> found = session.createNamedQuery("Article.findByBarcode", Article.class)
+								.setParameter("barcode", barcode).getResultList();
+
+						if (found.isEmpty()) {
+							throw new IllegalArgumentException("article " + barcode + " doesn't exist");
+						}
+						if (found.size() > 1) {
+							Log.warn("in {} with barcode {} matches {} articles", name, barcode, found.size());
+						}
+						Article article;
+						if (found.isEmpty()) {
+							article = new Article();
+							article.setBarcode(barcode);
+							article.setDescription(barcode);
+							session.persist(article);
+						} else {
+							article = found.get(0);
+						}
+
+						RetrievalOrderLine orderLine = new RetrievalOrderLine();
+						orderLine.setOrder(order);
+						orderLine.setArticle(article);
+						orderLine.setQuantity(Integer.parseInt(value(line, "quantity")));
+						orderLine.setStatus(RetrievalOrderLineStatus.NEW);
+						session.persist(orderLine);
+						items.add("requested " + article.getDescription() + " with id " + article.getBarcode()
+								+ " and quantity " + orderLine.getQuantity());
+					}
+					setReturnValue(true);
 				}
-
-				RetrievalOrder order = new RetrievalOrder();
-
-				String destinationName = value(xml.getDocumentElement(), "destination");
-
-				Destination destination = session.createNamedQuery("Destination.findByName", Destination.class)
-						.setParameter("name", destinationName).getSingleResult();
-
-				order.setOrderId(orderId);
-				order.setStatus(RetrievalOrderStatus.NEW);
-				order.setDestination(destination);
-				order.setAutomatic(isAutomatic(xml.getDocumentElement()));
-
-				session.persist(order);
-
-				for (int i = 0; i < lines.getLength(); i++) {
-					Element line = (Element) lines.item(i);
-					String barcode = value(line, "article");
-
-					List<Article> found = session.createNamedQuery("Article.findByBarcode", Article.class)
-							.setParameter("barcode", barcode).getResultList();
-
-					if (found.isEmpty()) {
-						throw new IllegalArgumentException("article " + barcode + " doesn't exist");
-					}
-					if (found.size() > 1) {
-						Log.warn("in {} with barcode {} matches {} articles", name, barcode, found.size());
-					}
-					Article article;
-					if (found.isEmpty()) {
-						article = new Article();
-						article.setBarcode(barcode);
-						article.setDescription(barcode);
-						session.persist(article);
-					} else {
-						article = found.get(0);
-					}
-
-					RetrievalOrderLine orderLine = new RetrievalOrderLine();
-					orderLine.setOrder(order);
-					orderLine.setArticle(article);
-					orderLine.setQuantity(Integer.parseInt(value(line, "quantity")));
-					orderLine.setStatus(RetrievalOrderLineStatus.NEW);
-					session.persist(orderLine);
-					items.add("requested " + article.getDescription() + " with id " + article.getBarcode()
-							+ " and quantity " + orderLine.getQuantity());
-				}
-				return true;
-			});
+			}.run();
 			if (created) {
 				Log.info("in {}, order {} created", name, orderId);
 				items.forEach(item -> Log.info(item));
