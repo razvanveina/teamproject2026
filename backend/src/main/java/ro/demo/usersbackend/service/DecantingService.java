@@ -5,13 +5,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.hibernate.Session;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
 import ro.demo.usersbackend.common.Constants;
+import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
 import ro.demo.usersbackend.dto.DecantingItem;
 import ro.demo.usersbackend.dto.DecantingResponse;
 import ro.demo.usersbackend.dto.DecantingTransferRequest;
@@ -27,107 +27,111 @@ import ro.demo.usersbackend.repository.StockItemRepository;
 @Service
 public class DecantingService {
 
-	private final LoadUnitRepository loadUnitRepository;
-	private final StockItemRepository stockItemRepository;
-	private final LocationRepository locationRepository;
-	private final EntityManager entityManager;
-
-	public DecantingService(LoadUnitRepository loadUnitRepository, StockItemRepository stockItemRepository,
-			LocationRepository locationRepository, EntityManager entityManager) {
-		this.loadUnitRepository = loadUnitRepository;
-		this.stockItemRepository = stockItemRepository;
-		this.locationRepository = locationRepository;
-		this.entityManager = entityManager;
+	public DecantingService() {
+		super();
 	}
 
-	@Transactional
 	public String createEmptyTote() {
-		return createTote().getBarcode();
+		return new WithSessionAndTransaction<String>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				setReturnValue(createTote(session).getBarcode());
+			}
+		}.run();
 	}
 
-	@Transactional
 	public DecantingResponse start(String loadUnitBarcode) {
-		LoadUnit loadUnit = findLoadUnit(loadUnitBarcode);
-		if (loadUnit.getType() == LoadUnitType.TOTE) {
-			throw badRequest("Load unit " + loadUnitBarcode + " is a tote. Scan a pallet or a carton.");
-		}
+		return new WithSessionAndTransaction<DecantingResponse>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				LoadUnit loadUnit = findLoadUnit(session, loadUnitBarcode);
+				if (loadUnit.getType() == LoadUnitType.TOTE) {
+					throw badRequest("Load unit " + loadUnitBarcode + " is a tote. Scan a pallet or a carton.");
+				}
 
-		List<StockItem> items = availableItems(loadUnit);
-		if (items.isEmpty()) {
-			throw badRequest("Load unit " + loadUnitBarcode + " is empty.");
-		}
+				List<StockItem> items = availableItems(session, loadUnit);
+				if (items.isEmpty()) {
+					throw badRequest("Load unit " + loadUnitBarcode + " is empty.");
+				}
 
-		return response(loadUnit, null, items, false);
+				setReturnValue(response(loadUnit, null, items, false));
+			}
+		}.run();
 	}
 
-	@Transactional
 	public DecantingResponse transfer(DecantingTransferRequest request) {
-		LoadUnit loadUnit = findLoadUnit(request.loadUnitBarcode());
-		List<StockItem> matching = availableItems(loadUnit).stream()
-				.filter(s -> s.getArticlePackagingUnitType().getBarcode().equals(request.packagingBarcode()))
-				.sorted(Comparator.comparing((StockItem s) -> s.getReservation() == null)).toList();
-		if (matching.isEmpty()) {
-			throw badRequest(
-					"Item " + request.packagingBarcode() + " is not on load unit " + request.loadUnitBarcode() + ".");
-		}
+		return new WithSessionAndTransaction<DecantingResponse>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				LoadUnit loadUnit = findLoadUnit(session, request.loadUnitBarcode());
+				List<StockItem> matching = availableItems(session, loadUnit).stream()
+						.filter(s -> s.getArticlePackagingUnitType().getBarcode().equals(request.packagingBarcode()))
+						.sorted(Comparator.comparing((StockItem s) -> s.getReservation() == null)).toList();
+				if (matching.isEmpty()) {
+					throw badRequest("Item " + request.packagingBarcode() + " is not on load unit "
+							+ request.loadUnitBarcode() + ".");
+				}
 
-		int total = matching.stream().mapToInt(StockItem::getQuantity).sum();
-		int quantity = request.quantity();
-		if (quantity <= 0) {
-			throw badRequest("Quantity must be greater than 0.");
-		}
-		if (quantity > total) {
-			throw badRequest("Cannot move " + quantity + ": only " + total + " available.");
-		}
+				int total = matching.stream().mapToInt(StockItem::getQuantity).sum();
+				int quantity = request.quantity();
+				if (quantity <= 0) {
+					throw badRequest("Quantity must be greater than 0.");
+				}
+				if (quantity > total) {
+					throw badRequest("Cannot move " + quantity + ": only " + total + " available.");
+				}
 
-		LoadUnit tote = createTote();
+				LoadUnit tote = createTote(session);
 
-		int left = quantity;
-		for (StockItem item : matching) {
-			if (left == 0) {
-				break;
+				int left = quantity;
+				for (StockItem item : matching) {
+					if (left == 0) {
+						break;
+					}
+					if (left >= item.getQuantity()) {
+						left -= item.getQuantity();
+						item.setLoadUnit(tote);
+					} else if (item.getReservation() == null) {
+						item.setQuantity(item.getQuantity() - left);
+						new StockItemRepository(session)
+								.save(new StockItem(item.getArticlePackagingUnitType(), left, tote));
+						left = 0;
+					} else {
+						throw badRequest("Moving " + quantity + " would split stock reserved for an order. "
+								+ "Choose another quantity.");
+					}
+				}
+
+				List<StockItem> remaining = availableItems(session, loadUnit);
+				setReturnValue(response(loadUnit, tote, remaining, remaining.isEmpty()));
 			}
-			if (left >= item.getQuantity()) {
-				left -= item.getQuantity();
-				item.setLoadUnit(tote);
-			} else if (item.getReservation() == null) {
-				item.setQuantity(item.getQuantity() - left);
-				stockItemRepository.save(new StockItem(item.getArticlePackagingUnitType(), left, tote));
-				left = 0;
-			} else {
-				throw badRequest("Moving " + quantity + " would split stock reserved for an order. "
-						+ "Choose another quantity.");
-			}
-		}
-
-		List<StockItem> remaining = availableItems(loadUnit);
-		return response(loadUnit, tote, remaining, remaining.isEmpty());
+		}.run();
 	}
 
-	private List<StockItem> availableItems(LoadUnit loadUnit) {
-		return stockItemRepository.findByLoadUnitOrderByIdAsc(loadUnit);
+	private List<StockItem> availableItems(Session session, LoadUnit loadUnit) {
+		return new StockItemRepository(session).findByLoadUnitOrderByIdAsc(loadUnit);
 	}
 
-	private LoadUnit createTote() {
-		Location decanting = locationRepository.findByName(Constants.DECANTING)
+	private LoadUnit createTote(Session session) {
+		Location decanting = new LocationRepository(session).findByName(Constants.DECANTING)
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
 						"Location " + Constants.DECANTING + " is missing."));
 
 		LoadUnit tote = new LoadUnit();
-		tote.setBarcode(generateToteBarcode());
+		tote.setBarcode(generateToteBarcode(session));
 		tote.setType(LoadUnitType.TOTE);
 		tote.setLocation(decanting);
-		return loadUnitRepository.save(tote);
+		return new LoadUnitRepository(session).save(tote);
 	}
 
-	private String generateToteBarcode() {
-		Number result = (Number) entityManager
-				.createNativeQuery("SELECT " + Constants.TOTE_SEQUENCE + ".NEXTVAL FROM DUAL").getSingleResult();
-		return String.format(Constants.TOTE_BARCODE, result.longValue());
+	private String generateToteBarcode(Session session) {
+		Long next = session.createNativeQuery("SELECT " + Constants.TOTE_SEQUENCE + ".NEXTVAL FROM DUAL", Long.class)
+				.getSingleResult();
+		return String.format(Constants.TOTE_BARCODE, next);
 	}
 
-	private LoadUnit findLoadUnit(String barcode) {
-		return loadUnitRepository.findByBarcode(barcode)
+	private LoadUnit findLoadUnit(Session session, String barcode) {
+		return new LoadUnitRepository(session).findByBarcode(barcode)
 				.orElseThrow(() -> badRequest("Load unit " + barcode + " not found."));
 	}
 
