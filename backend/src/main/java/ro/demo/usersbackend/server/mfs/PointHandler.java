@@ -2,14 +2,15 @@ package ro.demo.usersbackend.server.mfs;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hibernate.Session;
 
+import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
 import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.Location;
 import ro.demo.usersbackend.entity.TransportOrder;
 import ro.demo.usersbackend.entity.TransportOrderStatus;
 import ro.demo.usersbackend.messaging.MfsMessages;
 import ro.demo.usersbackend.messaging.MfsMessages.Arrived;
-import ro.demo.usersbackend.server.session.ServerSessionFactory;
 
 public abstract class PointHandler implements TelegramHandler {
 	public static final Logger log = LogManager.getLogger("application");
@@ -26,28 +27,34 @@ public abstract class PointHandler implements TelegramHandler {
 	public void handle(String telegram) throws Exception {
 		Arrived arrived = MfsMessages.fromJson(telegram, Arrived.class);
 
-		ServerSessionFactory.getInstance().inTransaction(session -> {
-			Location location = session.createNamedQuery("Location.findByName", Location.class)
-					.setParameter("name", point).uniqueResultOptional().orElse(null);
-			LoadUnit loadUnit = session.createNamedQuery("LoadUnit.findByBarcode", LoadUnit.class)
-					.setParameter("barcode", arrived.loadUnit()).uniqueResultOptional().orElse(null);
-
-			if (location == null || loadUnit == null) {
-				log.warn("{}: load unit {} or location not found", point, arrived.loadUnit());
-				return;
+		new WithSessionAndTransaction<>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				arrive(session, arrived.loadUnit());
 			}
+		}.run();
+	}
 
-			loadUnit.setLocation(location);
-			log.info("{}: load unit {} arrived", point, loadUnit.getBarcode());
+	private void arrive(Session session, String barcode) {
+		Location location = session.createNamedQuery("Location.findByName", Location.class).setParameter("name", point)
+				.uniqueResultOptional().orElse(null);
+		LoadUnit loadUnit = session.createNamedQuery("LoadUnit.findByBarcode", LoadUnit.class)
+				.setParameter("barcode", barcode).uniqueResultOptional().orElse(null);
 
-			for (TransportOrder order : session
-					.createNamedQuery("TransportOrder.findActiveByLoadUnitAndTarget", TransportOrder.class)
-					.setParameter("loadUnit", loadUnit).setParameter("target", location)
-					.setParameter("active", TransportOrderStatus.ACTIVE).getResultList()) {
-				order.setStatus(TransportOrderStatus.FINISHED);
-				log.info("{}: transport order {} for load unit {} finished", point, order.getId(),
-						loadUnit.getBarcode());
-			}
-		});
+		if (location == null || loadUnit == null) {
+			log.warn("{}: load unit {} or location not found", point, barcode);
+			return;
+		}
+
+		loadUnit.setLocation(location);
+		log.info("{}: load unit {} arrived", point, loadUnit.getBarcode());
+
+		for (TransportOrder order : session
+				.createNamedQuery("TransportOrder.findActiveByLoadUnitAndTarget", TransportOrder.class)
+				.setParameter("loadUnit", loadUnit).setParameter("target", location)
+				.setParameter("active", TransportOrderStatus.ACTIVE).getResultList()) {
+			order.setStatus(TransportOrderStatus.FINISHED);
+			log.info("{}: transport order {} for load unit {} finished", point, order.getId(), loadUnit.getBarcode());
+		}
 	}
 }

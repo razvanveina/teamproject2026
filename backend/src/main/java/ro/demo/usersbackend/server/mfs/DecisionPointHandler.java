@@ -3,13 +3,14 @@ package ro.demo.usersbackend.server.mfs;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hibernate.Session;
 
 import jakarta.jms.JMSContext;
+import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
 import ro.demo.usersbackend.entity.TransportOrderStatus;
 import ro.demo.usersbackend.messaging.Broker;
 import ro.demo.usersbackend.messaging.MfsMessages;
 import ro.demo.usersbackend.messaging.MfsMessages.Arrived;
-import ro.demo.usersbackend.server.session.ServerSessionFactory;
 
 public abstract class DecisionPointHandler extends PointHandler {
 	private static final Logger mfsLog = LogManager.getLogger("mfsMessages");
@@ -39,10 +40,14 @@ public abstract class DecisionPointHandler extends PointHandler {
 		log.info("{}: load unit {} going to {}, reply {}", point, arrived.loadUnit(), target, reply);
 	}
 
-	private String activeTarget(String loadUnit) throws Exception {
-		return ServerSessionFactory.getInstance().fromTransaction(
-				session -> session.createNamedQuery("TransportOrder.findActiveTargetName", String.class)
+	private String activeTarget(String loadUnit) {
+		return new WithSessionAndTransaction<String>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				setReturnValue(session.createNamedQuery("TransportOrder.findActiveTargetName", String.class)
 						.setParameter("barcode", loadUnit).setParameter("active", TransportOrderStatus.ACTIVE)
 						.setMaxResults(1).uniqueResultOptional().orElse(null));
+			}
+		}.run();
 	}
 }
