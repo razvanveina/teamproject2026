@@ -7,6 +7,7 @@ import org.apache.logging.log4j.Logger;
 import org.hibernate.Session;
 
 import ro.demo.usersbackend.common.Constants;
+import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
 import ro.demo.usersbackend.entity.Article;
 import ro.demo.usersbackend.entity.ArticlePickingLocation;
 import ro.demo.usersbackend.entity.LoadUnit;
@@ -16,7 +17,6 @@ import ro.demo.usersbackend.entity.StorageLocation;
 import ro.demo.usersbackend.entity.TransportOrder;
 import ro.demo.usersbackend.entity.TransportOrderStatus;
 import ro.demo.usersbackend.server.process.AbstractProcess;
-import ro.demo.usersbackend.server.session.ServerSessionFactory;
 
 // proces care muta tote-urile cu marfa: de la decanting pe banda (automat, prin TPS2), de la TPT1 la locatia de picking
 public class ToteTransportService extends AbstractProcess {
@@ -28,11 +28,19 @@ public class ToteTransportService extends AbstractProcess {
 
 	@Override
 	public void doAction() {
-		try {
-			ServerSessionFactory.getInstance().inTransaction(this::moveTotes);
-		} catch (Exception e) {
-			log.error("Tote transport: {}", e.toString());
-		}
+//		try {
+//			ServerSessionFactory.getInstance().inTransaction(this::moveTotes);
+//		} catch (Exception e) {
+//			log.error("Tote transport: {}", e.toString());
+//		}
+
+		new WithSessionAndTransaction<>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				moveTotes(session);
+			}
+		};
+
 	}
 
 	private void moveTotes(Session session) {
