@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Optional;
 
 import org.hibernate.Session;
-import org.hibernate.query.spi.Limit;
 
 import ro.demo.usersbackend.entity.StorageLocation;
 import ro.demo.usersbackend.entity.TransportOrderStatus;
@@ -15,8 +14,8 @@ public class StorageLocationRepository extends BaseRepository<StorageLocation, I
 		super(session, StorageLocation.class);
 	}
 
-	public Optional<StorageLocation> findClosestFreeSlot(List<TransportOrderStatus> open, Limit limit) {
+	public Optional<StorageLocation> findClosestFreeSlot(List<TransportOrderStatus> open) {
 		return session.createNamedQuery(StorageLocation.FIND_CLOSEST_FREE_SLOT, StorageLocation.class)
-				.uniqueResultOptional();
+				.setParameterList(1, open).setMaxResults(1).uniqueResultOptional();
 	}
 }
