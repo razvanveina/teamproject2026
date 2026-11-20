@@ -16,7 +16,4 @@ public class InventoryOrderLineItemRepository extends BaseRepository<InventoryOr
 				.setParameter("inventoryOrderLineId", inventoryOrderLineId).getResultList();
 	}
 
-	public void deleteByInventoryOrderLineId(Long inventoryOrderLineId) {
-		findByInventoryOrderLineId(inventoryOrderLineId).forEach(this::delete);
-	}
 }
