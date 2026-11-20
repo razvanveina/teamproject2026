@@ -2,14 +2,18 @@ package ro.demo.usersbackend.repository;
 
 import java.util.Optional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import org.hibernate.Session;
 
 import ro.demo.usersbackend.entity.Location;
 
-public interface LocationRepository extends JpaRepository<Location, Integer> {
+public class LocationRepository extends BaseRepository<Location, Integer> {
 
-	@Query(name = "Location.findByName")
-	Optional<Location> findByName(String name);
+	public LocationRepository(Session session) {
+		super(session, Location.class);
+	}
 
+	public Optional<Location> findByName(String name) {
+		return session.createNamedQuery(Location.BY_NAME, Location.class).setParameter("name", name)
+				.uniqueResultOptional();
+	}
 }

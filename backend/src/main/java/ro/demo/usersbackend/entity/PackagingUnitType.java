@@ -1,5 +1,8 @@
 package ro.demo.usersbackend.entity;
 
+import org.hibernate.annotations.NamedQueries;
+import org.hibernate.annotations.NamedQuery;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -7,7 +10,13 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
 @Entity
+@NamedQueries({ //
+		@NamedQuery(name = "PackagingUnitType.findByName", //
+				query = "from PackagingUnitType p where p.name = :name")//
+})
 public class PackagingUnitType {
+	public static final String BY_NAME = "PackagingUnitType.findByName";
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;

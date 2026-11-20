@@ -2,6 +2,9 @@ package ro.demo.usersbackend.entity;
 
 import java.util.List;
 
+import org.hibernate.annotations.NamedQueries;
+import org.hibernate.annotations.NamedQuery;
+
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.Column;
@@ -16,7 +19,17 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 
 @Entity
+@NamedQueries({ //
+		@NamedQuery(name = "LoadUnit.findByBarcode", //
+				query = "from LoadUnit lu where lu.barcode = :barcode"), //
+		@NamedQuery(name = "LoadUnit.findByLocationOrderByIdAsc", //
+				query = "from LoadUnit lu where lu.location = :location order by lu.id asc")//
+})
 public class LoadUnit {
+	public static final String BY_BARCODE = "LoadUnit.findByBarcode";
+	public static final String BY_LOCATION_ORDER_BY_ID_ASC = "LoadUnit.findByLocationOrderByIdAsc";
+	public static final String BY_LOCATION_NAME = "LoadUnit.findByLocationName";
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;

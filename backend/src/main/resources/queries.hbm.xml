@@ -4,20 +4,6 @@
 
 <hibernate-mapping>
 
-	<query name="Location.findByName">
-        <![CDATA[
-            from Location l
-            where l.name = :name
-        ]]>
-	</query>
-
-	<query name="LoadUnit.findByBarcode">
-        <![CDATA[
-            from LoadUnit lu
-            where lu.barcode = :barcode
-        ]]>
-	</query>
-
 	<query name="TransportOrder.findByLoadUnitBarcode">
     <![CDATA[
         select count(o) from TransportOrder o
@@ -29,6 +15,13 @@
         <![CDATA[
             from RetrievalOrder o
             where o.shippingUser = :user and o.status = :status
+        ]]>
+	</query>
+	
+		<query name="LoadUnit.findByLocationName">
+        <![CDATA[
+            from LoadUnit lu
+            where lu.location.name = :name
         ]]>
 	</query>
 

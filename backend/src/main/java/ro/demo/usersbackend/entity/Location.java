@@ -2,6 +2,9 @@ package ro.demo.usersbackend.entity;
 
 import java.util.List;
 
+import org.hibernate.annotations.NamedQueries;
+import org.hibernate.annotations.NamedQuery;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Column;
@@ -12,7 +15,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 
 @Entity
+@NamedQueries({ //
+		@NamedQuery(name = "Location.findByName", //
+				query = "from Location l where l.name = :name")//
+})
 public abstract class Location {
+	public static final String BY_NAME = "Location.findByName";
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
