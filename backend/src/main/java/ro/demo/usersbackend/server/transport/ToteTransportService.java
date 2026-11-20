@@ -39,7 +39,7 @@ public class ToteTransportService extends AbstractProcess {
 			protected void executeBusinessLogic(Session session) {
 				moveTotes(session);
 			}
-		};
+		}.run();
 
 	}
 
@@ -52,7 +52,8 @@ public class ToteTransportService extends AbstractProcess {
 			if (tote.getStockItems().isEmpty() || hasOpenTransport(session, tote)) {
 				continue;
 			}
-			// de la decanting tote-ul pleaca singur pe banda (prin TPS2), de la TPT1 merge la picking
+			// de la decanting tote-ul pleaca singur pe banda (prin TPS2), de la TPT1 merge
+			// la picking
 			if (Constants.DECANTING.equals(tote.getLocation().getName())) {
 				sendToConveyor(session, tote);
 			} else {
@@ -61,7 +62,8 @@ public class ToteTransportService extends AbstractProcess {
 		}
 	}
 
-	// transport automat decanting -> conveyor; GET-ul il trimite AutomaticRetrievalService pe coada lui TPS2
+	// transport automat decanting -> conveyor; GET-ul il trimite
+	// AutomaticRetrievalService pe coada lui TPS2
 	private void sendToConveyor(Session session, LoadUnit tote) {
 		Location conveyor = session.createNamedQuery("Location.findByName", Location.class)
 				.setParameter("name", Constants.CONVEYOR).uniqueResultOptional().orElse(null);
