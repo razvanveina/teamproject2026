@@ -27,11 +27,11 @@ public abstract class Location {
 	protected int id;
 
 	@Column(nullable = false, unique = true)
-	private String name;
+	protected String name;
 
 	@JsonIgnore
 	@OneToMany(mappedBy = "location")
-	private List<LoadUnit> loadUnits;
+	protected List<LoadUnit> loadUnits;
 
 	public Location() {
 		super();

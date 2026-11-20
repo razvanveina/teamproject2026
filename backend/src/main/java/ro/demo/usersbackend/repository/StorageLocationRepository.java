@@ -14,6 +14,11 @@ public class StorageLocationRepository extends BaseRepository<StorageLocation, I
 		super(session, StorageLocation.class);
 	}
 
+	public Optional<StorageLocation> findByName(String name) {
+		return session.createNamedQuery(StorageLocation.FIND_BY_NAME, StorageLocation.class).setParameter("name", name)
+				.uniqueResultOptional();
+	}
+
 	public Optional<StorageLocation> findClosestFreeSlot(List<TransportOrderStatus> open) {
 		return session.createNamedQuery(StorageLocation.FIND_CLOSEST_FREE_SLOT, StorageLocation.class)
 				.setParameterList(1, open).setMaxResults(1).uniqueResultOptional();

@@ -4,12 +4,14 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
+import org.hibernate.Session;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import jakarta.transaction.Transactional;
 import ro.demo.usersbackend.common.Constants;
+import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
 import ro.demo.usersbackend.dto.TransportOrderResponse;
 import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.Location;
@@ -17,28 +19,30 @@ import ro.demo.usersbackend.entity.StorageLocation;
 import ro.demo.usersbackend.entity.TransportOrder;
 import ro.demo.usersbackend.entity.TransportOrderErrorReason;
 import ro.demo.usersbackend.entity.TransportOrderStatus;
-import ro.demo.usersbackend.repository.LocationRepository;
+import ro.demo.usersbackend.repository.StorageLocationRepository;
 import ro.demo.usersbackend.repository.TransportOrderRepository;
 import ro.demo.usersbackend.server.mfs.StationControl;
 
 @Service
-@Transactional
 public class TransportOrderService {
 
-	private final TransportOrderRepository transportOrderRepository;
-	private final LocationRepository locationRepository;
-
-	public TransportOrderService(TransportOrderRepository transportOrderRepository,
-			LocationRepository locationRepository) {
-		super();
-		this.transportOrderRepository = transportOrderRepository;
-		this.locationRepository = locationRepository;
-	}
-
 	private Location decanting() {
-		return locationRepository.findByName(Constants.DECANTING)
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-						"Cannot find location with the name " + Constants.DECANTING));
+		return new WithSessionAndTransaction<Location>() {
+
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				StorageLocationRepository locationRepository = new StorageLocationRepository(session);
+				Optional<StorageLocation> location = locationRepository.findByName(Constants.DECANTING);
+
+				if (location.isPresent()) {
+					setReturnValue(location.get());
+				} else {
+					throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+							"Cannot find location with the name " + Constants.DECANTING);
+				}
+
+			}
+		}.run();
 	}
 
 	private boolean isTote(TransportOrder order) {
@@ -53,8 +57,20 @@ public class TransportOrderService {
 	}
 
 	private TransportOrder find(Long id) {
-		return transportOrderRepository.findById(id)
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Transport order not found"));
+		return new WithSessionAndTransaction<TransportOrder>() {
+
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				TransportOrderRepository transportOrderRepository = new TransportOrderRepository(session);
+				Optional<TransportOrder> to = transportOrderRepository.findById(id);
+
+				if (to.isPresent()) {
+					setReturnValue(to.get());
+				} else {
+					throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Transport order not found");
+				}
+			}
+		}.run();
 	}
 
 	private Comparator<TransportOrder> activeFirst() {
@@ -70,21 +86,28 @@ public class TransportOrderService {
 	}
 
 	private Optional<TransportOrderResponse> nextFor(String user, boolean tote) {
-		// 1. are deja un transport preluat? il continua
-		Optional<TransportOrder> mine = transportOrderRepository
-				.findByStatusAndAssignedToOrderByIdAsc(user, Constants.OPEN_TRANSPORT_STATUSES).stream()
-				.filter(o -> !isAutomatic(o)).filter(o -> isTote(o) == tote).sorted(activeFirst()).findFirst();
-		if (mine.isPresent()) {
-			return mine.map(this::toResponse);
-		}
+		return new WithSessionAndTransaction<Optional<TransportOrderResponse>>() {
 
-		// 2. altfel il preia pe cel mai vechi liber
-		return transportOrderRepository.findByStatusAndAssignedToIsNullOrderByIdAsc(Constants.OPEN_TRANSPORT_STATUSES)
-				.stream().filter(o -> !isAutomatic(o)).filter(o -> isTote(o) == tote).sorted(activeFirst()).findFirst()
-				.map(order -> {
-					order.setAssignedTo(user);
-					return toResponse(order);
-				});
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				TransportOrderRepository transportOrderRepository = new TransportOrderRepository(session);
+				Optional<TransportOrder> mine = transportOrderRepository
+						.findByStatusAndAssignedToOrderByIdAsc(user, Constants.OPEN_TRANSPORT_STATUSES).stream()
+						.filter(o -> !isAutomatic(o)).filter(o -> isTote(o) == tote).sorted(activeFirst()).findFirst();
+				if (mine.isPresent()) {
+					setReturnValue(mine.map(this::toResponse));
+				}
+
+				Optional<Object> to = transportOrderRepository
+						.findByStatusAndAssignedToIsNullOrderByIdAsc(Constants.OPEN_TRANSPORT_STATUSES).stream()
+						.filter(o -> !isAutomatic(o)).filter(o -> isTote(o) == tote).sorted(activeFirst()).findFirst()
+						.map(order -> {
+							order.setAssignedTo(user);
+							return toResponse(order);
+						});
+				setReturnValue(to);
+			}
+		}.run();
 	}
 
 	@Transactional(readOnly = true)
