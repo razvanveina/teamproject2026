@@ -2,12 +2,21 @@ package ro.demo.usersbackend.repository;
 
 import java.util.List;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.hibernate.Session;
 
 import ro.demo.usersbackend.entity.InventoryOrderLineItem;
 
-public interface InventoryOrderLineItemRepository extends JpaRepository<InventoryOrderLineItem, Long> {
-	List<InventoryOrderLineItem> findByInventoryOrderLine_IdOrderByIdAsc(Long inventoryOrderLineId);
+public class InventoryOrderLineItemRepository extends BaseRepository<InventoryOrderLineItem, Long> {
+	public InventoryOrderLineItemRepository(Session session) {
+		super(session, InventoryOrderLineItem.class);
+	}
 
-	void deleteByInventoryOrderLine_Id(Long inventoryOrderLineId);
+	public List<InventoryOrderLineItem> findByInventoryOrderLineId(Long inventoryOrderLineId) {
+		return session.createNamedQuery(InventoryOrderLineItem.BY_INVENTORY_ORDER_LINE, InventoryOrderLineItem.class)
+				.setParameter("inventoryOrderLineId", inventoryOrderLineId).getResultList();
+	}
+
+	public void deleteByInventoryOrderLineId(Long inventoryOrderLineId) {
+		findByInventoryOrderLineId(inventoryOrderLineId).forEach(this::delete);
+	}
 }

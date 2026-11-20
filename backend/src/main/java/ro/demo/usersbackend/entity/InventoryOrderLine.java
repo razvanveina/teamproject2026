@@ -4,6 +4,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hibernate.annotations.NamedQueries;
+import org.hibernate.annotations.NamedQuery;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -18,7 +21,21 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 
 @Entity
+@NamedQueries({ //
+		@NamedQuery(name = "InventoryOrderLine.findByInventoryOrderId", //
+				query = "from InventoryOrderLine l where l.inventoryOrder.id = :inventoryOrderId order by l.id"), //
+		@NamedQuery(name = "InventoryOrderLine.countByInventoryOrderIdAndStatus", //
+				query = "select count(l) from InventoryOrderLine l where l.inventoryOrder.id = :inventoryOrderId and l.status = :status"), //
+		@NamedQuery(name = "InventoryOrderLine.countByInventoryOrderIdAndLocationId", //
+				query = "select count(l) from InventoryOrderLine l where l.inventoryOrder.id = :inventoryOrderId and l.location.id = :locationId"), //
+		@NamedQuery(name = "InventoryOrderLine.findByLoadUnit", //
+				query = "from InventoryOrderLine l where l.loadUnit = :loadUnit")//
+})
 public class InventoryOrderLine {
+	public static final String BY_INVENTORY_ORDER = "InventoryOrderLine.findByInventoryOrderId";
+	public static final String COUNT_BY_INVENTORY_ORDER_AND_STATUS = "InventoryOrderLine.countByInventoryOrderIdAndStatus";
+	public static final String COUNT_BY_INVENTORY_ORDER_AND_LOCATION = "InventoryOrderLine.countByInventoryOrderIdAndLocationId";
+	public static final String BY_LOAD_UNIT = "InventoryOrderLine.findByLoadUnit";
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
@@ -76,8 +93,13 @@ public class InventoryOrderLine {
 		return loadUnit;
 	}
 
-	public Location getLocation() { return location; }
-	public void setLocation(Location location) { this.location = location; }
+	public Location getLocation() {
+		return location;
+	}
+
+	public void setLocation(Location location) {
+		this.location = location;
+	}
 
 	public void setLoadUnit(LoadUnit loadUnit) {
 		this.loadUnit = loadUnit;
