@@ -5,7 +5,6 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -15,10 +14,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
-import ro.demo.usersbackend.dto.InventoryLoadUnitResponse;
 import ro.demo.usersbackend.dto.CreateInventoryOrderRequest;
-import ro.demo.usersbackend.dto.InventoryOrderLineResponse;
 import ro.demo.usersbackend.dto.InventoryOrderLineCreateRequest;
+import ro.demo.usersbackend.dto.InventoryOrderLineResponse;
 import ro.demo.usersbackend.dto.InventoryOrderLineStartRequest;
 import ro.demo.usersbackend.dto.InventoryOrderResponse;
 import ro.demo.usersbackend.dto.ScannedInventoryItemRequest;
@@ -32,21 +30,6 @@ public class InventoryOrderController {
 
 	public InventoryOrderController(InventoryOrderService inventoryOrderService) {
 		this.inventoryOrderService = inventoryOrderService;
-	}
-
-	@GetMapping("/load-units/{barcode}")
-	public InventoryLoadUnitResponse getEligibleLoadUnit(@PathVariable String barcode) {
-		return inventoryOrderService.getEligibleLoadUnit(barcode);
-	}
-
-	@GetMapping("/started")
-	public List<InventoryOrderResponse> getStartedOrders() {
-		return inventoryOrderService.getStartedInventoryOrders();
-	}
-
-	@GetMapping("/code/{code}")
-	public InventoryOrderResponse getByCode(@PathVariable String code) {
-		return inventoryOrderService.getStartedInventoryOrder(code);
 	}
 
 	@PostMapping

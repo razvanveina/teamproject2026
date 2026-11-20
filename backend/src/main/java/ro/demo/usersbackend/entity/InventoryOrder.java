@@ -19,16 +19,12 @@ import jakarta.persistence.OneToMany;
 
 @Entity
 @NamedQueries({ //
-		@NamedQuery(name = "InventoryOrder.findByStatus", //
-				query = "from InventoryOrder o where o.status = :status order by o.createdAt desc"), //
 		@NamedQuery(name = "InventoryOrder.findByCodeAndStatus", //
 				query = "from InventoryOrder o where o.code = :code and o.status = :status"), //
 		@NamedQuery(name = "InventoryOrder.countByCode", //
 				query = "select count(o) from InventoryOrder o where o.code = :code")//
 })
-
 public class InventoryOrder {
-	public static final String BY_STATUS = "InventoryOrder.findByStatus";
 	public static final String BY_CODE_AND_STATUS = "InventoryOrder.findByCodeAndStatus";
 	public static final String COUNT_BY_CODE = "InventoryOrder.countByCode";
 	@Id

@@ -19,7 +19,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
-import ro.demo.usersbackend.dto.InventoryLoadUnitResponse;
 import ro.demo.usersbackend.dto.InventoryOrderLineResponse;
 import ro.demo.usersbackend.dto.InventoryOrderLineStartRequest;
 import ro.demo.usersbackend.dto.InventoryOrderResponse;
@@ -342,17 +341,6 @@ public class InventoryOrderService {
 		}
 	}
 
-	public InventoryLoadUnitResponse getEligibleLoadUnit(String barcode) {
-		return new WithSessionAndTransaction<InventoryLoadUnitResponse>() {
-			@Override
-			protected void executeBusinessLogic(Session session) {
-				LoadUnit loadUnit = findEligibleLoadUnit(session, barcode);
-				setReturnValue(new InventoryLoadUnitResponse(loadUnit.getId(), loadUnit.getBarcode(),
-						loadUnit.getType().name(), loadUnit.getLocation().getName()));
-			}
-		}.run();
-	}
-
 	private InventoryOrderResponse toOrderResponse(Session session, InventoryOrder order) {
 		List<InventoryOrderLineResponse> lines = new InventoryOrderLineRepository(session)
 				.findByInventoryOrderId(order.getId()).stream().map(line -> toLineResponse(session, line)).toList();
@@ -549,16 +537,6 @@ public class InventoryOrderService {
 				line.setCompletedAt(LocalDateTime.now());
 				line.setStockAdjustmentsCalculated(true);
 				setReturnValue(toLineResponse(session, lineRepository.save(line)));
-			}
-		}.run();
-	}
-
-	public List<InventoryOrderResponse> getStartedInventoryOrders() {
-		return new WithSessionAndTransaction<List<InventoryOrderResponse>>() {
-			@Override
-			protected void executeBusinessLogic(Session session) {
-				setReturnValue(new InventoryOrderRepository(session).findByStatus(InventoryOrderStatus.STARTED).stream()
-						.map(order -> toOrderResponse(session, order)).toList());
 			}
 		}.run();
 	}

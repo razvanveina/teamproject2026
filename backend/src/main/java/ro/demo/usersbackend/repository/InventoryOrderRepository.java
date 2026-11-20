@@ -1,6 +1,5 @@
 package ro.demo.usersbackend.repository;
 
-import java.util.List;
 import java.util.Optional;
 
 import org.hibernate.Session;
@@ -12,11 +11,6 @@ public class InventoryOrderRepository extends BaseRepository<InventoryOrder, Lon
 
 	public InventoryOrderRepository(Session session) {
 		super(session, InventoryOrder.class);
-	}
-
-	public List<InventoryOrder> findByStatus(InventoryOrderStatus status) {
-		return session.createNamedQuery(InventoryOrder.BY_STATUS, InventoryOrder.class).setParameter("status", status)
-				.getResultList();
 	}
 
 	public Optional<InventoryOrder> findByCodeAndStatus(String code, InventoryOrderStatus status) {
