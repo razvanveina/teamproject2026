@@ -4,6 +4,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hibernate.annotations.NamedQueries;
+import org.hibernate.annotations.NamedQuery;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -15,7 +18,19 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 
 @Entity
+@NamedQueries({ //
+		@NamedQuery(name = "InventoryOrder.findByStatus", //
+				query = "from InventoryOrder o where o.status = :status order by o.createdAt desc"), //
+		@NamedQuery(name = "InventoryOrder.findByCodeAndStatus", //
+				query = "from InventoryOrder o where o.code = :code and o.status = :status"), //
+		@NamedQuery(name = "InventoryOrder.countByCode", //
+				query = "select count(o) from InventoryOrder o where o.code = :code")//
+})
+
 public class InventoryOrder {
+	public static final String BY_STATUS = "InventoryOrder.findByStatus";
+	public static final String BY_CODE_AND_STATUS = "InventoryOrder.findByCodeAndStatus";
+	public static final String COUNT_BY_CODE = "InventoryOrder.countByCode";
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
@@ -43,8 +58,13 @@ public class InventoryOrder {
 		return id;
 	}
 
-	public String getCode() { return code; }
-	public void setCode(String code) { this.code = code; }
+	public String getCode() {
+		return code;
+	}
+
+	public void setCode(String code) {
+		this.code = code;
+	}
 
 	public LocalDateTime getCreatedAt() {
 		return createdAt;
