@@ -72,14 +72,14 @@ public class TransportOrderService {
 	private Optional<TransportOrderResponse> nextFor(String user, boolean tote) {
 		// 1. are deja un transport preluat? il continua
 		Optional<TransportOrder> mine = transportOrderRepository
-				.findByAssignedToAndStatusInOrderByIdAsc(user, Constants.OPEN_TRANSPORT_STATUSES).stream()
+				.findByStatusAndAssignedToOrderByIdAsc(user, Constants.OPEN_TRANSPORT_STATUSES).stream()
 				.filter(o -> !isAutomatic(o)).filter(o -> isTote(o) == tote).sorted(activeFirst()).findFirst();
 		if (mine.isPresent()) {
 			return mine.map(this::toResponse);
 		}
 
 		// 2. altfel il preia pe cel mai vechi liber
-		return transportOrderRepository.findByAssignedToIsNullAndStatusInOrderByIdAsc(Constants.OPEN_TRANSPORT_STATUSES)
+		return transportOrderRepository.findByStatusAndAssignedToIsNullOrderByIdAsc(Constants.OPEN_TRANSPORT_STATUSES)
 				.stream().filter(o -> !isAutomatic(o)).filter(o -> isTote(o) == tote).sorted(activeFirst()).findFirst()
 				.map(order -> {
 					order.setAssignedTo(user);
@@ -89,7 +89,7 @@ public class TransportOrderService {
 
 	@Transactional(readOnly = true)
 	public List<TransportOrderResponse> findOpenOrders(String user) {
-		return transportOrderRepository.findByStatusAndSourceNotOrderByIdAsc(TransportOrderStatus.NEW, decanting())
+		return transportOrderRepository.findByStatusAndNotSourceOrderByIdAsc(TransportOrderStatus.NEW, decanting())
 				.stream().filter(o -> !isAutomatic(o))
 				.filter(o -> o.getAssignedTo() == null || user.equals(o.getAssignedTo())).map(this::toResponse)
 				.toList();
@@ -97,7 +97,7 @@ public class TransportOrderService {
 
 	@Transactional(readOnly = true)
 	public List<TransportOrderResponse> findOpenToteOrders(String user) {
-		return transportOrderRepository.findByStatusAndSourceOrderByIdAsc(TransportOrderStatus.NEW, decanting())
+		return transportOrderRepository.findByStatusAndSourceOrderedByIdAsc(TransportOrderStatus.NEW, decanting())
 				.stream().filter(o -> !isAutomatic(o))
 				.filter(o -> o.getAssignedTo() == null || user.equals(o.getAssignedTo())).map(this::toResponse)
 				.toList();
@@ -114,7 +114,7 @@ public class TransportOrderService {
 		}
 
 		// eliberez celelalte transporturi NEW ale mele de acelasi tip
-		for (TransportOrder other : transportOrderRepository.findByAssignedToAndStatusInOrderByIdAsc(user,
+		for (TransportOrder other : transportOrderRepository.findByStatusAndAssignedToOrderByIdAsc(user,
 				List.of(TransportOrderStatus.NEW))) {
 			if (!other.getId().equals(id) && isTote(other) == isTote(order)) {
 				other.setAssignedTo(null);
