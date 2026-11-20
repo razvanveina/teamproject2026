@@ -138,8 +138,7 @@ public class Sim {
 			for (EntityState state : states) {
 				entities.stream().filter(e -> e.getName().equals(state.name())).forEach(e -> e.restore(state));
 			}
-			log.info(
-					"snapshot restored from " + SNAPSHOT.toAbsolutePath() + ", " + states.size() + " entities");
+			log.info("snapshot restored from " + SNAPSHOT.toAbsolutePath() + ", " + states.size() + " entities");
 		} catch (Exception e) {
 			log.error("snapshot not restored", e);
 		}
@@ -159,22 +158,52 @@ public class Sim {
 		Conveyor c6 = add(new Conveyor("C06", 2000, 2));
 		Conveyor c7 = add(new Conveyor("C07", 3000, 3));
 		Conveyor c8 = add(new Conveyor("C08", 3000, 3));
-		Conveyor c9 = add(new Conveyor("C09", 15000, 15));
+		Conveyor c9 = add(new Conveyor("C09", 2000, 2));
 		Conveyor c10 = add(new Conveyor("C10", 7000, 7));
-		Conveyor c11 = add(new Conveyor("C11", 3000, 3));
-		Conveyor c12 = add(new Conveyor("C12", 10000, 10));
-		Conveyor c13 = add(new Conveyor("C13", 25000, 25));
+		Conveyor c11 = add(new Conveyor("C11", 5000, 5));
+		Conveyor c12 = add(new Conveyor("C12", 7000, 7));
+		Conveyor c13 = add(new Conveyor("C13", 27000, 27));
 		Conveyor c14 = add(new Conveyor("C14", 30000, 30));
 		Conveyor c15 = add(new Conveyor("C15", 10000, 10));
+
+		Conveyor c16 = add(new Conveyor("C16", 3000, 3));
+		Conveyor c17 = add(new Conveyor("C17", 3000, 3));
+		Conveyor c18 = add(new Conveyor("C18", 3000, 3));
+		Conveyor c19 = add(new Conveyor("C19", 2000, 2));
+		Conveyor c20 = add(new Conveyor("C20", 3000, 3));
+		Conveyor c21 = add(new Conveyor("C21", 3000, 3));
+		Conveyor c22 = add(new Conveyor("C22", 3000, 3));
+		Conveyor c23 = add(new Conveyor("C23", 2000, 2));
+		Conveyor c24 = add(new Conveyor("C24", 3000, 3));
+		Conveyor c25 = add(new Conveyor("C25", 3000, 3));
+		Conveyor c26 = add(new Conveyor("C26", 3000, 3));
+		Conveyor c27 = add(new Conveyor("C27", 2000, 2));
+		Conveyor c28 = add(new Conveyor("C28", 3000, 3));
+		Conveyor c29 = add(new Conveyor("C29", 3000, 3));
+		Conveyor c30 = add(new Conveyor("C30", 3000, 3));
+		Conveyor c31 = add(new Conveyor("C31", 2000, 2));
+		Conveyor c32 = add(new Conveyor("C32", 3000, 3));
+		Conveyor c33 = add(new Conveyor("C33", 3000, 3));
+		Conveyor c34 = add(new Conveyor("C34", 3000, 3));
 
 		InfoPoint ip1 = add(new InfoPoint(Constants.IP1));
 		InfoPoint ip2 = add(new InfoPoint(Constants.IP2));
 		InfoPoint ip3 = add(new InfoPoint(Constants.IP3));
 		InfoPoint e = add(new InfoPoint(Constants.EMPTY));
+		InfoPoint ip4 = add(new InfoPoint(Constants.IP4));
+		InfoPoint ip5 = add(new InfoPoint(Constants.IP5));
+		InfoPoint ip6 = add(new InfoPoint(Constants.IP6));
+		InfoPoint ip7 = add(new InfoPoint(Constants.IP7));
+		InfoPoint ip8 = add(new InfoPoint(Constants.IP8));
 
 		DecisionPoint dp1 = add(new DecisionPoint(Constants.DP1));
 		DecisionPoint dp2 = add(new DecisionPoint(Constants.DP2));
 		DecisionPoint dp3 = add(new DecisionPoint(Constants.DP3));
+		DecisionPoint dp4 = add(new DecisionPoint(Constants.DP4));
+		DecisionPoint dp5 = add(new DecisionPoint(Constants.DP5));
+		DecisionPoint dp6 = add(new DecisionPoint(Constants.DP6));
+		DecisionPoint dp7 = add(new DecisionPoint(Constants.DP7));
+		DecisionPoint dp8 = add(new DecisionPoint(Constants.DP8));
 
 		SourceTransportPoint tps1 = add(new SourceTransportPoint(Constants.TPS1, MfsMessages.REQUEST_QUEUE));
 		SourceTransportPoint tps2 = add(new SourceTransportPoint(Constants.TPS2, MfsMessages.DECANTING_REQUEST_QUEUE));
@@ -183,6 +212,10 @@ public class Sim {
 
 		StationPoint ptts1 = add(new StationPoint(Constants.PTTS1));
 		StationPoint pttt1 = add(new StationPoint(Constants.PTTT1));
+		StationPoint ptts2 = add(new StationPoint(Constants.PTTS2));
+		StationPoint pttt2 = add(new StationPoint(Constants.PTTT2));
+		StationPoint ptts3 = add(new StationPoint(Constants.PTTS3));
+		StationPoint pttt3 = add(new StationPoint(Constants.PTTT3));
 		StationPoint out = add(new StationPoint(Constants.OUT));
 
 		c6.getSource().add(tps1);
@@ -208,7 +241,14 @@ public class Sim {
 		ip2.getSource().add(c2);
 		ip2.getSource().add(c8);
 
-		c3.getSource().add(ip2);
+		c19.getSource().add(ip2);
+		dp5.getSource().add(c19);
+		zone(dp5, c20, ptts2, c21, c22, ip5);
+		c23.getSource().add(ip5);
+		dp7.getSource().add(c23);
+		zone(dp7, c24, ptts3, c25, c26, ip7);
+
+		c3.getSource().add(ip7);
 		// IP3 pe C03: primeste de pe C03 (bucla) si de pe C14 (decanting)
 		ip3.getSource().add(c3);
 		ip3.getSource().add(c14);
@@ -236,11 +276,30 @@ public class Sim {
 		ptts1.getSource().add(c7);
 		c8.getSource().add(ptts1);
 
-		pttt1.getSource().add(c12);
-		c9.getSource().add(pttt1);
+		dp4.getSource().add(c12);
+		zone(dp4, c16, pttt1, c17, c18, ip4);
+		c27.getSource().add(ip4);
+		dp6.getSource().add(c27);
+		zone(dp6, c28, pttt2, c29, c30, ip6);
+		c31.getSource().add(ip6);
+		dp8.getSource().add(c31);
+		zone(dp8, c32, pttt3, c33, c34, ip8);
+		c9.getSource().add(ip8);
 
 		restore();
 		entities.forEach(Entity::start);
+	}
+
+	private void zone(DecisionPoint dp, Conveyor in, StationPoint station, Conveyor out, Conveyor bypass,
+			InfoPoint ip) {
+		dp.getTarget().add(in);
+		dp.getTarget().add(bypass);
+		in.getSource().add(dp);
+		bypass.getSource().add(dp);
+		station.getSource().add(in);
+		out.getSource().add(station);
+		ip.getSource().add(out);
+		ip.getSource().add(bypass);
 	}
 
 	public String getJSON() {

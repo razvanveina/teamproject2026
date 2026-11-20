@@ -1,7 +1,5 @@
 package ro.demo.usersbackend.init;
 
-import java.util.List;
-
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -89,9 +87,7 @@ public class InitialDataCreator implements CommandLineRunner {
 	}
 
 	private void createSimulatorData() {
-		for (String name : List.of(Constants.IP1, Constants.IP2, Constants.EMPTY, Constants.DP1, Constants.DP2,
-				Constants.DP3, Constants.TPS1, Constants.TPT1, Constants.PTTS1, Constants.PTTT1, Constants.TPS2,
-				Constants.IP3)) {
+		for (String name : Constants.CONVEYOR_POINTS) {
 			createTransitLocation(name);
 		}
 	}

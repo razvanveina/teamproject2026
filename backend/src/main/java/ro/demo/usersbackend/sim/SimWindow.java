@@ -51,8 +51,9 @@ public class SimWindow extends JPanel {
 	private static final long serialVersionUID = 1L;
 	private static final double K = 1.15;
 	private static final int TOP = 80;
-	private static final int DESIGN_W = 1560;
-	private static final int DESIGN_H = 970 - TOP;
+	private static final int DESIGN_W = 1760;
+	private static final int DESIGN_H = 1060 - TOP;
+	private static final List<String> LABEL_BELOW = List.of("IP1", "DP2", "DP4", "DP6", "DP8", "IP4", "IP6", "IP8");
 	private static final int CONV = 55;
 	private static final int POINT = 55;
 	private static final int TOTE = 45;
@@ -235,34 +236,91 @@ public class SimWindow extends JPanel {
 		drawConveyor(g, "C01", 58, 440, 560, 300, 120, 300, 120, 560);
 		drawConveyor(g, "C10", 325, 605, 120, 560, 560, 560);
 		drawConveyor(g, "C02", 654, 524, 560, 560, 768, 560);
-		drawConveyor(g, "C03", 960, 605, 768, 560, 1180, 560, 1180, 430);
-		drawConveyor(g, "C15", 960, 345, 1180, 430, 1180, 300, 768, 300);
-		drawConveyor(g, "C14", 1290, 392, 1440, 430, 1180, 430);
+		drawConveyor(g, "C19", 808, 524, 768, 560, 880, 560);
+		drawConveyor(g, "C20", 828, 705, 880, 560, 880, 690, 984, 690);
+		drawConveyor(g, "C21", 1124, 630, 984, 690, 1088, 690, 1088, 560);
+		drawConveyor(g, "C22", 970, 524, 880, 560, 1088, 560);
+		drawConveyor(g, "C23", 1128, 524, 1088, 560, 1200, 560);
+		drawConveyor(g, "C24", 1148, 705, 1200, 560, 1200, 690, 1304, 690);
+		drawConveyor(g, "C25", 1444, 630, 1304, 690, 1408, 690, 1408, 560);
+		drawConveyor(g, "C26", 1290, 524, 1200, 560, 1408, 560);
+		drawConveyor(g, "C03", 1536, 505, 1408, 560, 1500, 560, 1500, 430);
+		drawConveyor(g, "C15", 1130, 345, 1500, 430, 1500, 300, 768, 300);
+		drawConveyor(g, "C14", 1580, 392, 1660, 430, 1500, 430);
+
+		drawConveyor(g, "C11", 58, 730, 120, 560, 120, 900);
+		drawConveyor(g, "C12", 325, 945, 120, 900, 560, 900);
+		drawConveyor(g, "C16", 498, 840, 560, 900, 560, 770, 664, 770);
+		drawConveyor(g, "C17", 804, 805, 664, 770, 768, 770, 768, 900);
+		drawConveyor(g, "C18", 650, 945, 560, 900, 768, 900);
+		drawConveyor(g, "C27", 808, 945, 768, 900, 880, 900);
+		drawConveyor(g, "C28", 828, 865, 880, 900, 880, 770, 984, 770);
+		drawConveyor(g, "C29", 1124, 805, 984, 770, 1088, 770, 1088, 900);
+		drawConveyor(g, "C30", 970, 945, 880, 900, 1088, 900);
+		drawConveyor(g, "C31", 1128, 945, 1088, 900, 1200, 900);
+		drawConveyor(g, "C32", 1148, 865, 1200, 900, 1200, 770, 1304, 770);
+		drawConveyor(g, "C33", 1444, 805, 1304, 770, 1408, 770, 1408, 900);
+		drawConveyor(g, "C34", 1290, 945, 1200, 900, 1408, 900);
+		drawConveyor(g, "C09", 1450, 945, 1408, 900, 1540, 900);
+		drawConveyor(g, "C13", 790, 1045, 1540, 900, 1540, 1000, 120, 1000, 120, 900);
 		drawConveyor(g, "C04", 654, 345, 768, 300, 560, 300);
 		drawConveyor(g, "C05", 804, 220, 768, 300, 768, 130);
 		drawConveyor(g, "C07", 498, 630, 560, 560, 560, 690, 664, 690);
 		drawConveyor(g, "C08", 804, 630, 664, 690, 768, 690, 768, 560);
-		drawConveyor(g, "C11", 58, 670, 120, 560, 120, 770);
-		drawConveyor(g, "C12", 370, 734, 120, 770, 664, 770);
-		drawConveyor(g, "C09", 1050, 734, 664, 770, 1480, 770);
-		drawConveyor(g, "C13", 790, 945, 1480, 770, 1480, 900, 120, 900, 120, 770);
+		drawConveyor(g, "C21", 1128, 524, 1088, 560, 1200, 560);
+		drawConveyor(g, "C22", 1148, 705, 1200, 560, 1200, 690, 1304, 690);
+		drawConveyor(g, "C23", 1444, 630, 1304, 690, 1408, 690, 1408, 560);
+		drawConveyor(g, "C24", 1290, 524, 1200, 560, 1408, 560);
+		drawConveyor(g, "C03", 1536, 440, 1408, 560, 1500, 560, 1500, 300, 768, 300);
+
+		drawConveyor(g, "C11", 58, 730, 120, 560, 120, 900);
+		drawConveyor(g, "C12", 325, 945, 120, 900, 560, 900);
+		drawConveyor(g, "C14", 498, 840, 560, 900, 560, 770, 664, 770);
+		drawConveyor(g, "C15", 804, 805, 664, 770, 768, 770, 768, 900);
+		drawConveyor(g, "C16", 650, 945, 560, 900, 768, 900);
+		drawConveyor(g, "C25", 808, 945, 768, 900, 880, 900);
+		drawConveyor(g, "C26", 828, 865, 880, 900, 880, 770, 984, 770);
+		drawConveyor(g, "C27", 1124, 805, 984, 770, 1088, 770, 1088, 900);
+		drawConveyor(g, "C28", 970, 945, 880, 900, 1088, 900);
+		drawConveyor(g, "C29", 1128, 945, 1088, 900, 1200, 900);
+		drawConveyor(g, "C30", 1148, 865, 1200, 900, 1200, 770, 1304, 770);
+		drawConveyor(g, "C31", 1444, 805, 1304, 770, 1408, 770, 1408, 900);
+		drawConveyor(g, "C32", 1290, 945, 1200, 900, 1408, 900);
+		drawConveyor(g, "C09", 1450, 945, 1408, 900, 1540, 900);
+		drawConveyor(g, "C13", 790, 1045, 1540, 900, 1540, 1000, 120, 1000, 120, 900);
 
 		point(g, "TPS1", 560, 130);
 		point(g, "TPT1", 768, 130);
 		point(g, "IP1", 560, 300);
 		point(g, "DP2", 768, 300);
 		point(g, "DP3", 120, 560);
+		point(g, "EMPTY", 120, 900);
+		point(g, "OUT", 1540, 900);
 		point(g, "DP1", 560, 560);
-		point(g, "IP2", 768, 560);
-		point(g, "EMPTY", 120, 770);
 		point(g, "PTTS1", 664, 690);
+		point(g, "IP2", 768, 560);
+		point(g, "DP4", 560, 900);
 		point(g, "PTTT1", 664, 770);
-		point(g, "OUT", 1480, 770);
-		point(g, Constants.IP3, 1180, 430);
-		point(g, Constants.TPS2, 1440, 430);
+		point(g, "IP4", 768, 900);
+		point(g, "DP5", 880, 560);
+		point(g, "PTTS2", 984, 690);
+		point(g, "IP5", 1088, 560);
+		point(g, "DP6", 880, 900);
+		point(g, "PTTT2", 984, 770);
+		point(g, "IP6", 1088, 900);
+		point(g, "DP7", 1200, 560);
+		point(g, "PTTS3", 1304, 690);
+		point(g, "IP7", 1408, 560);
+		point(g, "DP8", 1200, 900);
+		point(g, "PTTT3", 1304, 770);
+		point(g, "IP8", 1408, 900);
+		point(g, Constants.IP3, 1500, 430);
+		point(g, Constants.TPS2, 1660, 430);
 
-		drawZone(g, Constants.PICKING_ZONE_LABEL, 620, 640, 88, 172);
-		drawZone(g, Constants.DECANTING_ZONE_LABEL, 1396, 380, 88, 92);
+		drawZone(g, Constants.PICKING_ZONE_LABEL + " 1", 620, 640, 88, 172);
+		drawZone(g, Constants.PICKING_ZONE_LABEL + " 2", 940, 640, 88, 172);
+		drawZone(g, Constants.PICKING_ZONE_LABEL + " 3", 1260, 640, 88, 172);
+		drawZone(g, Constants.DECANTING_ZONE_LABEL, 1616, 380, 88, 92);
 		g.dispose();
 	}
 
@@ -393,7 +451,7 @@ public class SimWindow extends JPanel {
 		int nameWidth = g.getFontMetrics().stringWidth(name);
 		if (name.equals("EMPTY") || name.equals("DP3") || name.equals(Constants.IP3)) {
 			g.drawString(name, x - h - 4 - nameWidth, y + 4);
-		} else if (name.equals("IP1") || name.equals("DP2")) {
+		} else if (LABEL_BELOW.contains(name)) {
 			g.drawString(name, x - nameWidth / 2, y + h + 13);
 		} else {
 			g.drawString(name, x - nameWidth / 2, y - h - 4);

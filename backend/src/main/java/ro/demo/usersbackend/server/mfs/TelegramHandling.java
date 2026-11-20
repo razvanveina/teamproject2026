@@ -30,7 +30,14 @@ public class TelegramHandling {
 			Map.entry(Constants.DP3, new DP3Handler()), Map.entry(Constants.PTTS1, new PTTS1Handler()),
 			Map.entry(Constants.PTTT1, new PTTT1Handler()), Map.entry(Constants.OUT, new OUTHandler()),
 			Map.entry(Constants.EMPTY, new EMPTYHandler()), Map.entry(Constants.IP3, new IP3Handler()),
-			Map.entry(Constants.TPS2, new TPS2Handler()));
+			Map.entry(Constants.TPS2, new TPS2Handler()), Map.entry(Constants.IP4, new IP4Handler()),
+			Map.entry(Constants.IP5, new IP5Handler()), Map.entry(Constants.IP6, new IP6Handler()),
+			Map.entry(Constants.IP7, new IP7Handler()), Map.entry(Constants.IP8, new IP8Handler()),
+			Map.entry(Constants.DP4, new DP4Handler()), Map.entry(Constants.DP5, new DP5Handler()),
+			Map.entry(Constants.DP6, new DP6Handler()), Map.entry(Constants.DP7, new DP7Handler()),
+			Map.entry(Constants.DP8, new DP8Handler()), Map.entry(Constants.PTTS2, new PTTS2Handler()),
+			Map.entry(Constants.PTTS3, new PTTS3Handler()), Map.entry(Constants.PTTT2, new PTTT2Handler()),
+			Map.entry(Constants.PTTT3, new PTTT3Handler()));
 
 	// ia ca parametrii punctul si telegrama lui
 	// gaseste handleru punctului si ii paseaza telegrama

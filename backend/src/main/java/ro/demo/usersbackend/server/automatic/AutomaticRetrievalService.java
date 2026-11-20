@@ -1,5 +1,7 @@
 package ro.demo.usersbackend.server.automatic;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
@@ -19,6 +21,8 @@ import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
 import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.LoadUnitType;
 import ro.demo.usersbackend.entity.Location;
+import ro.demo.usersbackend.entity.RetrievalOrder;
+import ro.demo.usersbackend.entity.StockItem;
 import ro.demo.usersbackend.entity.TransportOrder;
 import ro.demo.usersbackend.entity.TransportOrderStatus;
 import ro.demo.usersbackend.messaging.Broker;
@@ -26,6 +30,7 @@ import ro.demo.usersbackend.messaging.MfsMessages;
 import ro.demo.usersbackend.messaging.MfsMessages.AckGet;
 import ro.demo.usersbackend.messaging.MfsMessages.Get;
 import ro.demo.usersbackend.server.mfs.TelegramHandling;
+import ro.demo.usersbackend.server.picking.StationChooser;
 import ro.demo.usersbackend.server.process.AbstractProcess;
 
 public class AutomaticRetrievalService extends AbstractProcess {
@@ -99,9 +104,14 @@ public class AutomaticRetrievalService extends AbstractProcess {
 		List<Long> orderIds = new WithSessionAndTransaction<List<Long>>() {
 			@Override
 			protected void executeBusinessLogic(Session session) {
-				setReturnValue(session.createNamedQuery("TransportOrder.findIdsByStatusAndTargetName", Long.class)
-						.setParameter("status", TransportOrderStatus.NEW).setParameter("target", Constants.PTTS1)
-						.getResultList());
+				List<Long> ids = new ArrayList<>();
+				for (String station : Constants.PTTS_POINTS) {
+					ids.addAll(session.createNamedQuery("TransportOrder.findIdsByStatusAndTargetName", Long.class)
+							.setParameter("status", TransportOrderStatus.NEW).setParameter("target", station)
+							.getResultList());
+				}
+				Collections.sort(ids);
+				setReturnValue(ids);
 			}
 		}.run();
 
@@ -158,16 +168,30 @@ public class AutomaticRetrievalService extends AbstractProcess {
 
 	// tote-ul pleaca din locatia de picking direct spre statia PTTS1
 	private void createTransportOrder(Session session, Long loadUnitId) {
+		LoadUnit loadUnit = session.find(LoadUnit.class, loadUnitId);
+		String stationName = StationChooser.sourceStationFor(session, automaticOrderId(loadUnit),
+				loadUnit.getBarcode());
 		Location station = session.createNamedQuery("Location.findByName", Location.class)
-				.setParameter("name", Constants.PTTS1).uniqueResultOptional().orElse(null);
+				.setParameter("name", stationName).uniqueResultOptional().orElse(null);
 		if (station == null) {
-			log.error("Automatic retrieval: location {} is missing", Constants.PTTS1);
+			log.error("Automatic retrieval: location {} is missing", stationName);
 			return;
 		}
 
-		LoadUnit loadUnit = session.find(LoadUnit.class, loadUnitId);
 		session.persist(new TransportOrder(loadUnit.getLocation(), station, TransportOrderStatus.NEW, loadUnit));
 		log.info("Automatic retrieval: load unit {} goes from {} to {}", loadUnit.getBarcode(),
-				loadUnit.getLocation().getName(), Constants.PTTS1);
+				loadUnit.getLocation().getName(), stationName);
+	}
+
+	private Long automaticOrderId(LoadUnit tote) {
+		for (StockItem item : tote.getStockItems()) {
+			if (item.getReservation() != null) {
+				RetrievalOrder order = item.getReservation().getRetrievalOrderLine().getOrder();
+				if (order.isAutomatic()) {
+					return order.getId();
+				}
+			}
+		}
+		return null;
 	}
 }

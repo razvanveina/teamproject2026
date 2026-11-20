@@ -15,7 +15,7 @@ public class DP3Handler extends DecisionPointHandler {
 	@Override
 	protected int decide(String loadUnit, String target) {
 		if (target != null) {
-			return Constants.PTTT1.equals(target) ? 1 : 0;
+			return Constants.PTTT_POINTS.contains(target) ? 1 : 0;
 		}
 
 		long stockItems = new WithSessionAndTransaction<Long>() {

@@ -2,15 +2,18 @@ package ro.demo.usersbackend.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hibernate.Session;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import ro.demo.usersbackend.common.Constants;
+import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
 import ro.demo.usersbackend.dto.SimItemResponse;
 import ro.demo.usersbackend.dto.SimStationResponse;
 import ro.demo.usersbackend.dto.SimToteResponse;
@@ -29,6 +32,7 @@ import ro.demo.usersbackend.repository.LoadUnitRepository;
 import ro.demo.usersbackend.repository.LocationRepository;
 import ro.demo.usersbackend.repository.TransportOrderRepository;
 import ro.demo.usersbackend.server.mfs.StationControl;
+import ro.demo.usersbackend.server.picking.StationChooser;
 
 // statia de picking din simulator: tote-ul sursa sta pe PTTS1, tote-ul tinta pe PTTT1
 @Service
@@ -47,11 +51,15 @@ public class SimPickingService {
 		this.transportOrderRepository = transportOrderRepository;
 	}
 
+	public int stationCount() {
+		return Constants.PTTS_POINTS.size();
+	}
+
 	// ce e acum in statie, sus si jos, si orderul pe care lucreaza statia
 	@Transactional(readOnly = true)
-	public SimStationResponse findStation() {
-		LoadUnit source = findToteAt(Constants.PTTS1);
-		LoadUnit target = findToteAt(Constants.PTTT1);
+	public SimStationResponse findStation(int station) {
+		LoadUnit source = findToteAt(stationPoint(Constants.PTTS_POINTS, station));
+		LoadUnit target = findToteAt(stationPoint(Constants.PTTT_POINTS, station));
 
 		String orderId = null;
 		if (source != null && target != null) {
@@ -98,14 +106,16 @@ public class SimPickingService {
 	// (acelasi order pe care il arata si ecranul)
 	// sursa primeste un TO dupa ce a ramas in ea (routeSource), apoi release
 	// tinta primeste release (spre OUT) doar cand orderul e complet
-	public String confirm(String sourceBarcode, String targetBarcode) {
-		LoadUnit source = findToteAt(sourceBarcode, Constants.PTTS1);
-		LoadUnit target = findToteAt(targetBarcode, Constants.PTTT1);
+	public String confirm(int station, String sourceBarcode, String targetBarcode) {
+		String ptts = stationPoint(Constants.PTTS_POINTS, station);
+		String pttt = stationPoint(Constants.PTTT_POINTS, station);
+		LoadUnit source = findToteAt(sourceBarcode, ptts);
+		LoadUnit target = findToteAt(targetBarcode, pttt);
 
 		RetrievalOrder order = chooseOrder(source, target);
 		if (order == null) {
-			routeSource(source);
-			release(Constants.PTTS1);
+			routeSource(source, ptts);
+			release(ptts);
 			return "Tote " + sourceBarcode + " has nothing to pick here, it goes on";
 		}
 
@@ -121,19 +131,26 @@ public class SimPickingService {
 		}
 
 		if (moved == 0) {
-			routeSource(source);
-			release(Constants.PTTS1);
+			routeSource(source, ptts);
+			release(ptts);
 			return "Tote " + sourceBarcode + " has nothing for order " + order.getOrderId() + ", it goes on";
 		}
 
 		updateStatus(order, target);
-		routeSource(source);
-		release(Constants.PTTS1);
+		routeSource(source, ptts);
+		release(ptts);
 		if (order.getStatus() == RetrievalOrderStatus.PICKED) {
-			release(Constants.PTTT1);
+			release(pttt);
 			return "Order " + order.getOrderId() + " is complete, tote " + targetBarcode + " goes to " + Constants.OUT;
 		}
 		return "Moved to " + targetBarcode + ", the order " + order.getOrderId() + " needs more totes";
+	}
+
+	private String stationPoint(List<String> points, int station) {
+		if (station < 1 || station > points.size()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No picking zone " + station);
+		}
+		return points.get(station - 1);
 	}
 
 	// TO-ul tote-ului sursa, dupa ce a ramas in el:
@@ -143,26 +160,55 @@ public class SimPickingService {
 	// in picking
 	// e creat direct ACTIVE: tote-ul e deja pe banda, il inchide PointHandler cand
 	// ajunge
-	private void routeSource(LoadUnit source) {
+	private void routeSource(LoadUnit source, String from) {
 		boolean empty = true;
-		boolean automatic = false;
+		Long automaticOrder = null;
 		// source.getStockItems() inca vede ce tocmai am mutat in tinta, deci numaram
 		// doar ce e tot in sursa
 		for (StockItem item : source.getStockItems()) {
 			if (item.getLoadUnit().getBarcode().equals(source.getBarcode())) {
 				empty = false;
-				if (item.getReservation() != null
-						&& item.getReservation().getRetrievalOrderLine().getOrder().isAutomatic()) {
-					automatic = true;
+				if (item.getReservation() != null && automaticOrder == null) {
+					RetrievalOrder order = item.getReservation().getRetrievalOrderLine().getOrder();
+					if (order.isAutomatic()) {
+						automaticOrder = order.getId();
+					}
 				}
 			}
 		}
 
-		String next = empty ? Constants.PTTT1 : automatic ? Constants.PTTS1 : Constants.TPT1;
-		Location from = location(Constants.PTTS1);
-		Location to = location(next);
-		transportOrderRepository.save(new TransportOrder(from, to, TransportOrderStatus.ACTIVE, source));
-		log.info("Sim picking: tote {} goes from {} to {}", source.getBarcode(), Constants.PTTS1, next);
+		Long orderId = automaticOrder;
+		String barcode = source.getBarcode();
+		String next;
+		if (empty) {
+			next = chooseStation(StationChooser::freeTargetStation);
+		} else if (orderId != null) {
+			next = chooseStation(session -> StationChooser.sourceStationFor(session, orderId, barcode));
+		} else {
+			next = Constants.TPT1;
+		}
+
+		if (next == null) {
+			log.info("Sim picking: empty tote {} has no free target zone, it goes on without a TO", barcode);
+			return;
+		}
+		transportOrderRepository
+				.save(new TransportOrder(location(from), location(next), TransportOrderStatus.ACTIVE, source));
+		log.info("Sim picking: tote {} goes from {} to {}", barcode, from, next);
+	}
+
+	private String chooseStation(Function<Session, String> choice) {
+		try {
+			return new WithSessionAndTransaction<String>() {
+				@Override
+				protected void executeBusinessLogic(Session session) {
+					setReturnValue(choice.apply(session));
+				}
+			}.run();
+		} catch (RuntimeException e) {
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+					"Cannot choose a picking zone: " + e.getMessage());
+		}
 	}
 
 	private Location location(String name) {
