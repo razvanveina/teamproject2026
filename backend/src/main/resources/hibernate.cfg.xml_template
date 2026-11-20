@@ -30,23 +30,32 @@
  
         <property name="hibernate.hbm2ddl.auto">update</property>
         
- <mapping class="ro.demo.usersbackend.entity.Account"/>
-<mapping class="ro.demo.usersbackend.entity.Article"/>
-<mapping class="ro.demo.usersbackend.entity.Destination"/>
-<mapping class="ro.demo.usersbackend.entity.DestinationToGate"/>
-<mapping class="ro.demo.usersbackend.entity.LoadUnit"/>
-<mapping class="ro.demo.usersbackend.entity.Location"/>
-<mapping class="ro.demo.usersbackend.entity.PackagingUnitType"/>
-<mapping class="ro.demo.usersbackend.entity.ReceivingOrder"/>
-<mapping class="ro.demo.usersbackend.entity.ReceivingOrderLine"/>
-<mapping class="ro.demo.usersbackend.entity.Reservation"/>
-<mapping class="ro.demo.usersbackend.entity.RetrievalOrder"/>
-<mapping class="ro.demo.usersbackend.entity.RetrievalOrderLine"/>
-<mapping class="ro.demo.usersbackend.entity.StockItem"/>
-<mapping class="ro.demo.usersbackend.entity.StorageLocation"/>
-<mapping class="ro.demo.usersbackend.entity.TransitLocation"/>
-<mapping class="ro.demo.usersbackend.entity.TransportOrder"/>
-<mapping class="ro.demo.usersbackend.entity.User"/>
-<mapping class="ro.demo.usersbackend.entity.ArticlePackagingUnitType"/>
+		<mapping class="ro.demo.usersbackend.entity.Account"/>
+		<mapping class="ro.demo.usersbackend.entity.Article"/>
+		<mapping class="ro.demo.usersbackend.entity.Destination"/>
+		<mapping class="ro.demo.usersbackend.entity.DestinationToGate"/>
+		<mapping class="ro.demo.usersbackend.entity.LoadUnit"/>
+		<mapping class="ro.demo.usersbackend.entity.Location"/>
+		<mapping class="ro.demo.usersbackend.entity.PackagingUnitType"/>
+		<mapping class="ro.demo.usersbackend.entity.ReceivingOrder"/>
+		<mapping class="ro.demo.usersbackend.entity.ReceivingOrderLine"/>
+		<mapping class="ro.demo.usersbackend.entity.Reservation"/>
+		<mapping class="ro.demo.usersbackend.entity.RetrievalOrder"/>
+		<mapping class="ro.demo.usersbackend.entity.RetrievalOrderLine"/>
+		<mapping class="ro.demo.usersbackend.entity.StockItem"/>
+		<mapping class="ro.demo.usersbackend.entity.StorageLocation"/>
+		<mapping class="ro.demo.usersbackend.entity.TransitLocation"/>
+		<mapping class="ro.demo.usersbackend.entity.TransportOrder"/>
+		<mapping class="ro.demo.usersbackend.entity.User"/>
+		<mapping class="ro.demo.usersbackend.entity.ArticlePackagingUnitType"/>
+		<mapping class="ro.demo.usersbackend.entity.ArticlePickingLocation"/>
+		<mapping class="ro.demo.usersbackend.entity.InventoryOrder"/>
+		<mapping class="ro.demo.usersbackend.entity.InventoryOrderLine"/>
+		<mapping class="ro.demo.usersbackend.entity.InventoryOrderLineItem"/>
+		<mapping class="ro.demo.usersbackend.entity.Printer"/>
+		<mapping class="ro.demo.usersbackend.entity.PrintJob"/>
+		
+		<mapping resource="queries.hbm.xml"/>
+		<mapping resource="sequences.hbm.xml"/>
     </session-factory>
 </hibernate-configuration>
