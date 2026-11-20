@@ -2,12 +2,21 @@ package ro.demo.usersbackend.repository;
 
 import java.util.Optional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.hibernate.Session;
 
 import ro.demo.usersbackend.entity.Account;
 
-public interface AccountRepository extends JpaRepository<Account, Long> {
-	Optional<Account> findByUsername(String username);
+public class AccountRepository extends BaseRepository<Account, Long> {
+	public AccountRepository(Session session) {
+		super(session, Account.class);
+	}
 
-	boolean existsByUsername(String username);
+	public Optional<Account> findByUsername(String username) {
+		return session.createNamedQuery(Account.BY_USERNAME, Account.class).setParameter("username", username)
+				.uniqueResultOptional();
+	}
+
+	public boolean existsByUsername(String username) {
+		return findByUsername(username).isPresent();
+	}
 }

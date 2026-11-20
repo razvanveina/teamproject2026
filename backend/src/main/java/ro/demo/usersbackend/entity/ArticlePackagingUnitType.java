@@ -1,5 +1,8 @@
 package ro.demo.usersbackend.entity;
 
+import org.hibernate.annotations.NamedQueries;
+import org.hibernate.annotations.NamedQuery;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -9,7 +12,19 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
 @Entity
+@NamedQueries({ //
+		@NamedQuery(name = "ArticlePackagingUnitType.findByArticleAndPackagingUnitType", //
+				query = "from ArticlePackagingUnitType a where a.article = :article and a.packagingUnitType = :pack"), //
+		@NamedQuery(name = "ArticlePackagingUnitType.findByBarcode", //
+				query = "from ArticlePackagingUnitType a where a.barcode = :barcode"), //
+		@NamedQuery(name = "ArticlePackagingUnitType.findByArticleBarcodeIn", //
+				query = "from ArticlePackagingUnitType a where a.article.barcode in :barcodes")//
+})
 public class ArticlePackagingUnitType {
+	public static final String BY_ARTICLE_AND_PACK = "ArticlePackagingUnitType.findByArticleAndPackagingUnitType";
+	public static final String BY_BARCODE = "ArticlePackagingUnitType.findByBarcode";
+	public static final String BY_ARTICLE_BARCODES = "ArticlePackagingUnitType.findByArticleBarcodeIn";
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;

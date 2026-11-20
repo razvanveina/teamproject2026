@@ -1,11 +1,13 @@
 package ro.demo.usersbackend.repository;
 
-import java.util.List;
-
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.hibernate.Session;
 
 import ro.demo.usersbackend.entity.ArticlePickingLocation;
 
-public interface ArticlePickingLocationRepository extends JpaRepository<ArticlePickingLocation, Long> {
-	List<ArticlePickingLocation> findByArticleBarcode(String barcode);
+public class ArticlePickingLocationRepository extends BaseRepository<ArticlePickingLocation, Long> {
+	// List<ArticlePickingLocation> findByArticleBarcode(String barcode);
+
+	public ArticlePickingLocationRepository(Session session) {
+		super(session, ArticlePickingLocation.class);
+	}
 }
