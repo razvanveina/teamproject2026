@@ -7,10 +7,10 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.dto.DecantingItem;
 import ro.demo.usersbackend.dto.DecantingResponse;
