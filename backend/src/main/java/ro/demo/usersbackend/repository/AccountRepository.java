@@ -1,5 +1,6 @@
 package ro.demo.usersbackend.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.hibernate.Session;
@@ -18,5 +19,9 @@ public class AccountRepository extends BaseRepository<Account, Long> {
 
 	public boolean existsByUsername(String username) {
 		return findByUsername(username).isPresent();
+	}
+
+	public List<Account> findAllOrderByUsername() {
+		return session.createNamedQuery(Account.ALL_ORDER_BY_USERNAME, Account.class).list();
 	}
 }
