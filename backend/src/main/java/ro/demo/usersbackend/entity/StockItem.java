@@ -1,5 +1,8 @@
 package ro.demo.usersbackend.entity;
 
+import org.hibernate.annotations.NamedQueries;
+import org.hibernate.annotations.NamedQuery;
+
 import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import jakarta.persistence.Column;
@@ -11,7 +14,13 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
 @Entity
+@NamedQueries({ //
+		@NamedQuery(name = "StockItem.findByLoadUnitOrderByIdAsc", //
+				query = "from StockItem s where s.loadUnit = :loadUnit order by s.id asc") })
 public class StockItem {
+
+	public static final String FIND_BY_LOADUNIT_ORDER_BY_ID_ASC = "StockItem.findByLoadUnitOrderByIdAsc";
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;

@@ -1,15 +1,24 @@
 package ro.demo.usersbackend.repository;
 
-import java.util.List;
 import java.util.Optional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.hibernate.Session;
 
 import ro.demo.usersbackend.entity.DestinationToGate;
 
-public interface DestinationToGateRepository extends JpaRepository<DestinationToGate, Long> {
+public class DestinationToGateRepository extends BaseRepository<DestinationToGate, Long> {
 
-	List<DestinationToGate> findByGateName(String name);
+	public DestinationToGateRepository(Session session) {
+		super(session, DestinationToGate.class);
+	}
 
-	Optional<DestinationToGate> findByDestinationName(String name);
+	public Optional<DestinationToGate> findByGateName(String name) {
+		return session.createNamedQuery(DestinationToGate.BY_GATE_NAME, DestinationToGate.class)
+				.setParameter("name", name).uniqueResultOptional();
+	}
+
+	public Optional<DestinationToGate> findByDestinationName(String name) {
+		return session.createNamedQuery(DestinationToGate.BY_DESTINATION_NAME, DestinationToGate.class)
+				.setParameter("destination", name).uniqueResultOptional();
+	}
 }

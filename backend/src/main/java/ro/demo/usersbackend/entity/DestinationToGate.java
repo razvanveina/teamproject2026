@@ -1,5 +1,8 @@
 package ro.demo.usersbackend.entity;
 
+import org.hibernate.annotations.NamedQueries;
+import org.hibernate.annotations.NamedQuery;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -9,7 +12,16 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 
 @Entity
+@NamedQueries({ //
+		@NamedQuery(name = "DestinationToGate.findByGateName", //
+				query = "from DestinationToGate dtg where dtg.gate.name = :name"),
+		@NamedQuery(name = "DestinationToGate.findByDestinationName", //
+				query = "from DestinationToGate dtg where dtg.destination.name = :name") })
 public class DestinationToGate {
+
+	public static final String BY_GATE_NAME = "DestinationToGate.findByGateName";
+	public static final String BY_DESTINATION_NAME = "DestinationToGate.findByDestinationName";
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
@@ -31,7 +43,7 @@ public class DestinationToGate {
 		this.destination = destination;
 		this.gate = gate;
 	}
-	
+
 	public Long getId() {
 		return id;
 	}

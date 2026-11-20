@@ -19,7 +19,7 @@ public class StorageLocationService {
 	}
 
 	public Location findClosestEmptyX() {
-		return storageLocationRepository.findFirstFreeByX(Constants.OPEN_TRANSPORT_STATUSES, Limit.of(1)).orElseThrow(
+		return storageLocationRepository.findClosestFreeSlot(Constants.OPEN_TRANSPORT_STATUSES, Limit.of(1)).orElseThrow(
 				() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "No free storage location available"));
 	}
 }

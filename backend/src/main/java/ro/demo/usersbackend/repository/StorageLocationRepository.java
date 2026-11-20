@@ -3,19 +3,20 @@ package ro.demo.usersbackend.repository;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.data.domain.Limit;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import org.hibernate.Session;
+import org.hibernate.query.spi.Limit;
 
 import ro.demo.usersbackend.entity.StorageLocation;
 import ro.demo.usersbackend.entity.TransportOrderStatus;
 
-public interface StorageLocationRepository extends JpaRepository<StorageLocation, Integer> {
+public class StorageLocationRepository extends BaseRepository<StorageLocation, Integer> {
 
-	@Query("select l from StorageLocation l "
-			+ "where not exists (select u from LoadUnit u where u.location = l) "
-			+ "and l.aisle > 0 "
-			+ "and l.id not in (select t.target.id from TransportOrder t where t.status in ?1) "
-			+ "order by l.x asc")
-	Optional<StorageLocation> findFirstFreeByX(List<TransportOrderStatus> open, Limit limit);
+	public StorageLocationRepository(Session session) {
+		super(session, StorageLocation.class);
+	}
+
+	public Optional<StorageLocation> findClosestFreeSlot(List<TransportOrderStatus> open, Limit limit) {
+		return session.createNamedQuery(StorageLocation.FIND_CLOSEST_FREE_SLOT, StorageLocation.class)
+				.uniqueResultOptional();
+	}
 }

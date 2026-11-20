@@ -1,12 +1,24 @@
 package ro.demo.usersbackend.entity;
 
+import org.hibernate.annotations.NamedQueries;
+import org.hibernate.annotations.NamedQuery;
+
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import ro.demo.usersbackend.common.Constants;
 
 @Entity
 @DiscriminatorValue("STORAGE")
+@NamedQueries({ //
+		@NamedQuery(name = "StorageLocation.findClosestFreeSlot", //
+				query = "select l from StorageLocation l "
+						+ "where not exists (select u from LoadUnit u where u.location = l) " + "and l.aisle > 0 "
+						+ "and l.id not in (select t.target.id from TransportOrder t where t.status in ?1) "
+						+ "order by l.x asc") })
 public class StorageLocation extends Location {
+
+	public static final String FIND_CLOSEST_FREE_SLOT = "StorageLocation.findClosestFreeSlot";
+
 	private int x;
 
 	private int y;
