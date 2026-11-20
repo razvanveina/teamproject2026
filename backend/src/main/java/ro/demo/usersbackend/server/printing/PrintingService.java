@@ -9,7 +9,7 @@ import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.hibernate.SessionFactory;
+import org.hibernate.Session;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,11 +21,11 @@ import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
 
 import ro.demo.usersbackend.common.Constants;
+import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
 import ro.demo.usersbackend.entity.PrintJob;
 import ro.demo.usersbackend.entity.PrintJobStatus;
 import ro.demo.usersbackend.entity.PrinterType;
 import ro.demo.usersbackend.server.process.AbstractProcess;
-import ro.demo.usersbackend.server.session.ServerSessionFactory;
 
 public class PrintingService extends AbstractProcess {
 	private static final Logger log = LogManager.getLogger("application");
@@ -41,36 +41,50 @@ public class PrintingService extends AbstractProcess {
 
 	@Override
 	protected void doAction() {
+		List<Long> newPdfPrintJobIds;
 		try {
-			SessionFactory sessionFactory = ServerSessionFactory.getInstance();
-
-			List<Long> newPdfPrintJobIds = sessionFactory.fromTransaction(session -> session
-					.createNamedQuery("PrintJob.findNewIdsByPrinterType", Long.class).setParameter("status", PrintJobStatus.NEW)
-					.setParameter("printerType", PrinterType.PDF).getResultList());
-
-			newPdfPrintJobIds.forEach(printJobId -> printPdfJob(sessionFactory, printJobId));
+			newPdfPrintJobIds = new WithSessionAndTransaction<List<Long>>() {
+				@Override
+				protected void executeBusinessLogic(Session session) {
+					setReturnValue(findNewPdfPrintJobIds(session));
+				}
+			}.run();
 		} catch (Exception e) {
 			log.error("Printing: cannot scan the print jobs: {}", e.toString());
+			return;
+		}
+
+		for (Long printJobId : newPdfPrintJobIds) {
+			try {
+				new WithSessionAndTransaction<>() {
+					@Override
+					protected void executeBusinessLogic(Session session) {
+						printPdfJob(session, printJobId);
+					}
+				}.run();
+			} catch (Exception e) {
+				log.error("Printing: print job {} not processed {}", printJobId, e.toString());
+			}
 		}
 	}
 
-	private void printPdfJob(SessionFactory sessionFactory, Long printJobId) {
+	private List<Long> findNewPdfPrintJobIds(Session session) {
+		return session.createNamedQuery("PrintJob.findNewIdsByPrinterType", Long.class)
+				.setParameter("status", PrintJobStatus.NEW).setParameter("printerType", PrinterType.PDF)
+				.getResultList();
+	}
+
+	private void printPdfJob(Session session, Long printJobId) {
+		PrintJob printJob = session.find(PrintJob.class, printJobId);
 		try {
-			sessionFactory.inTransaction(session -> {
-				PrintJob printJob = session.find(PrintJob.class, printJobId);
-				try {
-					Path pdfFile = writeShippingLabelPdf(printJob);
-					printJob.setStatus(PrintJobStatus.PRINTED);
-					printJob.setPrintedAt(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
-					log.info("Printing: print job {} printed on {} to {}", printJobId,
-							printJob.getPrinter().getName(), pdfFile);
-				} catch (Exception e) {
-					printJob.setStatus(PrintJobStatus.ERROR);
-					log.error("Printing: print job {} failed {}", printJobId, e.toString());
-				}
-			});
+			Path pdfFile = writeShippingLabelPdf(printJob);
+			printJob.setStatus(PrintJobStatus.PRINTED);
+			printJob.setPrintedAt(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
+			log.info("Printing: print job {} printed on {} to {}", printJobId, printJob.getPrinter().getName(),
+					pdfFile);
 		} catch (Exception e) {
-			log.error("Printing: print job {} not processed {}", printJobId, e.toString());
+			printJob.setStatus(PrintJobStatus.ERROR);
+			log.error("Printing: print job {} failed {}", printJobId, e.toString());
 		}
 	}
 
