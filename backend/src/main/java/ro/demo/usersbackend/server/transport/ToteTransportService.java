@@ -11,14 +11,14 @@ import ro.demo.usersbackend.entity.Article;
 import ro.demo.usersbackend.entity.ArticlePickingLocation;
 import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.LoadUnitType;
-import ro.demo.usersbackend.entity.StockItem;
+import ro.demo.usersbackend.entity.Location;
 import ro.demo.usersbackend.entity.StorageLocation;
 import ro.demo.usersbackend.entity.TransportOrder;
 import ro.demo.usersbackend.entity.TransportOrderStatus;
 import ro.demo.usersbackend.server.process.AbstractProcess;
 import ro.demo.usersbackend.server.session.ServerSessionFactory;
 
-// proces care trimite tote-urile cu marfa rezervata din zona de decanting spre locatia de picking a articolului lor
+// proces care muta tote-urile cu marfa: de la decanting pe banda (automat, prin TPS2), de la TPT1 la locatia de picking
 public class ToteTransportService extends AbstractProcess {
 	private static final Logger log = LogManager.getLogger("toteTransport");
 
@@ -41,12 +41,29 @@ public class ToteTransportService extends AbstractProcess {
 				.setParameterList("places", List.of(Constants.DECANTING, Constants.TPT1)).getResultList();
 
 		for (LoadUnit tote : totes) {
-			boolean atDecanting = Constants.DECANTING.equals(tote.getLocation().getName());
-			boolean needsPicking = atDecanting ? hasReservation(tote) : !tote.getStockItems().isEmpty();
-			if (needsPicking && !hasOpenTransport(session, tote)) {
+			if (tote.getStockItems().isEmpty() || hasOpenTransport(session, tote)) {
+				continue;
+			}
+			// de la decanting tote-ul pleaca singur pe banda (prin TPS2), de la TPT1 merge la picking
+			if (Constants.DECANTING.equals(tote.getLocation().getName())) {
+				sendToConveyor(session, tote);
+			} else {
 				sendToPicking(session, tote);
 			}
 		}
+	}
+
+	// transport automat decanting -> conveyor; GET-ul il trimite AutomaticRetrievalService pe coada lui TPS2
+	private void sendToConveyor(Session session, LoadUnit tote) {
+		Location conveyor = session.createNamedQuery("Location.findByName", Location.class)
+				.setParameter("name", Constants.CONVEYOR).uniqueResultOptional().orElse(null);
+		if (conveyor == null) {
+			log.error("Tote transport: location {} is missing", Constants.CONVEYOR);
+			return;
+		}
+		session.persist(new TransportOrder(tote.getLocation(), conveyor, TransportOrderStatus.NEW, tote));
+		log.info("Tote transport: tote {} goes from {} to {}", tote.getBarcode(), tote.getLocation().getName(),
+				Constants.CONVEYOR);
 	}
 
 	// un tote are un singur articol, deci locatia de picking vine din articolul
@@ -120,15 +137,6 @@ public class ToteTransportService extends AbstractProcess {
 				.setParameter("location", location).setParameterList("open", Constants.OPEN_TRANSPORT_STATUSES)
 				.getSingleResult();
 		return open > 0;
-	}
-
-	private boolean hasReservation(LoadUnit tote) {
-		for (StockItem item : tote.getStockItems()) {
-			if (item.getReservation() != null) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	// nu facem al doilea transport order pentru un tote care are deja unul NEW sau
