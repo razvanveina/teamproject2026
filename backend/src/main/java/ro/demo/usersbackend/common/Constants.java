@@ -102,7 +102,6 @@ public final class Constants {
 	public static final String DESTINATION_TITLE = "Destination: ";
 	public static final String ARTICLE_HEADER = "Article";
 	public static final String QUANTITY_HEADER = "Quantity";
-	public static final String PRINT_JOB_ORDER_ID_PARAMETER = "orderId";
 
 	// campurile din json-ul etichetei
 	public static final String ORDER_ID = "orderId";

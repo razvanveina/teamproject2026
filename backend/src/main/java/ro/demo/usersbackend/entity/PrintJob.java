@@ -15,6 +15,8 @@ import jakarta.persistence.ManyToOne;
 
 @Entity
 public class PrintJob {
+	public static final String LATEST_BY_ORDER_ID = "PrintJob.findLatestByOrderId";
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
