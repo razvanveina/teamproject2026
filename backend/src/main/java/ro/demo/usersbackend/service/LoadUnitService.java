@@ -157,12 +157,13 @@ public class LoadUnitService {
 	}
 
 	public LoadUnit createEmptyLoadUnit(String barcode, LoadUnitType type) {
+		if (loadUnitRepository.findByBarcode(barcode).isPresent()) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT,
+					"A load unit with the barcode " + barcode + " already exists");
+		}
+
 		LoadUnit loadUnit = new LoadUnit();
-
-		Location loc = locationRepository.findByName(Constants.IP1).orElseThrow(
-				() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot find location " + Constants.IP1));
-
-		loadUnit.setLocation(loc);
+		loadUnit.setLocation(location(Constants.CONVEYOR));
 		loadUnit.setBarcode(barcode);
 		loadUnit.setType(type);
 
