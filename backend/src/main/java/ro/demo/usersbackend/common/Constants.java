@@ -29,6 +29,8 @@ public final class Constants {
 	public static final String EMPTY = "EMPTY";
 	public static final String PTTS1 = "PTTS1";
 	public static final String PTTT1 = "PTTT1";
+	public static final List<String> CONVEYOR_POINTS = List.of(TPS1, TPT1, IP1, IP2, DP1, DP2, DP3, EMPTY, PTTS1,
+			PTTT1);
 
 	// location names
 	public static final String PICK_PREFIX = "PICK";

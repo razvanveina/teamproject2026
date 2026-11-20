@@ -5,6 +5,8 @@ import org.apache.logging.log4j.Logger;
 
 import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.Location;
+import ro.demo.usersbackend.entity.TransportOrder;
+import ro.demo.usersbackend.entity.TransportOrderStatus;
 import ro.demo.usersbackend.messaging.MfsMessages;
 import ro.demo.usersbackend.messaging.MfsMessages.Arrived;
 import ro.demo.usersbackend.server.session.ServerSessionFactory;
@@ -19,6 +21,7 @@ public abstract class PointHandler implements TelegramHandler {
 	}
 
 	// actualizam locatia lu-ului ajuns intr-un anumit punct
+	// se termina TO cand ajunge pe punct
 	@Override
 	public void handle(String telegram) throws Exception {
 		Arrived arrived = MfsMessages.fromJson(telegram, Arrived.class);
@@ -36,6 +39,15 @@ public abstract class PointHandler implements TelegramHandler {
 
 			loadUnit.setLocation(location);
 			log.info("{}: load unit {} arrived", point, loadUnit.getBarcode());
+
+			for (TransportOrder order : session
+					.createNamedQuery("TransportOrder.findActiveByLoadUnitAndTarget", TransportOrder.class)
+					.setParameter("loadUnit", loadUnit).setParameter("target", location)
+					.setParameter("active", TransportOrderStatus.ACTIVE).getResultList()) {
+				order.setStatus(TransportOrderStatus.FINISHED);
+				log.info("{}: transport order {} for load unit {} finished", point, order.getId(),
+						loadUnit.getBarcode());
+			}
 		});
 	}
 }

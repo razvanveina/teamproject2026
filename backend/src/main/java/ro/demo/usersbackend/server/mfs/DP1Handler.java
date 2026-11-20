@@ -8,8 +8,9 @@ public class DP1Handler extends DecisionPointHandler {
 	}
 
 	// 0 = DP1 -> PTTS1 (C7) ; 1 = DP1 -> IP2 (C2)
+	// in statie intra doar tote-ul care are TO spre PTTS1
 	@Override
-	protected int decide(String loadUnit) {
-		return 0;
+	protected int decide(String loadUnit, String target) {
+		return Constants.PTTS1.equals(target) ? 0 : 1;
 	}
 }

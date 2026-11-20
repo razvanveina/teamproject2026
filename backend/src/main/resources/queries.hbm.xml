@@ -213,6 +213,14 @@
 	    ]]>
 	</query>
 
+	<query name="TransportOrder.findActiveTargetName">
+	    <![CDATA[
+	        select t.target.name from TransportOrder t
+	        where t.loadUnit.barcode = :barcode and t.status = :active
+	        order by t.id desc
+	    ]]>
+	</query>
+
 	<sql-query name="releaseReservationsForLoadUnit">
         <![CDATA[
             UPDATE stock_item SET reservation_id = NULL
