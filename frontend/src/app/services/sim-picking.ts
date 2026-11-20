@@ -7,11 +7,15 @@ import { API_BASE_URL } from '../api.config';
 export class SimPickingApi {
     private http = inject(HttpClient);
 
-    getStation(): Observable<any> {
-        return this.http.get<any>(API_BASE_URL + '/sim-picking/station');
+    getStationCount(): Observable<number> {
+        return this.http.get<number>(API_BASE_URL + '/sim-picking/stations');
     }
 
-    confirm(sourceTote: string, targetTote: string): Observable<any> {
-        return this.http.post<any>(API_BASE_URL + '/sim-picking/confirm', { sourceTote: sourceTote, targetTote: targetTote });
+    getStation(station: number): Observable<any> {
+        return this.http.get<any>(API_BASE_URL + '/sim-picking/station', { params: { station: station } });
+    }
+
+    confirm(station: number, sourceTote: string, targetTote: string): Observable<any> {
+        return this.http.post<any>(API_BASE_URL + '/sim-picking/confirm', { station: station, sourceTote: sourceTote, targetTote: targetTote });
     }
 }

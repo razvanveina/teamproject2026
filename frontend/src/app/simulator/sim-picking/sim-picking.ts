@@ -14,12 +14,18 @@ export class SimPicking implements OnInit, OnDestroy {
   private leaving = '';
   private targetLeaving = '';
 
+  station = signal(1);
+  stations = signal<number[]>([1]);
+
   source = signal<any>(null);
   target = signal<any>(null);
   orderId = signal<string | null>(null);
   message = signal('');
 
   ngOnInit(): void {
+    this.api.getStationCount().subscribe({
+      next: (count: number) => this.stations.set(Array.from({ length: count }, (_, i) => i + 1)),
+    });
     this.refresh();
     this.checker = setInterval(() => this.refresh(), 1000);
   }
@@ -28,9 +34,24 @@ export class SimPicking implements OnInit, OnDestroy {
     clearInterval(this.checker);
   }
 
+  selectStation(station: number): void {
+    this.station.set(station);
+    this.leaving = '';
+    this.targetLeaving = '';
+    this.message.set('');
+    this.source.set(null);
+    this.target.set(null);
+    this.orderId.set(null);
+    this.refresh();
+  }
+
   refresh(): void {
-    this.api.getStation().subscribe({
+    const zone = this.station();
+    this.api.getStation(zone).subscribe({
       next: (station: any) => {
+        if (zone !== this.station()) {
+          return;
+        }
         let source = station.source;
         if (source !== null && source.barcode === this.leaving) {
           source = null;
@@ -69,10 +90,10 @@ export class SimPicking implements OnInit, OnDestroy {
 
   instruction(): string {
     if (this.target() === null) {
-      return 'Waiting for an empty target tote at PTTT1';
+      return 'Waiting for an empty target tote at PTTT' + this.station();
     }
     if (this.source() === null) {
-      return this.message() + ' Waiting for the next source tote at PTTS1';
+      return this.message() + ' Waiting for the next source tote at PTTS' + this.station();
     }
     const items = this.toMove();
     if (items.length === 0) {
@@ -91,9 +112,13 @@ export class SimPicking implements OnInit, OnDestroy {
   onConfirm(): void {
     const source = this.source();
     const target = this.target();
-    this.log.action('SIM PICKING confirm ' + source.barcode + ' into ' + target.barcode);
-    this.api.confirm(source.barcode, target.barcode).subscribe({
+    const zone = this.station();
+    this.log.action('SIM PICKING zone ' + zone + ' confirm ' + source.barcode + ' into ' + target.barcode);
+    this.api.confirm(zone, source.barcode, target.barcode).subscribe({
       next: (res: any) => {
+        if (zone !== this.station()) {
+          return;
+        }
         this.message.set(res.message + '.');
         this.leaving = source.barcode;
         this.source.set(null);

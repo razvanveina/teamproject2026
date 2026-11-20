@@ -1,7 +1,13 @@
 <div class="container">
+    <div class="zones">
+        @for (n of stations(); track n) {
+        <button [class.active]="n === station()" (click)="selectStation(n)">Zone {{ n }}</button>
+        }
+    </div>
+
     <div class="top">
         <div class="tote">
-            <h3>Source tote (PTTS1)</h3>
+            <h3>Source tote (PTTS{{ station() }})</h3>
             @if (source(); as tote) {
             <p class="barcode">{{ tote.barcode }}</p>
             <table>
@@ -32,7 +38,7 @@
         <div class="arrow">➜</div>
 
         <div class="tote">
-            <h3>Target tote (PTTT1)</h3>
+            <h3>Target tote (PTTT{{ station() }})</h3>
             @if (target(); as tote) {
             <p class="barcode">{{ tote.barcode }}</p>
             <table>

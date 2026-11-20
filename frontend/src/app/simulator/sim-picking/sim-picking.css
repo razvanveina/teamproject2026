@@ -1,6 +1,6 @@
 .container {
     display: grid;
-    grid-template-rows: auto 1fr 100px;
+    grid-template-rows: auto auto 1fr 100px;
     gap: 10px;
     height: 80vh;
     width: 90vw;
@@ -110,5 +110,26 @@ button:disabled {
 }
 
 .confirm {
+    background: linear-gradient(110deg, #172b4d, #203b5e);
+}
+
+.zones {
+    display: flex;
+    gap: 10px;
+}
+
+.zones button {
+    width: auto;
+    height: auto;
+    margin: 0;
+    padding: 8px 20px;
+    color: #172b4d;
+    font-size: 18px;
+    background: white;
+    border: 2px solid #203b5e;
+}
+
+.zones button.active {
+    color: white;
     background: linear-gradient(110deg, #172b4d, #203b5e);
 }
