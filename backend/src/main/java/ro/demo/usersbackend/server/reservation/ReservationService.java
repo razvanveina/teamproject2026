@@ -7,9 +7,9 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hibernate.Session;
-import org.hibernate.SessionFactory;
 
 import ro.demo.usersbackend.common.Constants;
+import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
 import ro.demo.usersbackend.entity.Article;
 import ro.demo.usersbackend.entity.ArticlePackagingUnitType;
 import ro.demo.usersbackend.entity.Reservation;
@@ -19,7 +19,6 @@ import ro.demo.usersbackend.entity.RetrievalOrderLineStatus;
 import ro.demo.usersbackend.entity.RetrievalOrderStatus;
 import ro.demo.usersbackend.entity.StockItem;
 import ro.demo.usersbackend.server.process.AbstractProcess;
-import ro.demo.usersbackend.server.session.ServerSessionFactory;
 
 public class ReservationService extends AbstractProcess {
 	private static final Logger Log = LogManager.getLogger("reservation");
@@ -35,26 +34,34 @@ public class ReservationService extends AbstractProcess {
 	@Override
 	public void doAction() {
 		try {
-			SessionFactory sessionFactory = ServerSessionFactory.getInstance();
-
-			List<String> orderIds = sessionFactory.fromTransaction(
-					session -> session.createNamedQuery("RetrievalOrder.findOrderIdsByStatus", String.class)
+			List<String> orderIds = new WithSessionAndTransaction<List<String>>() {
+				@Override
+				protected void executeBusinessLogic(Session session) {
+					setReturnValue(session.createNamedQuery("RetrievalOrder.findOrderIdsByStatus", String.class)
 							.setParameter("status", RetrievalOrderStatus.NEW).getResultList());
+				}
+			}.run();
 
-			orderIds.forEach(orderId -> process(sessionFactory, orderId));
+			for (String orderId : orderIds) {
+				process(orderId);
+			}
 		} catch (Exception e) {
 			Log.error("cannot scan retrieval orders: {}", e.toString());
 		}
 	}
 
-	private void process(SessionFactory sessionFactory, String orderId) {
+	private void process(String orderId) {
 		try {
 			List<String> items = new ArrayList<>();
-			boolean reserved = sessionFactory.fromTransaction(session -> {
-				RetrievalOrder order = session.createNamedQuery("RetrievalOrder.findByOrderId", RetrievalOrder.class)
-						.setParameter("id", orderId).getSingleResult();
-				return reserve(session, order, items);
-			});
+			boolean reserved = new WithSessionAndTransaction<Boolean>() {
+				@Override
+				protected void executeBusinessLogic(Session session) {
+					RetrievalOrder order = session
+							.createNamedQuery("RetrievalOrder.findByOrderId", RetrievalOrder.class)
+							.setParameter("id", orderId).getSingleResult();
+					setReturnValue(reserve(session, order, items));
+				}
+			}.run();
 			if (reserved) {
 				Log.info("order {} reserved", orderId);
 				items.forEach(item -> Log.info(item));
