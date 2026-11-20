@@ -40,7 +40,12 @@ public final class ServerSessionFactory {
 
 	public static synchronized SessionFactory getInstance() throws Exception {
 		if (sessionFactory == null) {
-			sessionFactory = build();
+			try {
+				sessionFactory = build();
+			} catch (Exception e) {
+				Log.error("session factory not built: {}", e.toString());
+				throw e;
+			}
 			Log.info("session factory built");
 		}
 		return sessionFactory;
@@ -63,15 +68,22 @@ public final class ServerSessionFactory {
 						"org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy")
 				.build();
 
-		return new MetadataSources(registry).addAnnotatedClass(Article.class)
-				.addAnnotatedClass(ArticlePackagingUnitType.class).addAnnotatedClass(PackagingUnitType.class)
-				.addAnnotatedClass(StockItem.class).addAnnotatedClass(LoadUnit.class).addAnnotatedClass(Location.class)
-				.addAnnotatedClass(StorageLocation.class).addAnnotatedClass(TransitLocation.class)
-				.addAnnotatedClass(Reservation.class).addAnnotatedClass(RetrievalOrder.class)
-				.addAnnotatedClass(RetrievalOrderLine.class).addAnnotatedClass(ReceivingOrder.class)
-				.addAnnotatedClass(ReceivingOrderLine.class).addAnnotatedClass(Destination.class)
-				.addAnnotatedClass(TransportOrder.class).addAnnotatedClass(ArticlePickingLocation.class)
-				.addAnnotatedClass(Printer.class).addAnnotatedClass(PrintJob.class).addResource("queries.hbm.xml")
-				.buildMetadata().buildSessionFactory();
+		try {
+			return new MetadataSources(registry).addAnnotatedClass(Article.class)
+					.addAnnotatedClass(ArticlePackagingUnitType.class).addAnnotatedClass(PackagingUnitType.class)
+					.addAnnotatedClass(StockItem.class).addAnnotatedClass(LoadUnit.class)
+					.addAnnotatedClass(Location.class).addAnnotatedClass(StorageLocation.class)
+					.addAnnotatedClass(TransitLocation.class).addAnnotatedClass(Reservation.class)
+					.addAnnotatedClass(RetrievalOrder.class).addAnnotatedClass(RetrievalOrderLine.class)
+					.addAnnotatedClass(ReceivingOrder.class).addAnnotatedClass(ReceivingOrderLine.class)
+					.addAnnotatedClass(Destination.class).addAnnotatedClass(TransportOrder.class)
+					.addAnnotatedClass(ArticlePickingLocation.class).addAnnotatedClass(Printer.class)
+					.addAnnotatedClass(PrintJob.class).addResource("queries.hbm.xml").buildMetadata()
+					.buildSessionFactory();
+		} catch (Exception e) {
+			// registry-ul a deschis deja conexiuni la db; daca nu le inchidem, raman deschise la fiecare reincercare
+			StandardServiceRegistryBuilder.destroy(registry);
+			throw e;
+		}
 	}
 }
