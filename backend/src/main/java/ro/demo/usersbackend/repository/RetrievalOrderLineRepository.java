@@ -1,11 +1,18 @@
 package ro.demo.usersbackend.repository;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.hibernate.Session;
 
 import ro.demo.usersbackend.entity.RetrievalOrderLine;
 import ro.demo.usersbackend.entity.RetrievalOrderLineStatus;
 
-public interface RetrievalOrderLineRepository extends JpaRepository<RetrievalOrderLine, Long> {
+public class RetrievalOrderLineRepository extends BaseRepository<RetrievalOrderLine, Long> {
 
-	long countByOrderOrderIdAndStatusNot(String orderId, RetrievalOrderLineStatus status);
+	public RetrievalOrderLineRepository(Session session) {
+		super(session, RetrievalOrderLine.class);
+	}
+
+	public long countByOrderOrderIdAndStatusNot(String orderId, RetrievalOrderLineStatus status) {
+		return session.createNamedQuery(RetrievalOrderLine.COUNT_BY_ORDER_ID_AND_STATUS_NOT, Long.class)
+				.setParameter("orderId", orderId).setParameter("status", status).getSingleResult();
+	}
 }

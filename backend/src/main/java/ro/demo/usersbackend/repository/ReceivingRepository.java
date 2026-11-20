@@ -2,12 +2,18 @@ package ro.demo.usersbackend.repository;
 
 import java.util.Optional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.hibernate.Session;
 
 import ro.demo.usersbackend.entity.ReceivingOrder;
 
-public interface ReceivingRepository extends JpaRepository<ReceivingOrder, Long> {
+public class ReceivingRepository extends BaseRepository<ReceivingOrder, Long> {
 
-	Optional<ReceivingOrder> findByOrderId(String orderId);
+	public ReceivingRepository(Session session) {
+		super(session, ReceivingOrder.class);
+	}
 
+	public Optional<ReceivingOrder> findByOrderId(String orderId) {
+		return session.createNamedQuery(ReceivingOrder.BY_ORDER_ID, ReceivingOrder.class)
+				.setParameter("orderId", orderId).uniqueResultOptional();
+	}
 }

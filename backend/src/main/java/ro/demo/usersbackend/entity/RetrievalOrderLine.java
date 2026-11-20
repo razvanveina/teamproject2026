@@ -2,6 +2,9 @@ package ro.demo.usersbackend.entity;
 
 import java.util.List;
 
+import org.hibernate.annotations.NamedQueries;
+import org.hibernate.annotations.NamedQuery;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -14,7 +17,12 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 
 @Entity
+@NamedQueries({ //
+		@NamedQuery(name = "RetrievalOrderLine.countByOrderIdAndStatusNot", //
+				query = "select count(l) from RetrievalOrderLine l where l.order.orderId = :orderId and l.status <> :status") //
+})
 public class RetrievalOrderLine {
+	public static final String COUNT_BY_ORDER_ID_AND_STATUS_NOT = "RetrievalOrderLine.countByOrderIdAndStatusNot";
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;

@@ -1,5 +1,8 @@
 package ro.demo.usersbackend.entity;
 
+import org.hibernate.annotations.NamedQueries;
+import org.hibernate.annotations.NamedQuery;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -8,7 +11,13 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
 @Entity
+@NamedQueries({ //
+		@NamedQuery(name = "Reservation.findByStockItemIn", //
+				query = "from Reservation r where r.stockItem in :stockItems") //
+})
 public class Reservation {
+	public static final String BY_STOCK_ITEMS = "Reservation.findByStockItemIn";
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;

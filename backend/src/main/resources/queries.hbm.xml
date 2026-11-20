@@ -106,12 +106,6 @@
 	    ]]>
 	</query>
 
-	<query name="RetrievalOrder.findByOrderId">
-	    <![CDATA[
-	        from RetrievalOrder o where o.orderId = :id
-	    ]]>
-	</query>
-
 	<query name="RetrievalOrder.findOrderIdsByStatus">
 	    <![CDATA[
 	        select o.orderId from RetrievalOrder o where o.status = :status

@@ -17,7 +17,6 @@ import ro.demo.usersbackend.dto.FinishReceivingRequest;
 import ro.demo.usersbackend.dto.PackageOption;
 import ro.demo.usersbackend.dto.PackageResponse;
 import ro.demo.usersbackend.dto.ReceivingOrderResponse;
-import ro.demo.usersbackend.service.ReceivingLineService;
 import ro.demo.usersbackend.service.ReceivingService;
 
 @RestController
@@ -27,7 +26,7 @@ public class ReceivingController {
 
 	private final ReceivingService receivingService;
 
-	public ReceivingController(ReceivingService receivingService, ReceivingLineService receivingLineService) {
+	public ReceivingController(ReceivingService receivingService) {
 		super();
 		this.receivingService = receivingService;
 	}
@@ -75,9 +74,9 @@ public class ReceivingController {
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
 		}
 	}
-	
+
 	@GetMapping("/{orderId}/packages")
-	public List<PackageOption> findPackageOptions(@PathVariable String orderId){
+	public List<PackageOption> findPackageOptions(@PathVariable String orderId) {
 		log.info("Receiving: packaging options requested for order {}", orderId);
 		try {
 			return receivingService.findPackageOptions(orderId);

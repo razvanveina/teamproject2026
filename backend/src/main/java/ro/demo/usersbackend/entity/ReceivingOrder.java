@@ -2,6 +2,9 @@ package ro.demo.usersbackend.entity;
 
 import java.util.List;
 
+import org.hibernate.annotations.NamedQueries;
+import org.hibernate.annotations.NamedQuery;
+
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.Column;
@@ -16,7 +19,13 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "RECEIVING_ORDER")
+@NamedQueries({ //
+		@NamedQuery(name = "ReceivingOrder.findByOrderId", //
+				query = "from ReceivingOrder o where o.orderId = :orderId") //
+})
 public class ReceivingOrder {
+	public static final String BY_ORDER_ID = "ReceivingOrder.findByOrderId";
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;

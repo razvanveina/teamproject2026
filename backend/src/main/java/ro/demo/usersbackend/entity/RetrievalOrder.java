@@ -2,6 +2,9 @@ package ro.demo.usersbackend.entity;
 
 import java.util.List;
 
+import org.hibernate.annotations.NamedQueries;
+import org.hibernate.annotations.NamedQuery;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -15,8 +18,23 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 @Entity
+@NamedQueries({ //
+		@NamedQuery(name = "RetrievalOrder.findByOrderId", //
+				query = "from RetrievalOrder o where o.orderId = :id"), //
+		@NamedQuery(name = "RetrievalOrder.findByStatus", //
+				query = "from RetrievalOrder o where o.status = :status order by o.id"), //
+		@NamedQuery(name = "RetrievalOrder.findManualByStatus", //
+				query = "from RetrievalOrder o where o.status = :status and o.automatic = false order by o.id"), //
+		@NamedQuery(name = "RetrievalOrder.findByPickedBy", //
+				query = "from RetrievalOrder o where o.pickedBy = :pickedBy") //
+})
 @Table(name = "RETRIEVAL_ORDER")
 public class RetrievalOrder {
+	public static final String BY_ORDER_ID = "RetrievalOrder.findByOrderId";
+	public static final String BY_STATUS = "RetrievalOrder.findByStatus";
+	public static final String MANUAL_BY_STATUS = "RetrievalOrder.findManualByStatus";
+	public static final String BY_PICKED_BY = "RetrievalOrder.findByPickedBy";
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
@@ -35,10 +53,10 @@ public class RetrievalOrder {
 	@ManyToOne
 	@JoinColumn(name = "destination_id", nullable = false)
 	private Destination destination;
-	
+
 	@Column(nullable = false)
 	private boolean automatic;
-	
+
 	@Column(length = 50)
 	private String shippingUser;
 
