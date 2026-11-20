@@ -275,14 +275,14 @@
 	        where j.status = :status and j.printer.type = :printerType
 	    ]]>
 	</query>
-
-	<sql-query name="PrintJob.findLatestByOrderId">
-		<return class="ro.demo.usersbackend.entity.PrintJob" />
-	    <![CDATA[
-	        select * from print_job
-	        where json_value(data, '$.orderId') = :orderId
-	        order by id desc fetch first 1 rows only
-	    ]]>
-	</sql-query>
+	
+	<query name="PrintJob.findLatestByOrderId">
+		<![CDATA[
+			from PrintJob j
+			where function('json_value', j.data, '$.orderId') = :orderId
+			order by j.id desc
+			fetch first 1 rows only
+		]]>
+	</query>
 
 </hibernate-mapping>
