@@ -2,7 +2,6 @@ package ro.demo.usersbackend.init;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -20,7 +19,6 @@ public class InitialDataCreator implements CommandLineRunner {
 	private EntityManager entityManager;
 
 	@Override
-	@Transactional
 	public void run(String... args) {
 		createStorageLocations();
 		createTransitLocations();
