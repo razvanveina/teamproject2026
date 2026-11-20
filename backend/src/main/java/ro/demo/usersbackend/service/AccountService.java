@@ -4,13 +4,13 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
-import org.springframework.data.domain.Sort;
+import org.hibernate.Session;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
 import ro.demo.usersbackend.dto.AccountResponse;
 import ro.demo.usersbackend.dto.CreateAccountRequest;
 import ro.demo.usersbackend.entity.Account;
@@ -18,13 +18,11 @@ import ro.demo.usersbackend.repository.AccountRepository;
 
 @Service
 public class AccountService {
-	private final AccountRepository accounts;
-	private final PasswordEncoder encoder;
-
 	private static final Duration ONLINE_WINDOW = Duration.ofMinutes(1);
 
-	public AccountService(AccountRepository accounts, PasswordEncoder encoder) {
-		this.accounts = accounts;
+	private final PasswordEncoder encoder;
+
+	public AccountService(PasswordEncoder encoder) {
 		this.encoder = encoder;
 	}
 
@@ -33,41 +31,71 @@ public class AccountService {
 		return new AccountResponse(a.getId(), a.getUsername(), online);
 	}
 
-	@Transactional(readOnly = true)
 	public List<AccountResponse> findAll() {
-		return accounts.findAll(Sort.by("username")).stream().map(this::toResponse).toList();
+		List<Account> accounts = new WithSessionAndTransaction<List<Account>>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				setReturnValue(new AccountRepository(session).findAllOrderByUsername());
+			}
+		}.run();
+		return accounts.stream().map(this::toResponse).toList();
 	}
 
-	@Transactional
 	public AccountResponse create(CreateAccountRequest request) {
 		String username = request.username().trim();
-		if (accounts.existsByUsername(username)) {
+		Account account = new Account(username, encoder.encode(request.password()));
+		boolean created = new WithSessionAndTransaction<Boolean>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				AccountRepository ar = new AccountRepository(session);
+				if (ar.existsByUsername(username)) {
+					setReturnValue(false);
+					return;
+				}
+				ar.insert(account);
+				setReturnValue(true);
+			}
+		}.run();
+		if (!created) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "Username " + username + " already exists.");
 		}
-
-		Account account = accounts.save(new Account(username, encoder.encode(request.password())));
 		return toResponse(account);
 	}
 
-	@Transactional
 	public void delete(Long id, String currentUsername) {
-		Account account = accounts.findById(id)
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account " + id + " not found."));
-
+		Account account = new WithSessionAndTransaction<Account>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				AccountRepository ar = new AccountRepository(session);
+				Account found = ar.findById(id).orElse(null);
+				if (found != null && !found.getUsername().equals(currentUsername)) {
+					ar.delete(found);
+				}
+				setReturnValue(found);
+			}
+		}.run();
+		if (account == null) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Account " + id + " not found.");
+		}
 		if (account.getUsername().equals(currentUsername)) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You cannot delete your own account.");
 		}
-
-		accounts.delete(account);
 	}
 
-	@Transactional
 	public void heartbeat(String username) {
-		accounts.findByUsername(username).ifPresent(a -> a.setLastSeen(Instant.now()));
+		setLastSeen(username, Instant.now());
 	}
 
-	@Transactional
 	public void logout(String username) {
-		accounts.findByUsername(username).ifPresent(a -> a.setLastSeen(null));
+		setLastSeen(username, null);
+	}
+
+	private void setLastSeen(String username, Instant lastSeen) {
+		new WithSessionAndTransaction<>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				new AccountRepository(session).findByUsername(username).ifPresent(a -> a.setLastSeen(lastSeen));
+			}
+		}.run();
 	}
 }
