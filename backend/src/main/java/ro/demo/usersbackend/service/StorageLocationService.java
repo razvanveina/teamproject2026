@@ -1,6 +1,5 @@
 package ro.demo.usersbackend.service;
 
-import org.springframework.data.domain.Limit;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -19,7 +18,7 @@ public class StorageLocationService {
 	}
 
 	public Location findClosestEmptyX() {
-		return storageLocationRepository.findClosestFreeSlot(Constants.OPEN_TRANSPORT_STATUSES, Limit.of(1)).orElseThrow(
+		return storageLocationRepository.findClosestFreeSlot(Constants.OPEN_TRANSPORT_STATUSES).orElseThrow(
 				() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "No free storage location available"));
 	}
 }

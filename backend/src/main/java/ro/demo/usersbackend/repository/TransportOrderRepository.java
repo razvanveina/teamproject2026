@@ -1,17 +1,40 @@
 package ro.demo.usersbackend.repository;
 
-import java.util.List;
 import java.util.Collection;
+import java.util.List;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.hibernate.Session;
 
 import ro.demo.usersbackend.entity.Location;
 import ro.demo.usersbackend.entity.TransportOrder;
 import ro.demo.usersbackend.entity.TransportOrderStatus;
 
-public interface TransportOrderRepository extends JpaRepository<TransportOrder, Long> {
-	List<TransportOrder> findByStatusAndSourceNotOrderByIdAsc(TransportOrderStatus status, Location source);
-	List<TransportOrder> findByStatusAndSourceOrderByIdAsc(TransportOrderStatus status, Location source);
-	List<TransportOrder> findByAssignedToAndStatusInOrderByIdAsc(String assignedTo, Collection<TransportOrderStatus> statuses);
-	List<TransportOrder> findByAssignedToIsNullAndStatusInOrderByIdAsc(Collection<TransportOrderStatus> statuses);
+public class TransportOrderRepository extends BaseRepository<TransportOrder, Long> {
+	public TransportOrderRepository(Session session) {
+		super(session, TransportOrder.class);
+	}
+
+	public List<TransportOrder> findByStatusAndNotSourceOrderByIdAsc(TransportOrderStatus status, Location source) {
+		return session.createNamedQuery(TransportOrder.FIND_BY_STATUS_AND_NOT_SOURCE_ODERED_BY_ID, TransportOrder.class)
+				.setParameter("status", status).setParameter("source", source).getResultList();
+	}
+
+	public List<TransportOrder> findByStatusAndSourceOrderedByIdAsc(TransportOrderStatus status, Location source) {
+		return session.createNamedQuery(TransportOrder.FIND_BY_STATUS_AND_SOURCE_ODERED_BY_ID, TransportOrder.class)
+				.setParameter("status", status).setParameter("source", source).getResultList();
+	}
+
+	public List<TransportOrder> findByStatusAndAssignedToOrderByIdAsc(String assignedTo,
+			Collection<TransportOrderStatus> statuses) {
+
+		return session
+				.createNamedQuery(TransportOrder.FIND_BY_STATUS_AND_ASSIGNED_TO_IS_NULL_ODERED_BY_ID,
+						TransportOrder.class)
+				.setParameter("assignedTo", assignedTo).setParameterList("statuses", statuses).getResultList();
+	}
+
+	public List<TransportOrder> findByStatusAndAssignedToIsNullOrderByIdAsc(Collection<TransportOrderStatus> statuses) {
+		return session.createNamedQuery(TransportOrder.FIND_BY_STATUS_AND_ASSIGNED_TO_IS_NULL_ODERED_BY_ID,
+				TransportOrder.class).setParameterList("statuses", statuses).getResultList();
+	}
 }

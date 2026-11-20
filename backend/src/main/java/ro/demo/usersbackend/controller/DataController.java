@@ -3,18 +3,19 @@ package ro.demo.usersbackend.controller;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.hibernate.Session;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
+import org.hibernate.query.MutationQuery;
+import org.hibernate.query.NativeQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.dao.DataAccessException;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,8 +30,11 @@ import org.springframework.web.server.ResponseStatusException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import jakarta.persistence.EntityManager;
+import jakarta.persistence.Tuple;
+import jakarta.persistence.TupleElement;
 import jakarta.persistence.metamodel.EntityType;
+import ro.demo.usersbackend.core.persistence.SessionFactoryProvider;
+import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
 
 @RestController
 @RequestMapping("/api/data")
@@ -38,14 +42,6 @@ public class DataController {
 
 	// Writes messages in the Eclipse console
 	private static final Logger log = LoggerFactory.getLogger(DataController.class);
-
-	private final JdbcTemplate jdbcTemplate;
-	private final EntityManager entityManager;
-
-	public DataController(JdbcTemplate jdbcTemplate, EntityManager entityManager) {
-		this.jdbcTemplate = jdbcTemplate;
-		this.entityManager = entityManager;
-	}
 
 	// All rows of a table, plus the columns of the linked tables from entitySpec
 	// e.g. GET /api/data/StockItem also brings ARTICLE_ID__BARCODE and
@@ -57,7 +53,7 @@ public class DataController {
 		// rows
 		log.info("Data: {} with filters {}", entity, filters);
 		if (!new ClassPathResource("static/api/dialogs/" + entity + ".json").exists()) {
-			return jdbcTemplate.queryForList("SELECT * FROM " + tableNameOf(entity));
+			return select("SELECT * FROM " + tableNameOf(entity), new ArrayList<>());
 		}
 
 		JsonNode columns = readJson(entity + ".json").get("columns");
@@ -122,8 +118,7 @@ public class DataController {
 			paging = " ORDER BY " + sortField + " " + direction + tieBreaker;
 		}
 
-		return jdbcTemplate.queryForList(select + " FROM " + tableNameOf(entity) + " t" + joins + where + paging,
-				params.toArray());
+		return select(select + " FROM " + tableNameOf(entity) + " t" + joins + where + paging, params);
 	}
 
 	// The columns of a table: name, type and if it can be empty
@@ -131,7 +126,9 @@ public class DataController {
 	public List<Map<String, Object>> columns(@PathVariable String entity) {
 		log.info("Data: columns of table {}", entity);
 		String sql = "SELECT COLUMN_NAME, DATA_TYPE, NULLABLE FROM USER_TAB_COLUMNS WHERE TABLE_NAME = ?";
-		return jdbcTemplate.queryForList(sql, tableNameOf(entity).toUpperCase());
+		List<Object> params = new ArrayList<>();
+		params.add(tableNameOf(entity).toUpperCase());
+		return select(sql, params);
 	}
 
 	// Adds one row, e.g. POST /api/data/Destination with { "NAME": "Sibiu" }
@@ -156,10 +153,10 @@ public class DataController {
 		String sql = "INSERT INTO " + tableNameOf(entity) + " (" + String.join(", ", names) + ") VALUES ("
 				+ String.join(", ", marks) + ")";
 		try {
+			execute(sql, params);
 			log.info("Data: row added to {}", entity);
-			jdbcTemplate.update(sql, params.toArray());
 			return ResponseEntity.ok(Map.of("message", "Saved"));
-		} catch (DataAccessException e) {
+		} catch (RuntimeException e) {
 			return error("Cannot save " + entity, e);
 		}
 	}
@@ -167,7 +164,13 @@ public class DataController {
 	@GetMapping("/{entity}/{id}")
 	public Map<String, Object> findOne(@PathVariable String entity, @PathVariable Long id) {
 		log.info("Data: read {} {}", entity, id);
-		return jdbcTemplate.queryForMap("SELECT * FROM " + tableNameOf(entity) + " WHERE ID = ?", id);
+		List<Object> params = new ArrayList<>();
+		params.add(id);
+		List<Map<String, Object>> rows = select("SELECT * FROM " + tableNameOf(entity) + " WHERE ID = ?", params);
+		if (rows.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, entity + " " + id + " not found");
+		}
+		return rows.get(0);
 	}
 
 	@PutMapping("/{entity}/{id}")
@@ -188,10 +191,10 @@ public class DataController {
 
 		String sql = "UPDATE " + tableNameOf(entity) + " SET " + String.join(", ", sets) + " WHERE ID = ?";
 		try {
+			execute(sql, params);
 			log.info("Data: {} {} updated", entity, id);
-			jdbcTemplate.update(sql, params.toArray());
 			return ResponseEntity.ok(Map.of("message", "Saved"));
-		} catch (DataAccessException e) {
+		} catch (RuntimeException e) {
 			return error("Cannot save " + entity + " " + id, e);
 		}
 	}
@@ -199,20 +202,100 @@ public class DataController {
 	// Deletes one row, e.g. DELETE /api/data/Article/5
 	@DeleteMapping("/{entity}/{id}")
 	public ResponseEntity<Map<String, String>> delete(@PathVariable String entity, @PathVariable Long id) {
+		log.info("Data: delete {} {}", entity, id);
+		String table = tableNameOf(entity);
 		try {
-			log.info("Data: delete {} {} ", entity, id);
+			if (entity.equals("LoadUnit")) {
+				String refusal = deleteLoadUnit(id);
+				if (refusal != null) {
+					log.warn("Data: {}", refusal);
+					return ResponseEntity.badRequest().body(Map.of("message", refusal));
+				}
+			} else {
+				List<Object> params = new ArrayList<>();
+				params.add(id);
+				execute("DELETE FROM " + table + " WHERE ID = ?", params);
+			}
 			log.info("Data: {} {} deleted", entity, id);
 			return ResponseEntity.ok(Map.of("message", "Deleted"));
-		} catch (DataIntegrityViolationException e) {
-			return error("Cannot delete " + entity + " " + id + ": it is still referenced by other records", e);
-		} catch (DataAccessException e) {
+		} catch (RuntimeException e) {
 			return error("Cannot delete " + entity + " " + id, e);
 		}
 	}
 
+	// A load unit is deleted together with its stock items and reservations, in
+	// one transaction. Transport orders block the delete.
+	// Returns the refusal message, or null when the load unit was deleted.
+	private String deleteLoadUnit(Long id) {
+		return new WithSessionAndTransaction<String>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				Number transports = (Number) session.createNamedQuery("TransportOrder.countByLoadUnitId")
+						.setParameter("loadUnitId", id).getSingleResult();
+				if (transports.intValue() > 0) {
+					setReturnValue("Cannot delete load unit " + id + ": it is still used in TRANSPORT_ORDER ("
+							+ transports.intValue() + " rows)");
+					return;
+				}
+				session.createNamedMutationQuery("releaseReservationsForLoadUnit").setParameter("loadUnitId", id)
+						.executeUpdate();
+				session.createNamedMutationQuery("Reservation.deleteByLoadUnitId").setParameter("loadUnitId", id)
+						.executeUpdate();
+				session.createNamedMutationQuery("StockItem.deleteByLoadUnitId").setParameter("loadUnitId", id)
+						.executeUpdate();
+				session.createNamedMutationQuery("InvetoryOrderLine.deleteByLoadUnitId")
+						.setParameter("loadUnitId", id).executeUpdate();
+				session.createNamedMutationQuery("LoadUnit.deleteById").setParameter("id", id).executeUpdate();
+			}
+		}.run();
+	}
+
+	// Runs a SELECT and gives every row as column name -> value (column names upper
+	// case, as Oracle sends them)
+	private List<Map<String, Object>> select(String sql, List<Object> params) {
+		return new WithSessionAndTransaction<List<Map<String, Object>>>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				NativeQuery<Tuple> query = session.createNativeQuery(sql, Tuple.class);
+				for (int i = 0; i < params.size(); i++) {
+					query.setParameter(i + 1, params.get(i));
+				}
+
+				List<Map<String, Object>> rows = new ArrayList<>();
+				for (Tuple tuple : query.getResultList()) {
+					Map<String, Object> row = new LinkedHashMap<>();
+					for (TupleElement<?> element : tuple.getElements()) {
+						row.put(element.getAlias(), tuple.get(element));
+					}
+					rows.add(row);
+				}
+				setReturnValue(rows);
+			}
+		}.run();
+	}
+
+	// Runs an INSERT, UPDATE or DELETE
+	private void execute(String sql, List<Object> params) {
+		new WithSessionAndTransaction<Void>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				MutationQuery query = session.createNativeMutationQuery(sql);
+				for (int i = 0; i < params.size(); i++) {
+					query.setParameter(i + 1, params.get(i));
+				}
+				query.executeUpdate();
+			}
+		}.run();
+	}
+
 	// A database error: write it in the Eclipse console and send it to Angular
-	private ResponseEntity<Map<String, String>> error(String text, DataAccessException e) {
-		String message = text + ": " + e.getMostSpecificCause().getMessage();
+	// (the Oracle message, e.g. ORA-02292)
+	private ResponseEntity<Map<String, String>> error(String text, RuntimeException e) {
+		Throwable cause = e;
+		while (cause.getCause() != null) {
+			cause = cause.getCause();
+		}
+		String message = text + ": " + cause.getMessage();
 		log.error(message);
 		return ResponseEntity.badRequest().body(Map.of("message", message));
 	}
@@ -231,10 +314,10 @@ public class DataController {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown entity: " + entity);
 		}
 
-		for (EntityType<?> type : entityManager.getMetamodel().getEntities()) {
+		SessionFactoryImplementor sessionFactory = SessionFactoryProvider.getSessionFactory()
+				.unwrap(SessionFactoryImplementor.class);
+		for (EntityType<?> type : sessionFactory.getMetamodel().getEntities()) {
 			if (type.getName().equals(entity)) {
-				SessionFactoryImplementor sessionFactory = entityManager.getEntityManagerFactory()
-						.unwrap(SessionFactoryImplementor.class);
 				return sessionFactory.getMappingMetamodel().getEntityDescriptor(type.getJavaType())
 						.getIdentifierTableName();
 			}

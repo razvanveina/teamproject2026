@@ -11,4 +11,8 @@ public class UserRepository extends BaseRepository<User, Long> {
 		super(session, User.class);
 	}
 
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 0a243cfd365abc70c9808d6f2d60725b6f74f219

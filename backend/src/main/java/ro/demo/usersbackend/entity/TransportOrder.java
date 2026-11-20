@@ -1,5 +1,8 @@
 package ro.demo.usersbackend.entity;
 
+import org.hibernate.annotations.NamedQueries;
+import org.hibernate.annotations.NamedQuery;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -11,12 +14,26 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
 @Entity
+@NamedQueries({ //
+		@NamedQuery(name = "TransportOrder.findByStatusAndNotSourceOrderByIdAsc", //
+				query = "from TransportOrder o where o.status = :status and not o.source = :source order by o.id asc"),
+		@NamedQuery(name = "TransportOrder.findByStatusAndSourceOrderByIdAsc", //
+				query = "from TransportOrder o where o.status = :status and o.source = :source order by o.id asc"),
+		@NamedQuery(name = "TransportOrder.findByStatusAndAssignedToOrderByIdAsc", //
+				query = "from TransportOrder o where o.assignedTo = null and o.status = :statuses order by o.id asc"),
+		@NamedQuery(name = "TransportOrder.findByStatusAndAssignedToIsNullOrderByIdAsc", //
+				query = "from TransportOrder o where o.assignedTo = :assignedTo and o.status = :statuses order by o.id asc") })
 public class TransportOrder {
+	public static final String FIND_BY_STATUS_AND_NOT_SOURCE_ODERED_BY_ID = "TransportOrder.findByStatusAndNotSourceOrderByIdAsc";
+	public static final String FIND_BY_STATUS_AND_SOURCE_ODERED_BY_ID = "TransportOrder.findByStatusAndSourceOrderByIdAsc";
+	public static final String FIND_BY_STATUS_AND_ASSIGNED_TO_ODERED_BY_ID = "TransportOrder.findByStatusAndAssignedToOrderByIdAsc";
+	public static final String FIND_BY_STATUS_AND_ASSIGNED_TO_IS_NULL_ODERED_BY_ID = "TransportOrder.findByStatusAndAssignedToIsNullOrderByIdAsc";
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
-	
-	@Column(length =50)
+
+	@Column(length = 50)
 	private String assignedTo;
 
 	@ManyToOne
@@ -97,12 +114,12 @@ public class TransportOrder {
 	public void setId(Long id) {
 		this.id = id;
 	}
-	
+
 	public String getAssignedTo() {
 		return assignedTo;
 	}
 
 	public void setAssignedTo(String assignedTo) {
 		this.assignedTo = assignedTo;
-	} 
+	}
 }
