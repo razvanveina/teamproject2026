@@ -8,25 +8,39 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
+import java.awt.GridLayout;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.Shape;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Path2D;
+import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
@@ -45,6 +59,7 @@ public class SimWindow extends JPanel {
 	private static final Font CONV_LABEL = new Font("Arial", Font.BOLD, 12);
 	private static final Font NAME = new Font("Arial", Font.BOLD, 10).deriveFont(9.5f);
 
+	private static final double MIN_ZOOM = 0.25;
 	private static final double MAX_ZOOM = 8;
 
 	private TimeKeeper timeKeeper = TimeKeeper.getInstance();
@@ -53,6 +68,9 @@ public class SimWindow extends JPanel {
 	private double panX;
 	private double panY;
 	private Point last;
+	private final Map<String, Shape> conveyorShapes = new HashMap<>();
+	private final Map<String, Shape> pointShapes = new HashMap<>();
+	private AffineTransform drawingTransform = new AffineTransform();
 
 	public void open(Runnable action) {
 		SwingUtilities.invokeLater(() -> {
@@ -91,11 +109,8 @@ public class SimWindow extends JPanel {
 		MouseAdapter mouse = new MouseAdapter() {
 			@Override
 			public void mouseWheelMoved(MouseWheelEvent e) {
-				double next = Math.max(1, Math.min(MAX_ZOOM, zoom * Math.pow(1.1, -e.getPreciseWheelRotation())));
-				if (next == 1) {
-					reset();
-					return;
-				}
+				double next = Math.max(MIN_ZOOM,
+						Math.min(MAX_ZOOM, zoom * Math.pow(1.1, -e.getPreciseWheelRotation())));
 				double r = next / zoom;
 				panX = e.getX() - (e.getX() - panX) * r;
 				panY = e.getY() - (e.getY() - panY) * r;
@@ -106,21 +121,29 @@ public class SimWindow extends JPanel {
 			@Override
 			public void mousePressed(MouseEvent e) {
 				last = e.getPoint();
+				if (e.isPopupTrigger()) {
+					showAddLoadUnitMenu(e);
+				}
+			}
+
+			@Override
+			public void mouseReleased(MouseEvent e) {
+				if (e.isPopupTrigger()) {
+					showAddLoadUnitMenu(e);
+				}
 			}
 
 			@Override
 			public void mouseDragged(MouseEvent e) {
-				if (zoom > 1) {
-					panX += e.getX() - last.x;
-					panY += e.getY() - last.y;
-					repaint();
-				}
+				panX += e.getX() - last.x;
+				panY += e.getY() - last.y;
+				repaint();
 				last = e.getPoint();
 			}
 
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				if (e.getClickCount() == 2) {
+				if (SwingUtilities.isLeftMouseButton(e) && e.getClickCount() == 2) {
 					reset();
 				}
 			}
@@ -128,6 +151,60 @@ public class SimWindow extends JPanel {
 		addMouseListener(mouse);
 		addMouseMotionListener(mouse);
 		addMouseWheelListener(mouse);
+	}
+
+	private void showAddLoadUnitMenu(MouseEvent e) {
+		entityAt(e.getPoint()).ifPresent(entityName -> {
+			JMenuItem addLoadUnit = new JMenuItem(Constants.ADD_LOAD_UNIT);
+			addLoadUnit.addActionListener(a -> showAddLoadUnitDialog(entityName));
+
+			JPopupMenu menu = new JPopupMenu();
+			menu.add(addLoadUnit);
+			menu.show(this, e.getX(), e.getY());
+		});
+	}
+
+	private Optional<String> entityAt(Point screenPoint) {
+		Point2D drawingPoint;
+		try {
+			drawingPoint = drawingTransform.inverseTransform(screenPoint, null);
+		} catch (NoninvertibleTransformException e) {
+			return Optional.empty();
+		}
+		return Stream.of(pointShapes, conveyorShapes).flatMap(shapes -> shapes.entrySet().stream())
+				.filter(entry -> entry.getValue().contains(drawingPoint)).map(Map.Entry::getKey).findFirst();
+	}
+
+	private void showAddLoadUnitDialog(String entityName) {
+		JTextField barcodeField = new JTextField(12);
+		JComboBox<String> typeBox = new JComboBox<>(new String[] { Constants.TOTE_TYPE, Constants.CARTON_TYPE });
+
+		JPanel form = new JPanel(new GridLayout(0, 2, 8, 8));
+		form.add(new JLabel("Barcode"));
+		form.add(barcodeField);
+		form.add(new JLabel("Type"));
+		form.add(typeBox);
+
+		int choice = JOptionPane.showConfirmDialog(this, form, entityName, JOptionPane.OK_CANCEL_OPTION,
+				JOptionPane.PLAIN_MESSAGE);
+		if (choice != JOptionPane.OK_OPTION) {
+			return;
+		}
+
+		String barcode = barcodeField.getText().trim();
+		if (barcode.isEmpty()) {
+			JOptionPane.showMessageDialog(this, "Barcode is required", Constants.ADD_LOAD_UNIT,
+					JOptionPane.WARNING_MESSAGE);
+			return;
+		}
+
+		Entity entity = byName.get(entityName);
+		boolean isCreated = entity.addLoadUnit(new SimLoadUnit(barcode, (String) typeBox.getSelectedItem()));
+		if (!isCreated) {
+			String occupiedPlace = entity instanceof Conveyor ? "First slot of " + entityName : entityName;
+			JOptionPane.showMessageDialog(this, occupiedPlace + " is occupied, try again later",
+					Constants.ADD_LOAD_UNIT, JOptionPane.WARNING_MESSAGE);
+		}
 	}
 
 	private void reset() {
@@ -144,12 +221,15 @@ public class SimWindow extends JPanel {
 		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 		g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
-		g.translate(panX, panY);
-		g.scale(zoom, zoom);
 		double f = Math.min(getWidth() / (double) DESIGN_W, getHeight() / (double) DESIGN_H);
-		g.translate((getWidth() - DESIGN_W * f) / 2, 0);
-		g.scale(f, f);
-		g.translate(0, -TOP);
+		AffineTransform screenToDrawing = new AffineTransform();
+		screenToDrawing.translate(panX, panY);
+		screenToDrawing.scale(zoom, zoom);
+		screenToDrawing.translate((getWidth() - DESIGN_W * f) / 2, 0);
+		screenToDrawing.scale(f, f);
+		screenToDrawing.translate(0, -TOP);
+		drawingTransform = screenToDrawing;
+		g.transform(drawingTransform);
 
 		drawConveyor(g, "C06", 498, 220, 560, 130, 560, 300);
 		drawConveyor(g, "C01", 58, 440, 560, 300, 120, 300, 120, 560);
@@ -198,9 +278,12 @@ public class SimWindow extends JPanel {
 
 	private void drawConveyor(Graphics2D g, String name, int labelX, int labelY, int... xy) {
 		double[] centerLine = Arrays.stream(xy).asDoubleStream().toArray();
+		Path2D beltPath = toPath(trimEndsToPointEdges(centerLine));
+		BasicStroke beltStroke = new BasicStroke(CONV, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER);
+		conveyorShapes.put(name, beltStroke.createStrokedShape(beltPath));
 		g.setColor(Color.BLACK);
-		g.setStroke(new BasicStroke(CONV, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER));
-		g.draw(toPath(trimEndsToPointEdges(centerLine)));
+		g.setStroke(beltStroke);
+		g.draw(beltPath);
 		g.setColor(Color.WHITE);
 		g.setStroke(new BasicStroke(CONV - 5, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER));
 		g.draw(toPath(centerLine));
@@ -298,8 +381,10 @@ public class SimWindow extends JPanel {
 		double boxLeft = x - POINT / 2.0;
 		double boxTop = y - POINT / 2.0;
 		double borderWidth = (CONV - (CONV - 5)) / 2.0;
+		Rectangle2D pointBox = new Rectangle2D.Double(boxLeft, boxTop, POINT, POINT);
+		pointShapes.put(name, pointBox);
 		g.setColor(Color.WHITE);
-		g.fill(new Rectangle2D.Double(boxLeft, boxTop, POINT, POINT));
+		g.fill(pointBox);
 		g.setColor(Color.BLACK);
 		g.setStroke(new BasicStroke((float) borderWidth));
 		g.draw(new Rectangle2D.Double(boxLeft + borderWidth / 2, boxTop + borderWidth / 2, POINT - borderWidth,

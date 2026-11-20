@@ -78,7 +78,7 @@ public class PrintingService extends AbstractProcess {
 		JsonNode labelData = jsonMapper.readTree(printJob.getData());
 		String orderId = labelData.get(Constants.ORDER_ID).asText();
 
-		Path pdfFile = Path.of(Constants.PDF_OUTPUT_FOLDER, Constants.PREFIX + orderId + ".pdf");
+		Path pdfFile = Path.of(Constants.PDF_OUTPUT_FOLDER, Constants.PREFIX + orderId + Constants.PDF_EXTENSION);
 		Files.createDirectories(pdfFile.getParent());
 
 		try (OutputStream pdfOutputStream = Files.newOutputStream(pdfFile)) {
@@ -86,15 +86,15 @@ public class PrintingService extends AbstractProcess {
 			PdfWriter pdfWriter = PdfWriter.getInstance(document, pdfOutputStream);
 			document.open();
 
-			document.add(new Paragraph("Shipping Document", new Font(Font.HELVETICA, 18, Font.BOLD)));
-			document.add(new Paragraph("Order ID: " + orderId));
-			document.add(new Paragraph("Destination: " + labelData.get(Constants.DESTINATION).asText()));
+			document.add(new Paragraph(Constants.SHIPPING_DOCUMENT_TITLE, new Font(Font.HELVETICA, 18, Font.BOLD)));
+			document.add(new Paragraph(Constants.ORDER_ID_TITLE + orderId));
+			document.add(new Paragraph(Constants.DESTINATION_TITLE + labelData.get(Constants.DESTINATION).asText()));
 
 			PdfPTable articleTable = new PdfPTable(2);
 			articleTable.setSpacingBefore(10);
 			articleTable.setSpacingAfter(20);
-			articleTable.addCell("Article");
-			articleTable.addCell("Quantity");
+			articleTable.addCell(Constants.ARTICLE_HEADER);
+			articleTable.addCell(Constants.QUANTITY_HEADER);
 			for (JsonNode labelLine : labelData.get(Constants.LINES)) {
 				articleTable.addCell(labelLine.get(Constants.ARTICLE).asText());
 				articleTable.addCell(labelLine.get(Constants.QUANTITY).asText());

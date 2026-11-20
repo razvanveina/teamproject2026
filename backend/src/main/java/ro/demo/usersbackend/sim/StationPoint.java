@@ -30,22 +30,20 @@ public class StationPoint extends ServerPoint {
 			}
 			if (message != null && !released) {
 				released = true;
-				System.out.println(name + ": " + loadUnit.barcode() + " released");
+				log.info(name + ": " + loadUnit.barcode() + " released");
 			}
 		}
 	}
 
 	private void pull() {
-		for (Entity e : getSource()) {
-			SimLoadUnit arrivingLoadUnit = e.getAvailableLU(this);
-			if (arrivingLoadUnit != null) {
-				loadUnit = arrivingLoadUnit;
-				released = false;
-				System.out.println(arrivingLoadUnit.barcode() + " arrived at " + name);
-				announceLU(arrivingLoadUnit);
-				return;
-			}
+		SimLoadUnit arrivingLoadUnit = nextArrivingLoadUnit();
+		if (arrivingLoadUnit == null) {
+			return;
 		}
+		loadUnit = arrivingLoadUnit;
+		released = false;
+		log.info(arrivingLoadUnit.barcode() + " arrived at " + name);
+		announceLU(arrivingLoadUnit);
 	}
 
 	@Override

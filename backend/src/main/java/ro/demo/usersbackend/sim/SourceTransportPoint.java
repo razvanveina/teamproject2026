@@ -37,16 +37,21 @@ public class SourceTransportPoint extends ServerPoint {
 		this.setTransportOrderId(transportOrderId);
 		loadedAt = timeKeeper.currentSimulationTime();
 		acknowledged = false;
-		System.out.println(requestedLoadUnit.barcode() + " (" + requestedLoadUnit.type() + ") loaded");
+		log.info(requestedLoadUnit.barcode() + " (" + requestedLoadUnit.type() + ") loaded");
 	}
 
 	@Override
 	protected void step() throws JMSException, InterruptedException {
 		if (isEmpty()) {
-			Message message = consumer.receive(100);
-			if (message instanceof TextMessage text) {
-				Get request = MfsMessages.fromJson(text.getText(), Get.class);
-				get(new SimLoadUnit(request.loadUnit(), request.loadUnitType()), request.transportOrderId());
+			SimLoadUnit addedLoadUnit = nextArrivingLoadUnit();
+			if (addedLoadUnit != null) {
+				get(addedLoadUnit);
+			} else {
+				Message message = consumer.receive(100);
+				if (message instanceof TextMessage text) {
+					Get request = MfsMessages.fromJson(text.getText(), Get.class);
+					get(new SimLoadUnit(request.loadUnit(), request.loadUnitType()), request.transportOrderId());
+				}
 			}
 		} else {
 			Thread.sleep(100);
@@ -55,7 +60,9 @@ public class SourceTransportPoint extends ServerPoint {
 		synchronized (this) {
 			if (loadUnit != null && !acknowledged && timeKeeper.currentSimulationTime() - loadedAt >= 2000) {
 				acknowledged = true;
-				put(MfsMessages.toJson(new AckGet("ACK_GET", getTransportOrderId(), loadUnit.barcode())));
+				if (getTransportOrderId() != null) {
+					put(MfsMessages.toJson(new AckGet("ACK_GET", getTransportOrderId(), loadUnit.barcode())));
+				}
 				announceLU(loadUnit);
 			}
 		}

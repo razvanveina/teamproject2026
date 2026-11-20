@@ -41,11 +41,11 @@ public class DecisionPoint extends ServerPoint {
 			if (message instanceof TextMessage text) {
 				String reply = text.getText().trim();
 				decision = getTarget().get(toIndex(reply));
-				System.out.println(
+				log.info(
 						name + ": " + loadUnit.barcode() + " reply " + reply + ", goes to " + decision.getName());
 			} else if (timeKeeper.currentSimulationTime() - askedAt >= Constants.DECISION_TIMEOUT) {
 				decision = getTarget().get(0);
-				System.out.println(name + ": " + loadUnit.barcode() + " no reply, goes to " + decision.getName());
+				log.info(name + ": " + loadUnit.barcode() + " no reply, goes to " + decision.getName());
 			}
 		}
 	}
@@ -58,25 +58,23 @@ public class DecisionPoint extends ServerPoint {
 			}
 		} catch (NumberFormatException e) {
 		}
-		System.out.println(name + ": invalid reply " + reply + ", using 0");
+		log.info(name + ": invalid reply " + reply + ", using 0");
 		return 0;
 	}
 
 	private void pull() {
-		for (Entity e : getSource()) {
-			SimLoadUnit arrivingLoadUnit = e.getAvailableLU(this);
-			if (arrivingLoadUnit != null) {
-				synchronized (this) {
-					loadUnit = arrivingLoadUnit;
-					decision = null;
-					askedAt = timeKeeper.currentSimulationTime();
-				}
-				announceLU(arrivingLoadUnit);
-				System.out.println(arrivingLoadUnit.barcode() + " arrived at " + name);
-				put(MfsMessages.toJson(new AckGet("DECIDE", null, arrivingLoadUnit.barcode())));
-				return;
-			}
+		SimLoadUnit arrivingLoadUnit = nextArrivingLoadUnit();
+		if (arrivingLoadUnit == null) {
+			return;
 		}
+		synchronized (this) {
+			loadUnit = arrivingLoadUnit;
+			decision = null;
+			askedAt = timeKeeper.currentSimulationTime();
+		}
+		announceLU(arrivingLoadUnit);
+		log.info(arrivingLoadUnit.barcode() + " arrived at " + name);
+		put(MfsMessages.toJson(new AckGet("DECIDE", null, arrivingLoadUnit.barcode())));
 	}
 
 	private synchronized boolean isEmpty() {

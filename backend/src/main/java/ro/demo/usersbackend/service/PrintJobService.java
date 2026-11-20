@@ -80,7 +80,7 @@ public class PrintJobService {
 
 	public PrintJob findLatestPrintJobForOrder(String orderId) {
 		List<PrintJob> latestPrintJobs = entityManager.createNamedQuery("PrintJob.findLatestByOrderId", PrintJob.class)
-				.setParameter("orderId", orderId).getResultList();
+				.setParameter(Constants.PRINT_JOB_ORDER_ID_PARAMETER, orderId).getResultList();
 		return latestPrintJobs.isEmpty() ? null : latestPrintJobs.get(0);
 	}
 }

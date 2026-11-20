@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import jakarta.jms.JMSContext;
 import jakarta.jms.Queue;
@@ -13,7 +15,9 @@ import ro.demo.usersbackend.messaging.MfsMessages.Arrived;
 
 public abstract class ServerPoint extends Entity {
 
+	protected final Logger log = LogManager.getLogger("application");
 	protected SimLoadUnit loadUnit;
+	private SimLoadUnit pendingLoadUnit;
 	private Long transportOrderId;
 	private JMSContext context;
 	private Queue outQueue;
@@ -25,7 +29,7 @@ public abstract class ServerPoint extends Entity {
 
 	public void put(String message) {
 		context.createProducer().send(outQueue, message);
-		System.out.println(message);
+		log.info(message);
 	}
 
 	protected void connected(JMSContext context) {
@@ -53,7 +57,7 @@ public abstract class ServerPoint extends Entity {
 				}
 			}
 		} catch (Exception e) {
-			System.out.println("Exception " + e);
+			log.error("Exception", e);
 		}
 	}
 
@@ -64,6 +68,32 @@ public abstract class ServerPoint extends Entity {
 
 	protected boolean isReady() {
 		return false;
+	}
+
+	@Override
+	public synchronized boolean addLoadUnit(SimLoadUnit addedLoadUnit) {
+		if (loadUnit != null || pendingLoadUnit != null) {
+			return false;
+		}
+		pendingLoadUnit = addedLoadUnit;
+		return true;
+	}
+
+	protected SimLoadUnit nextArrivingLoadUnit() {
+		synchronized (this) {
+			if (pendingLoadUnit != null) {
+				SimLoadUnit addedLoadUnit = pendingLoadUnit;
+				pendingLoadUnit = null;
+				return addedLoadUnit;
+			}
+		}
+		for (Entity sourceEntity : getSource()) {
+			SimLoadUnit arrivingLoadUnit = sourceEntity.getAvailableLU(this);
+			if (arrivingLoadUnit != null) {
+				return arrivingLoadUnit;
+			}
+		}
+		return null;
 	}
 
 	@Override

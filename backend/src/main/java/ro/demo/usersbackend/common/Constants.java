@@ -71,11 +71,19 @@ public final class Constants {
 	public static final Color CARTON_COLOR = new Color(185, 140, 100);
 	public static final String PICKING_ZONE_LABEL = "Picking Zone";
 	public static final String DECANTING_ZONE_LABEL = "Decanting Zone";
+	public static final String ADD_LOAD_UNIT = "Add Load Unit";
 
 	// printing
 	public static final String PDF_OUTPUT_FOLDER = "prints";
 	public static final String PREFIX = "Shipping_Document_";
 	public static final String STATUS_MISSING = "MISSING";
+	public static final String PDF_EXTENSION = ".pdf";
+	public static final String SHIPPING_DOCUMENT_TITLE = "Shipping Document";
+	public static final String ORDER_ID_TITLE = "Order ID: ";
+	public static final String DESTINATION_TITLE = "Destination: ";
+	public static final String ARTICLE_HEADER = "Article";
+	public static final String QUANTITY_HEADER = "Quantity";
+	public static final String PRINT_JOB_ORDER_ID_PARAMETER = "orderId";
 
 	// campurile din json-ul etichetei
 	public static final String ORDER_ID = "orderId";

@@ -20,17 +20,15 @@ public class InfoPoint extends ServerPoint {
 	}
 
 	private void pull() {
-		for (Entity e : getSource()) {
-			SimLoadUnit arrivingLoadUnit = e.getAvailableLU(this);
-			if (arrivingLoadUnit != null) {
-				synchronized (this) {
-					loadUnit = arrivingLoadUnit;
-					arrivedAt = timeKeeper.currentSimulationTime();
-				}
-				announceLU(arrivingLoadUnit);
-				return;
-			}
+		SimLoadUnit arrivingLoadUnit = nextArrivingLoadUnit();
+		if (arrivingLoadUnit == null) {
+			return;
 		}
+		synchronized (this) {
+			loadUnit = arrivingLoadUnit;
+			arrivedAt = timeKeeper.currentSimulationTime();
+		}
+		announceLU(arrivingLoadUnit);
 	}
 
 	private synchronized boolean isEmpty() {

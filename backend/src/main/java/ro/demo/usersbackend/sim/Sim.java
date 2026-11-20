@@ -15,6 +15,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import jakarta.jms.JMSConsumer;
 import jakarta.jms.JMSContext;
@@ -30,6 +32,7 @@ public class Sim {
 	private static final Path SNAPSHOT = Path.of("sim-snapshot.bin");
 	private static final Path SNAPSHOT_TMP = Path.of("sim-snapshot.bin.tmp");
 
+	private final Logger log = LogManager.getLogger("application");
 	private final List<Entity> entities = new ArrayList<>();
 
 	private Queue outQueue;
@@ -70,7 +73,7 @@ public class Sim {
 			outQueue = context.createQueue(MfsMessages.FRONTEND_RESPONSE_QUEUE);
 
 		} catch (Exception e) {
-			System.out.println("Exception " + e);
+			log.error("Exception", e);
 		}
 	}
 
@@ -94,14 +97,14 @@ public class Sim {
 					}
 				}
 			} catch (Exception e) {
-				System.out.println("Exception " + e);
+				log.error("Exception", e);
 			}
 		}
 	}
 
 	private void put(String message) {
 		context.createProducer().send(outQueue, message);
-		System.out.println(message);
+		log.info(message);
 	}
 
 	private synchronized void save() {
@@ -121,7 +124,7 @@ public class Sim {
 			}
 			Files.move(SNAPSHOT_TMP, SNAPSHOT, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
 		} catch (Exception e) {
-			System.out.println("snapshot not saved " + e);
+			log.error("snapshot not saved", e);
 		}
 	}
 
@@ -135,10 +138,10 @@ public class Sim {
 			for (EntityState state : states) {
 				entities.stream().filter(e -> e.getName().equals(state.name())).forEach(e -> e.restore(state));
 			}
-			System.out.println(
+			log.info(
 					"snapshot restored from " + SNAPSHOT.toAbsolutePath() + ", " + states.size() + " entities");
 		} catch (Exception e) {
-			System.out.println("snapshot not restored " + e);
+			log.error("snapshot not restored", e);
 		}
 	}
 

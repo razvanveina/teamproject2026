@@ -54,10 +54,17 @@ public class Conveyor extends Entity {
 		return capacity;
 	}
 
-	public synchronized void createLU(SimLoadUnit createdLoadUnit) {
-		if (isSlotFree(0, timeKeeper.currentSimulationTime())) {
-			enterFirstSlot(createdLoadUnit);
+	public synchronized boolean createLU(SimLoadUnit createdLoadUnit) {
+		if (!isSlotFree(0, timeKeeper.currentSimulationTime())) {
+			return false;
 		}
+		enterFirstSlot(createdLoadUnit);
+		return true;
+	}
+
+	@Override
+	public boolean addLoadUnit(SimLoadUnit addedLoadUnit) {
+		return createLU(addedLoadUnit);
 	}
 
 	@Override

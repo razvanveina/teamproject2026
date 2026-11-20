@@ -36,14 +36,12 @@ public class TargetTransportPoint extends ServerPoint {
 	}
 
 	private synchronized void pull() {
-		for (Entity e : getSource()) {
-			SimLoadUnit arrivingLoadUnit = e.getAvailableLU(this);
-			if (arrivingLoadUnit != null) {
-				loadUnit = arrivingLoadUnit;
-				announceLU(arrivingLoadUnit);
-				return;
-			}
+		SimLoadUnit arrivingLoadUnit = nextArrivingLoadUnit();
+		if (arrivingLoadUnit == null) {
+			return;
 		}
+		loadUnit = arrivingLoadUnit;
+		announceLU(arrivingLoadUnit);
 	}
 
 	@Override

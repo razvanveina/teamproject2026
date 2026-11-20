@@ -66,6 +66,10 @@ public abstract class Entity implements Runnable {
 		return getAvailableLU();
 	}
 
+	public boolean addLoadUnit(SimLoadUnit addedLoadUnit) {
+		return false;
+	}
+
 	@Override
 	public void run() {
 		while (true) {
