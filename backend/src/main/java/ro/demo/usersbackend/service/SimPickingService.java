@@ -16,13 +16,18 @@ import ro.demo.usersbackend.dto.SimStationResponse;
 import ro.demo.usersbackend.dto.SimToteResponse;
 import ro.demo.usersbackend.entity.ArticlePackagingUnitType;
 import ro.demo.usersbackend.entity.LoadUnit;
+import ro.demo.usersbackend.entity.Location;
 import ro.demo.usersbackend.entity.Reservation;
 import ro.demo.usersbackend.entity.RetrievalOrder;
 import ro.demo.usersbackend.entity.RetrievalOrderLine;
 import ro.demo.usersbackend.entity.RetrievalOrderLineStatus;
 import ro.demo.usersbackend.entity.RetrievalOrderStatus;
 import ro.demo.usersbackend.entity.StockItem;
+import ro.demo.usersbackend.entity.TransportOrder;
+import ro.demo.usersbackend.entity.TransportOrderStatus;
 import ro.demo.usersbackend.repository.LoadUnitRepository;
+import ro.demo.usersbackend.repository.LocationRepository;
+import ro.demo.usersbackend.repository.TransportOrderRepository;
 import ro.demo.usersbackend.server.mfs.StationControl;
 
 // statia de picking din simulator: tote-ul sursa sta pe PTTS1, tote-ul tinta pe PTTT1
@@ -32,9 +37,14 @@ public class SimPickingService {
 	public static final Logger log = LogManager.getLogger("application");
 
 	private final LoadUnitRepository loadUnitRepository;
+	private final LocationRepository locationRepository;
+	private final TransportOrderRepository transportOrderRepository;
 
-	public SimPickingService(LoadUnitRepository loadUnitRepository) {
+	public SimPickingService(LoadUnitRepository loadUnitRepository, LocationRepository locationRepository,
+			TransportOrderRepository transportOrderRepository) {
 		this.loadUnitRepository = loadUnitRepository;
+		this.locationRepository = locationRepository;
+		this.transportOrderRepository = transportOrderRepository;
 	}
 
 	// ce e acum in statie, sus si jos, si orderul pe care lucreaza statia
@@ -85,8 +95,8 @@ public class SimPickingService {
 
 	// muncitorul a mutat marfa din tote-ul de sus in cel de jos si a apasat Confirm
 	// mutam in tinta doar marfa rezervata pentru orderul ales de chooseOrder
-	// (acelasi order pe care il arata si ecranul), apoi sursa primeste release
-	// (drumul il decide DP2)
+	// (acelasi order pe care il arata si ecranul)
+	// sursa primeste un TO dupa ce a ramas in ea (routeSource), apoi release
 	// tinta primeste release (spre OUT) doar cand orderul e complet
 	public String confirm(String sourceBarcode, String targetBarcode) {
 		LoadUnit source = findToteAt(sourceBarcode, Constants.PTTS1);
@@ -94,6 +104,7 @@ public class SimPickingService {
 
 		RetrievalOrder order = chooseOrder(source, target);
 		if (order == null) {
+			routeSource(source);
 			release(Constants.PTTS1);
 			return "Tote " + sourceBarcode + " has nothing to pick here, it goes on";
 		}
@@ -110,11 +121,13 @@ public class SimPickingService {
 		}
 
 		if (moved == 0) {
+			routeSource(source);
 			release(Constants.PTTS1);
 			return "Tote " + sourceBarcode + " has nothing for order " + order.getOrderId() + ", it goes on";
 		}
 
 		updateStatus(order, target);
+		routeSource(source);
 		release(Constants.PTTS1);
 		if (order.getStatus() == RetrievalOrderStatus.PICKED) {
 			release(Constants.PTTT1);
@@ -123,8 +136,44 @@ public class SimPickingService {
 		return "Moved to " + targetBarcode + ", the order " + order.getOrderId() + " needs more totes";
 	}
 
+	// TO-ul tote-ului sursa, dupa ce a ramas in el:
+	// gol -> PTTT1 (prin EMPTY), stoc pentru un order automat -> PTTS1 (inca o
+	// tura),
+	// altfel (stoc liber sau pentru un order manual) -> TPT1, de unde merge inapoi
+	// in picking
+	// e creat direct ACTIVE: tote-ul e deja pe banda, il inchide PointHandler cand
+	// ajunge
+	private void routeSource(LoadUnit source) {
+		boolean empty = true;
+		boolean automatic = false;
+		// source.getStockItems() inca vede ce tocmai am mutat in tinta, deci numaram
+		// doar ce e tot in sursa
+		for (StockItem item : source.getStockItems()) {
+			if (item.getLoadUnit().getBarcode().equals(source.getBarcode())) {
+				empty = false;
+				if (item.getReservation() != null
+						&& item.getReservation().getRetrievalOrderLine().getOrder().isAutomatic()) {
+					automatic = true;
+				}
+			}
+		}
+
+		String next = empty ? Constants.PTTT1 : automatic ? Constants.PTTS1 : Constants.TPT1;
+		Location from = location(Constants.PTTS1);
+		Location to = location(next);
+		transportOrderRepository.save(new TransportOrder(from, to, TransportOrderStatus.ACTIVE, source));
+		log.info("Sim picking: tote {} goes from {} to {}", source.getBarcode(), Constants.PTTS1, next);
+	}
+
+	private Location location(String name) {
+		return locationRepository.findByName(name)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+						"Location " + name + " is missing"));
+	}
+
 	// ii spunem simulatorului sa dea drumul tote-ului din punct
-	// daca nu merge, exceptia anuleaza si mutarea stocului (tranzactia se intoarce)
+	// daca nu merge, exceptia anuleaza si mutarea stocului si TO-ul (tranzactia se
+	// intoarce)
 	private void release(String point) {
 		try {
 			StationControl.getInstance().release(point);

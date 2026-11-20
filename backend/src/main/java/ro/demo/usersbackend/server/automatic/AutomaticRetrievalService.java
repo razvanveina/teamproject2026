@@ -52,8 +52,8 @@ public class AutomaticRetrievalService extends AbstractProcess {
 		}
 	}
 
-	// ACK_GET inchide to-ul, restul telegramelor (ARRIVED) merg la handlerul
-	// punctului
+	// ACK_GET confirma ca TPS1 a luat tote-ul, restul telegramelor (ARRIVED) merg
+	// la handlerul punctului
 	private void receiveReplies(SessionFactory sessionFactory, JMSContext context) throws JMSException {
 		JMSConsumer consumer = context.createConsumer(context.createQueue(MfsMessages.RESPONSE_QUEUE));
 		Message message;
@@ -64,7 +64,7 @@ public class AutomaticRetrievalService extends AbstractProcess {
 				JsonNode node = MfsMessages.fromJson(text, JsonNode.class);
 				if ("ACK_GET".equals(node.path("type").asText())) {
 					AckGet ack = MfsMessages.fromJson(text, AckGet.class);
-					sessionFactory.inTransaction(session -> finishTransportOrder(session, ack));
+					sessionFactory.inTransaction(session -> confirmGet(session, ack));
 				} else {
 					TelegramHandling.getInstance().route(node.path("point").asText(), text);
 				}
@@ -74,25 +74,23 @@ public class AutomaticRetrievalService extends AbstractProcess {
 		}
 	}
 
-	private void finishTransportOrder(Session session, AckGet ack) {
+	// tote-ul e pe banda; TO-ul ramane ACTIVE pana ajunge la PTTS1 (il inchide
+	// PointHandler)
+	private void confirmGet(Session session, AckGet ack) {
 		TransportOrder order = session.find(TransportOrder.class, ack.transportOrderId());
 		if (order == null || order.getStatus() != TransportOrderStatus.ACTIVE) {
 			log.warn("Automatic retrieval: ACK_GET for order {} ignored", ack.transportOrderId());
 			return;
 		}
-
-		LoadUnit loadUnit = order.getLoadUnit();
-		loadUnit.setLocation(order.getTarget());
-		order.setStatus(TransportOrderStatus.FINISHED);
-		log.info("Automatic retrieval: ACK_GET, load unit {} is on {}", loadUnit.getBarcode(),
-				order.getTarget().getName());
+		log.info("Automatic retrieval: ACK_GET, load unit {} is on the conveyor, going to {}",
+				order.getLoadUnit().getBarcode(), order.getTarget().getName());
 	}
 
-	// to-urile new trimise spre conveyor trimit GET si sunt trecute pe active
+	// to-urile NEW spre PTTS1 (din picking) trimit GET si sunt trecute pe ACTIVE
 	private void sendRequests(SessionFactory sessionFactory, JMSContext context) {
 		List<Long> orderIds = sessionFactory.fromTransaction(
 				session -> session.createNamedQuery("TransportOrder.findIdsByStatusAndTargetName", Long.class)
-						.setParameter("status", TransportOrderStatus.NEW).setParameter("target", Constants.CONVEYOR)
+						.setParameter("status", TransportOrderStatus.NEW).setParameter("target", Constants.PTTS1)
 						.getResultList());
 
 		Queue requests = context.createQueue(MfsMessages.REQUEST_QUEUE);
@@ -129,17 +127,18 @@ public class AutomaticRetrievalService extends AbstractProcess {
 		}
 	}
 
+	// tote-ul pleaca din locatia de picking direct spre statia PTTS1
 	private void createTransportOrder(Session session, Long loadUnitId) {
-		Location conveyor = session.createNamedQuery("Location.findByName", Location.class)
-				.setParameter("name", Constants.CONVEYOR).uniqueResultOptional().orElse(null);
-		if (conveyor == null) {
-			log.error("Automatic retrieval: location {} is missing", Constants.CONVEYOR);
+		Location station = session.createNamedQuery("Location.findByName", Location.class)
+				.setParameter("name", Constants.PTTS1).uniqueResultOptional().orElse(null);
+		if (station == null) {
+			log.error("Automatic retrieval: location {} is missing", Constants.PTTS1);
 			return;
 		}
 
 		LoadUnit loadUnit = session.find(LoadUnit.class, loadUnitId);
-		session.persist(new TransportOrder(loadUnit.getLocation(), conveyor, TransportOrderStatus.NEW, loadUnit));
+		session.persist(new TransportOrder(loadUnit.getLocation(), station, TransportOrderStatus.NEW, loadUnit));
 		log.info("Automatic retrieval: load unit {} goes from {} to {}", loadUnit.getBarcode(),
-				loadUnit.getLocation().getName(), Constants.CONVEYOR);
+				loadUnit.getLocation().getName(), Constants.PTTS1);
 	}
 }

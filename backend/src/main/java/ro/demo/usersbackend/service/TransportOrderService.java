@@ -46,8 +46,10 @@ public class TransportOrderService {
 		return Constants.DECANTING.equals(source) || Constants.TPT1.equals(source);
 	}
 
+	// TO-urile spre un punct de pe banda le face simulatorul, nu un muncitor, adica
+	// nu apar pe ecranele de transport
 	private boolean isAutomatic(TransportOrder order) {
-		return Constants.CONVEYOR.equals(order.getTarget().getName());
+		return Constants.CONVEYOR_POINTS.contains(order.getTarget().getName());
 	}
 
 	private TransportOrder find(Long id) {
