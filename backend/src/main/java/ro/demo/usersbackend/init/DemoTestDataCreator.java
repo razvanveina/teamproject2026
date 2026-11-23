@@ -2,16 +2,17 @@ package ro.demo.usersbackend.init;
 
 import java.util.Optional;
 
+import org.hibernate.Session;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
+import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
 import ro.demo.usersbackend.entity.Article;
 import ro.demo.usersbackend.entity.ArticlePackagingUnitType;
 import ro.demo.usersbackend.entity.PackagingUnitType;
@@ -21,45 +22,52 @@ import ro.demo.usersbackend.repository.PackagingUnitTypeRepository;
 
 @SpringBootApplication(scanBasePackages = { "ro.demo.usersbackend.repository" })
 @EntityScan(basePackages = "ro.demo.usersbackend.entity")
-@EnableJpaRepositories(basePackages = "ro.demo.usersbackend.repository")
 public class DemoTestDataCreator implements CommandLineRunner {
 
 	@PersistenceContext
 	private EntityManager entityManager;
 
-	private final ArticleRepository articleRepository;
-	private final PackagingUnitTypeRepository packagingUnitTypeRepository;
-	private final ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository;
-
-	public DemoTestDataCreator(ArticleRepository articleRepository,
-			PackagingUnitTypeRepository packagingUnitTypeRepository,
-			ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository) {
-		this.articleRepository = articleRepository;
-		this.packagingUnitTypeRepository = packagingUnitTypeRepository;
-		this.articlePackagingUnitTypeRepository = articlePackagingUnitTypeRepository;
-	}
-
 	@Override
 	@Transactional
 	public void run(String... args) {
-		addArticle("111", "Mere");
-		addArticle("112", "Pere");
+		new WithSessionAndTransaction<Void>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
 
-		addPackagingUnitType("PIECE", 1);
-		addPackagingUnitType("BAX3", 3);
-		addPackagingUnitType("BAX6", 6);
-		addPackagingUnitType("BAX12", 12);
+				ArticleRepository articleRepository = new ArticleRepository(session);
+				PackagingUnitTypeRepository packagingUnitTypeRepository = new PackagingUnitTypeRepository(session);
+				ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository = new ArticlePackagingUnitTypeRepository(
+						session);
 
-		addAP("111", "111", "PIECE");
-		addAP("111", "111003", "BAX3");
-		addAP("111", "111006", "BAX6");
+				addArticle("111", "Mere", articleRepository);
+				addArticle("112", "Pere", articleRepository);
 
-		addAP("112", "112", "PIECE"); // la piece are acelasi barcode cu pack
-		addAP("112", "112003", "BAX3");
-		addAP("112", "112012", "BAX12");
+				addPackagingUnitType("PIECE", 1, packagingUnitTypeRepository);
+				addPackagingUnitType("BAX3", 3, packagingUnitTypeRepository);
+				addPackagingUnitType("BAX6", 6, packagingUnitTypeRepository);
+				addPackagingUnitType("BAX12", 12, packagingUnitTypeRepository);
+
+				addAP("111", "111", "PIECE", articleRepository, packagingUnitTypeRepository,
+						articlePackagingUnitTypeRepository);
+				addAP("111", "111003", "BAX3", articleRepository, packagingUnitTypeRepository,
+						articlePackagingUnitTypeRepository);
+				addAP("111", "111006", "BAX6", articleRepository, packagingUnitTypeRepository,
+						articlePackagingUnitTypeRepository);
+
+				addAP("112", "112", "PIECE", articleRepository, packagingUnitTypeRepository,
+						articlePackagingUnitTypeRepository); // la piece are acelasi barcode cu pack
+				addAP("112", "112003", "BAX3", articleRepository, packagingUnitTypeRepository,
+						articlePackagingUnitTypeRepository);
+				addAP("112", "112012", "BAX12", articleRepository, packagingUnitTypeRepository,
+						articlePackagingUnitTypeRepository);
+
+			}
+		}.run();
 	}
 
-	private void addAP(String articleBarcode, String barcode, String packName) {
+	private void addAP(String articleBarcode, String barcode, String packName, ArticleRepository articleRepository,
+			PackagingUnitTypeRepository packagingUnitTypeRepository,
+			ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository) {
 		Optional<PackagingUnitType> pack = packagingUnitTypeRepository.findByName(packName);
 		Optional<Article> article = articleRepository.findByBarcode(articleBarcode);
 
@@ -77,7 +85,8 @@ public class DemoTestDataCreator implements CommandLineRunner {
 		}
 	}
 
-	private void addPackagingUnitType(String packName, int amount) {
+	private void addPackagingUnitType(String packName, int amount,
+			PackagingUnitTypeRepository packagingUnitTypeRepository) {
 		Optional<PackagingUnitType> pack = packagingUnitTypeRepository.findByName(packName);
 		if (!pack.isPresent()) {
 			packagingUnitTypeRepository.save(new PackagingUnitType(packName, amount));
@@ -86,7 +95,7 @@ public class DemoTestDataCreator implements CommandLineRunner {
 		}
 	}
 
-	private void addArticle(String barcode, String desc) {
+	private void addArticle(String barcode, String desc, ArticleRepository articleRepository) {
 		Optional<Article> article = articleRepository.findByBarcode(barcode);
 
 		if (article.isPresent()) {
