@@ -224,6 +224,15 @@ public class LoadUnitService {
 		}.run();
 	}
 
+	public boolean existsByBarcode(String barcode) {
+		return new WithSessionAndTransaction<Boolean>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				setReturnValue(new LoadUnitRepository(session).findByBarcode(barcode).isPresent());
+			}
+		}.run();
+	}
+
 	public String getLabelStatus(String barcode, String user) {
 		return new WithSessionAndTransaction<String>() {
 			@Override

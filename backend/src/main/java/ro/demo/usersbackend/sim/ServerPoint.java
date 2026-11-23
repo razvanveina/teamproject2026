@@ -18,6 +18,7 @@ import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.messaging.Broker;
 import ro.demo.usersbackend.messaging.MfsMessages;
 import ro.demo.usersbackend.messaging.MfsMessages.Arrived;
+import ro.demo.usersbackend.messaging.MfsMessages.Created;
 
 public abstract class ServerPoint extends Entity {
 
@@ -103,6 +104,8 @@ public abstract class ServerPoint extends Entity {
 			if (pendingLoadUnit != null) {
 				SimLoadUnit addedLoadUnit = pendingLoadUnit;
 				pendingLoadUnit = null;
+				put(MfsMessages.toJson(
+						new Created(Constants.CREATED, name, addedLoadUnit.barcode(), addedLoadUnit.type())));
 				return addedLoadUnit;
 			}
 		}

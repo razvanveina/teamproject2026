@@ -1,5 +1,7 @@
 package ro.demo.usersbackend.sim;
 
+import java.awt.BasicStroke;
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.List;
@@ -94,24 +96,26 @@ public abstract class Entity implements Runnable {
 	}
 
 	protected void tote(Graphics2D g, SimLoadUnit loadUnit, double x, double y) {
-		return;
-//		String barcode = loadUnit.barcode();
-//		int tx = (int) (x - SimWindow.TOTE / 2.0);
-//		int ty = (int) (y - SimWindow.TOTE / 2.0);
-//		g.setColor(isCarton(loadUnit) ? Constants.CARTON_COLOR : Constants.TOTE_COLOR);
-//		g.fillRect(tx, ty, SimWindow.TOTE, SimWindow.TOTE);
-//		g.setColor(Color.BLACK);
-//		g.setStroke(new BasicStroke(1.75f));
-//		g.drawRect(tx, ty, SimWindow.TOTE, SimWindow.TOTE);
-//
-//		float size = SimWindow.NAME.getSize2D();
-//		g.setFont(SimWindow.NAME);
-//		while (g.getFontMetrics().stringWidth(barcode) > SimWindow.TOTE - 3 && size > 5f) {
-//			size -= 0.5f;
-//			g.setFont(SimWindow.NAME.deriveFont(size));
-//		}
-//		int w = g.getFontMetrics().stringWidth(barcode);
-//		g.drawString(barcode, (int) x - w / 2, (int) y + 3);
+		if (loadUnit == null) {
+			return;
+		}
+		String barcode = loadUnit.barcode();
+		int tx = (int) (x - SimWindow.TOTE / 2.0);
+		int ty = (int) (y - SimWindow.TOTE / 2.0);
+		g.setColor(isCarton(loadUnit) ? Constants.CARTON_COLOR : Constants.TOTE_COLOR);
+		g.fillRect(tx, ty, SimWindow.TOTE, SimWindow.TOTE);
+		g.setColor(Color.BLACK);
+		g.setStroke(new BasicStroke(1.75f));
+		g.drawRect(tx, ty, SimWindow.TOTE, SimWindow.TOTE);
+
+		float size = SimWindow.NAME.getSize2D();
+		g.setFont(SimWindow.NAME);
+		while (g.getFontMetrics().stringWidth(barcode) > SimWindow.TOTE - 3 && size > 5f) {
+			size -= 0.5f;
+			g.setFont(SimWindow.NAME.deriveFont(size));
+		}
+		int w = g.getFontMetrics().stringWidth(barcode);
+		g.drawString(barcode, (int) x - w / 2, (int) y + 3);
 	}
 
 }

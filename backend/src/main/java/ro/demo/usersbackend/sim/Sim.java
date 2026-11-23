@@ -41,6 +41,7 @@ public class Sim {
 	private JMSContext context;
 
 	public static void main(String[] args) throws IOException {
+		System.setProperty(Constants.LOG_CONFIGURATION_PROPERTY, Constants.LOG_CONFIGURATION_FILE);
 		Sim sim = new Sim();
 		sim.run();
 		SimWindow window = new SimWindow(sim);

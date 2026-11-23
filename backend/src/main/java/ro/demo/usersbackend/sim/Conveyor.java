@@ -11,8 +11,15 @@ import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
 
+import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import jakarta.jms.JMSContext;
+import ro.demo.usersbackend.common.Constants;
+import ro.demo.usersbackend.messaging.Broker;
+import ro.demo.usersbackend.messaging.MfsMessages;
+import ro.demo.usersbackend.messaging.MfsMessages.Created;
 
 public class Conveyor extends Entity {
 
@@ -77,7 +84,20 @@ public class Conveyor extends Entity {
 
 	@Override
 	public boolean addLoadUnit(SimLoadUnit addedLoadUnit) {
-		return createLU(addedLoadUnit);
+		if (!createLU(addedLoadUnit)) {
+			return false;
+		}
+		announceCreated(addedLoadUnit);
+		return true;
+	}
+
+	private void announceCreated(SimLoadUnit createdLoadUnit) {
+		String message = MfsMessages.toJson(
+				new Created(Constants.CREATED, name, createdLoadUnit.barcode(), createdLoadUnit.type()));
+		try (JMSContext context = new ActiveMQConnectionFactory(Broker.URL).createContext()) {
+			context.createProducer().send(context.createQueue(MfsMessages.RESPONSE_QUEUE), message);
+		}
+		log.info(message);
 	}
 
 	@Override

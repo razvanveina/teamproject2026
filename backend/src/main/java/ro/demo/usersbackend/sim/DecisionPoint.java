@@ -13,6 +13,7 @@ public class DecisionPoint extends ServerPoint {
 
 	private Entity decision;
 	private long askedAt;
+	private boolean isHeld;
 	private JMSConsumer consumer;
 	private TimeKeeper timeKeeper = TimeKeeper.getInstance();
 
@@ -44,13 +45,32 @@ public class DecisionPoint extends ServerPoint {
 			}
 			if (message instanceof TextMessage text) {
 				String reply = text.getText().trim();
+				if (Constants.HOLD.equals(reply)) {
+					hold();
+					return;
+				}
+				isHeld = false;
 				decision = getTarget().get(toIndex(reply));
-				log.info(name + ": " + loadUnit.barcode() + " reply " + reply + ", goes to " + decision.getName());
+				log.info(
+						name + ": " + loadUnit.barcode() + " reply " + reply + ", goes to " + decision.getName());
+			} else if (isHeld) {
+				if (timeKeeper.currentSimulationTime() - askedAt >= Constants.HOLD_RETRY_INTERVAL) {
+					askedAt = timeKeeper.currentSimulationTime();
+					announceLU(loadUnit);
+				}
 			} else if (timeKeeper.currentSimulationTime() - askedAt >= Constants.DECISION_TIMEOUT) {
 				decision = getTarget().get(0);
 				log.info(name + ": " + loadUnit.barcode() + " no reply, goes to " + decision.getName());
 			}
 		}
+	}
+
+	private void hold() {
+		if (!isHeld) {
+			log.error(name + ": " + loadUnit.barcode() + " held by the server at " + name);
+		}
+		isHeld = true;
+		askedAt = timeKeeper.currentSimulationTime();
 	}
 
 	private int toIndex(String reply) {
@@ -73,6 +93,7 @@ public class DecisionPoint extends ServerPoint {
 		synchronized (this) {
 			loadUnit = arrivingLoadUnit;
 			decision = null;
+			isHeld = false;
 			askedAt = timeKeeper.currentSimulationTime();
 		}
 		announceLU(arrivingLoadUnit);
@@ -104,6 +125,7 @@ public class DecisionPoint extends ServerPoint {
 	public synchronized void restore(EntityState state) {
 		super.restore(state);
 		decision = null;
+		isHeld = false;
 		askedAt = timeKeeper.currentSimulationTime();
 	}
 }

@@ -29,6 +29,7 @@ import ro.demo.usersbackend.messaging.Broker;
 import ro.demo.usersbackend.messaging.MfsMessages;
 import ro.demo.usersbackend.messaging.MfsMessages.AckGet;
 import ro.demo.usersbackend.messaging.MfsMessages.Get;
+import ro.demo.usersbackend.server.mfs.LUCHandler;
 import ro.demo.usersbackend.server.mfs.TelegramHandling;
 import ro.demo.usersbackend.server.picking.StationChooser;
 import ro.demo.usersbackend.server.process.AbstractProcess;
@@ -41,6 +42,7 @@ public class AutomaticRetrievalService extends AbstractProcess {
 	// refacem la fiecare tura
 	private final JMSContext context;
 	private final JMSConsumer replies;
+	private final LUCHandler lucHandler = new LUCHandler();
 
 	public AutomaticRetrievalService() {
 		super("automaticRetrievalService");
@@ -76,6 +78,8 @@ public class AutomaticRetrievalService extends AbstractProcess {
 							confirmGet(session, ack);
 						}
 					}.run();
+				} else if (Constants.CREATED.equals(node.path("type").asText())) {
+					lucHandler.handle(text);
 				} else {
 					TelegramHandling.getInstance().route(node.path("point").asText(), text);
 				}

@@ -73,7 +73,9 @@ public class SimulatorController {
 	@PostMapping("/createLU")
 	public ResponseEntity<Void> createLU(@RequestParam String barcode, @RequestParam String location,
 			@RequestParam LoadUnitType type) {
-		loadUnitService.createEmptyLoadUnit(barcode, type);
+		if (!loadUnitService.existsByBarcode(barcode)) {
+			loadUnitService.createEmptyLoadUnit(barcode, type);
+		}
 		simulatorService.createLU(barcode, location, type);
 
 		return ResponseEntity.ok().build();

@@ -34,6 +34,11 @@ public final class MfsMessages {
 	public record Arrived(String type, String point, String loadUnit) {
 	}
 
+	// de ex
+	// {"type":"ARRIVED","point":"IP1","loadUnit":"00001","loadUnitType":"TOTE"}
+	public record Created(String type, String point, String loadUnit, String loadUnitType) {
+	}
+
 	public static String toJson(Object message) {
 		try {
 			return MAPPER.writeValueAsString(message);
