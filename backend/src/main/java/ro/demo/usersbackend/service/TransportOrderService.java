@@ -128,8 +128,9 @@ public class TransportOrderService {
 				TransportOrder order = find(session, id);
 				if (!user.equals(order.getAssignedTo())) {
 					if (order.getAssignedTo() != null || order.getStatus() != TransportOrderStatus.NEW) {
-						throw new ResponseStatusException(HttpStatus.CONFLICT, "Transport order " + id
-								+ " is already taken" + (order.getAssignedTo() == null ? "" : " by " + order.getAssignedTo()));
+						throw new ResponseStatusException(HttpStatus.CONFLICT,
+								"Transport order " + id + " is already taken"
+										+ (order.getAssignedTo() == null ? "" : " by " + order.getAssignedTo()));
 					}
 					order.setAssignedTo(user);
 				}
@@ -188,9 +189,10 @@ public class TransportOrderService {
 						throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
 								"Wrong location. Scan location " + order.getTarget().getName());
 					}
+					boolean wasAtTpt1 = Constants.TPT1.equals(order.getLoadUnit().getLocation().getName());
 					moveLoadUnit(order.getLoadUnit(), order.getTarget());
 					order.setStatus(TransportOrderStatus.FINISHED);
-					if (Constants.TPT1.equals(order.getSource().getName())) {
+					if (wasAtTpt1) {
 						releaseTPT1();
 					}
 				}

@@ -11,12 +11,13 @@ public class DP2Handler extends DecisionPointHandler {
 	}
 
 	// 0 = DP2 -> TPT1 (C5) ; 1 = DP2 -> IP1 (C4), bucla
-	// spre TPT1 iese, spre orice alt punct (PTTS1, PTTT1) mai face o tura
+	// iese la TPT1 daca TO-ul e spre TPT1 sau spre o locatie din afara benzii (ex.
+	// PICK), altfel (PTTS, PTTT) mai face o tura
 	// fara TO: gol sau cu stoc pentru un order automat -> bucla, altfel TPT1
 	@Override
 	protected int decide(String loadUnit, String target) {
 		if (target != null) {
-			return Constants.TPT1.equals(target) ? 0 : 1;
+			return Constants.TPT1.equals(target) || !Constants.CONVEYOR_POINTS.contains(target) ? 0 : 1;
 		}
 
 		return new WithSessionAndTransaction<Integer>() {
