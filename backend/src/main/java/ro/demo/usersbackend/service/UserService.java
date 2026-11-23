@@ -1,8 +1,6 @@
-
 package ro.demo.usersbackend.service;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.hibernate.Session;
 import org.springframework.http.HttpStatus;
@@ -18,32 +16,27 @@ public class UserService {
 
 	public List<User> findAll() {
 		return new WithSessionAndTransaction<List<User>>() {
-
 			@Override
 			protected void executeBusinessLogic(Session session) {
-				UserRepository userRepository = new UserRepository(session);
-				setReturnValue(userRepository.findAll());
+				setReturnValue(new UserRepository(session).findAll());
 			}
 		}.run();
 	}
 
-	private User findById(Long id, Session session) {
-		UserRepository userRepository = new UserRepository(session);
-		Optional<User> user = userRepository.findById(id);
-
-		if (user.isPresent()) {
-			return user.get();
-		} else {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found: " + id);
-		}
+	public User findById(Long id) {
+		return new WithSessionAndTransaction<User>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				setReturnValue(find(id, session));
+			}
+		}.run();
 	}
 
 	public User create(User user) {
 		return new WithSessionAndTransaction<User>() {
 			@Override
 			protected void executeBusinessLogic(Session session) {
-				UserRepository userRepository = new UserRepository(session);
-				setReturnValue(userRepository.save(user));
+				setReturnValue(new UserRepository(session).save(user));
 			}
 		}.run();
 	}
@@ -52,24 +45,25 @@ public class UserService {
 		return new WithSessionAndTransaction<User>() {
 			@Override
 			protected void executeBusinessLogic(Session session) {
-				UserRepository userRepository = new UserRepository(session);
-				User existingUser = findById(id, session);
-
+				User existingUser = find(id, session);
 				existingUser.setName(updatedUser.getName());
 				existingUser.setEmail(updatedUser.getEmail());
-
-				setReturnValue(userRepository.save(existingUser));
+				setReturnValue(existingUser);
 			}
 		}.run();
 	}
 
 	public void delete(Long id) {
-		new WithSessionAndTransaction<User>() {
+		new WithSessionAndTransaction<>() {
 			@Override
 			protected void executeBusinessLogic(Session session) {
-				UserRepository userRepository = new UserRepository(session);
-				userRepository.delete(findById(id, session));
+				new UserRepository(session).delete(find(id, session));
 			}
 		}.run();
+	}
+
+	private User find(Long id, Session session) {
+		return new UserRepository(session).findById(id)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found: " + id));
 	}
 }
