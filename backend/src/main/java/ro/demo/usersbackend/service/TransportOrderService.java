@@ -9,7 +9,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import jakarta.transaction.Transactional;
 import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
 import ro.demo.usersbackend.dto.TransportOrderResponse;
@@ -19,30 +18,21 @@ import ro.demo.usersbackend.entity.StorageLocation;
 import ro.demo.usersbackend.entity.TransportOrder;
 import ro.demo.usersbackend.entity.TransportOrderErrorReason;
 import ro.demo.usersbackend.entity.TransportOrderStatus;
-import ro.demo.usersbackend.repository.StorageLocationRepository;
+import ro.demo.usersbackend.repository.LocationRepository;
 import ro.demo.usersbackend.repository.TransportOrderRepository;
 import ro.demo.usersbackend.server.mfs.StationControl;
 
 @Service
 public class TransportOrderService {
 
-	private Location decanting() {
-		return new WithSessionAndTransaction<Location>() {
+	public TransportOrderService() {
+		super();
+	}
 
-			@Override
-			protected void executeBusinessLogic(Session session) {
-				StorageLocationRepository locationRepository = new StorageLocationRepository(session);
-				Optional<StorageLocation> location = locationRepository.findByName(Constants.DECANTING);
-
-				if (location.isPresent()) {
-					setReturnValue(location.get());
-				} else {
-					throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-							"Cannot find location with the name " + Constants.DECANTING);
-				}
-
-			}
-		}.run();
+	private Location decanting(Session session) {
+		return new LocationRepository(session).findByName(Constants.DECANTING)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+						"Cannot find location with the name " + Constants.DECANTING));
 	}
 
 	private boolean isTote(TransportOrder order) {
@@ -56,21 +46,9 @@ public class TransportOrderService {
 		return Constants.CONVEYOR_POINTS.contains(order.getTarget().getName());
 	}
 
-	private TransportOrder find(Long id) {
-		return new WithSessionAndTransaction<TransportOrder>() {
-
-			@Override
-			protected void executeBusinessLogic(Session session) {
-				TransportOrderRepository transportOrderRepository = new TransportOrderRepository(session);
-				Optional<TransportOrder> to = transportOrderRepository.findById(id);
-
-				if (to.isPresent()) {
-					setReturnValue(to.get());
-				} else {
-					throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Transport order not found");
-				}
-			}
-		}.run();
+	private TransportOrder find(Session session, Long id) {
+		return new TransportOrderRepository(session).findById(id)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Transport order not found"));
 	}
 
 	private Comparator<TransportOrder> activeFirst() {
@@ -78,83 +56,110 @@ public class TransportOrderService {
 	}
 
 	public Optional<TransportOrderResponse> findNextOrder(String user) {
-		return nextFor(user, false);
-	}
-
-	public Optional<TransportOrderResponse> findNextToteOrder(String user) {
-		return nextFor(user, true);
-	}
-
-	private Optional<TransportOrderResponse> nextFor(String user, boolean tote) {
 		return new WithSessionAndTransaction<Optional<TransportOrderResponse>>() {
-
 			@Override
 			protected void executeBusinessLogic(Session session) {
-				TransportOrderRepository transportOrderRepository = new TransportOrderRepository(session);
-				Optional<TransportOrder> mine = transportOrderRepository
-						.findByStatusAndAssignedToOrderByIdAsc(user, Constants.OPEN_TRANSPORT_STATUSES).stream()
-						.filter(o -> !isAutomatic(o)).filter(o -> isTote(o) == tote).sorted(activeFirst()).findFirst();
-				if (mine.isPresent()) {
-					setReturnValue(mine.map(this::toResponse));
-				}
-
-				Optional<Object> to = transportOrderRepository
-						.findByStatusAndAssignedToIsNullOrderByIdAsc(Constants.OPEN_TRANSPORT_STATUSES).stream()
-						.filter(o -> !isAutomatic(o)).filter(o -> isTote(o) == tote).sorted(activeFirst()).findFirst()
-						.map(order -> {
-							order.setAssignedTo(user);
-							return toResponse(order);
-						});
-				setReturnValue(to);
+				setReturnValue(nextFor(session, user, false));
 			}
 		}.run();
 	}
 
-	@Transactional(readOnly = true)
-	public List<TransportOrderResponse> findOpenOrders(String user) {
-		return transportOrderRepository.findByStatusAndNotSourceOrderByIdAsc(TransportOrderStatus.NEW, decanting())
-				.stream().filter(o -> !isAutomatic(o))
-				.filter(o -> o.getAssignedTo() == null || user.equals(o.getAssignedTo())).map(this::toResponse)
-				.toList();
+	public Optional<TransportOrderResponse> findNextToteOrder(String user) {
+		return new WithSessionAndTransaction<Optional<TransportOrderResponse>>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				setReturnValue(nextFor(session, user, true));
+			}
+		}.run();
 	}
 
-	@Transactional(readOnly = true)
+	private Optional<TransportOrderResponse> nextFor(Session session, String user, boolean tote) {
+		TransportOrderRepository transportOrderRepository = new TransportOrderRepository(session);
+
+		// 1. are deja un transport preluat? il continua
+		Optional<TransportOrder> mine = transportOrderRepository
+				.findByStatusAndAssignedToOrderByIdAsc(user, Constants.OPEN_TRANSPORT_STATUSES).stream()
+				.filter(o -> !isAutomatic(o)).filter(o -> isTote(o) == tote).sorted(activeFirst()).findFirst();
+		if (mine.isPresent()) {
+			return mine.map(this::toResponse);
+		}
+
+		// 2. altfel il preia pe cel mai vechi liber
+		return transportOrderRepository.findByStatusAndAssignedToIsNullOrderByIdAsc(Constants.OPEN_TRANSPORT_STATUSES)
+				.stream().filter(o -> !isAutomatic(o)).filter(o -> isTote(o) == tote).sorted(activeFirst()).findFirst()
+				.map(order -> {
+					order.setAssignedTo(user);
+					return toResponse(order);
+				});
+	}
+
+	public List<TransportOrderResponse> findOpenOrders(String user) {
+		return new WithSessionAndTransaction<List<TransportOrderResponse>>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				List<TransportOrder> openOrders = new TransportOrderRepository(session)
+						.findByStatusAndNotSourceOrderByIdAsc(TransportOrderStatus.NEW, decanting(session));
+				setReturnValue(visibleTo(user, openOrders));
+			}
+		}.run();
+	}
+
 	public List<TransportOrderResponse> findOpenToteOrders(String user) {
-		return transportOrderRepository.findByStatusAndSourceOrderedByIdAsc(TransportOrderStatus.NEW, decanting())
-				.stream().filter(o -> !isAutomatic(o))
+		return new WithSessionAndTransaction<List<TransportOrderResponse>>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				List<TransportOrder> openToteOrders = new TransportOrderRepository(session)
+						.findByStatusAndSourceOrderedByIdAsc(TransportOrderStatus.NEW, decanting(session));
+				setReturnValue(visibleTo(user, openToteOrders));
+			}
+		}.run();
+	}
+
+	private List<TransportOrderResponse> visibleTo(String user, List<TransportOrder> orders) {
+		return orders.stream().filter(o -> !isAutomatic(o))
 				.filter(o -> o.getAssignedTo() == null || user.equals(o.getAssignedTo())).map(this::toResponse)
 				.toList();
 	}
 
 	public TransportOrderResponse take(Long id, String user) {
-		TransportOrder order = find(id);
-		if (!user.equals(order.getAssignedTo())) {
-			if (order.getAssignedTo() != null || order.getStatus() != TransportOrderStatus.NEW) {
-				throw new ResponseStatusException(HttpStatus.CONFLICT, "Transport order " + id + " is already taken"
-						+ (order.getAssignedTo() == null ? "" : " by " + order.getAssignedTo()));
-			}
-			order.setAssignedTo(user);
-		}
+		return new WithSessionAndTransaction<TransportOrderResponse>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				TransportOrder order = find(session, id);
+				if (!user.equals(order.getAssignedTo())) {
+					if (order.getAssignedTo() != null || order.getStatus() != TransportOrderStatus.NEW) {
+						throw new ResponseStatusException(HttpStatus.CONFLICT, "Transport order " + id
+								+ " is already taken" + (order.getAssignedTo() == null ? "" : " by " + order.getAssignedTo()));
+					}
+					order.setAssignedTo(user);
+				}
 
-		// eliberez celelalte transporturi NEW ale mele de acelasi tip
-		for (TransportOrder other : transportOrderRepository.findByStatusAndAssignedToOrderByIdAsc(user,
-				List.of(TransportOrderStatus.NEW))) {
-			if (!other.getId().equals(id) && isTote(other) == isTote(order)) {
-				other.setAssignedTo(null);
+				// eliberez celelalte transporturi NEW ale mele de acelasi tip
+				for (TransportOrder other : new TransportOrderRepository(session)
+						.findByStatusAndAssignedToOrderByIdAsc(user, List.of(TransportOrderStatus.NEW))) {
+					if (!other.getId().equals(id) && isTote(other) == isTote(order)) {
+						other.setAssignedTo(null);
+					}
+				}
+				setReturnValue(toResponse(order));
 			}
-		}
-		return toResponse(order);
+		}.run();
 	}
 
 	public void release(Long id, String user) {
-		TransportOrder order = find(id);
-		if (user.equals(order.getAssignedTo()) && order.getStatus() == TransportOrderStatus.NEW) {
-			order.setAssignedTo(null);
-		}
+		new WithSessionAndTransaction<Void>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				TransportOrder order = find(session, id);
+				if (user.equals(order.getAssignedTo()) && order.getStatus() == TransportOrderStatus.NEW) {
+					order.setAssignedTo(null);
+				}
+			}
+		}.run();
 	}
 
-	private TransportOrder ownedOrder(Long id, String user) {
-		TransportOrder order = find(id);
+	private TransportOrder ownedOrder(Session session, Long id, String user) {
+		TransportOrder order = find(session, id);
 		if (order.getAssignedTo() == null) {
 			order.setAssignedTo(user); // transport vechi, fara user: il preia acum
 		}
@@ -166,27 +171,32 @@ public class TransportOrderService {
 	}
 
 	public TransportOrderResponse scan(Long id, String barcode, String user) {
-		TransportOrder order = ownedOrder(id, user);
-		String scanned = barcode.trim();
+		return new WithSessionAndTransaction<TransportOrderResponse>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				TransportOrder order = ownedOrder(session, id, user);
+				String scanned = barcode.trim();
 
-		if (order.getStatus() == TransportOrderStatus.NEW) {
-			if (!order.getLoadUnit().getBarcode().equalsIgnoreCase(scanned)) {
-				throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-						"Wrong pallet. Scan pallet " + order.getLoadUnit().getBarcode());
+				if (order.getStatus() == TransportOrderStatus.NEW) {
+					if (!order.getLoadUnit().getBarcode().equalsIgnoreCase(scanned)) {
+						throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+								"Wrong pallet. Scan pallet " + order.getLoadUnit().getBarcode());
+					}
+					order.setStatus(TransportOrderStatus.ACTIVE);
+				} else if (order.getStatus() == TransportOrderStatus.ACTIVE) {
+					if (!order.getTarget().getName().equalsIgnoreCase(scanned)) {
+						throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+								"Wrong location. Scan location " + order.getTarget().getName());
+					}
+					moveLoadUnit(order.getLoadUnit(), order.getTarget());
+					order.setStatus(TransportOrderStatus.FINISHED);
+					if (Constants.TPT1.equals(order.getSource().getName())) {
+						releaseTPT1();
+					}
+				}
+				setReturnValue(toResponse(order));
 			}
-			order.setStatus(TransportOrderStatus.ACTIVE);
-		} else if (order.getStatus() == TransportOrderStatus.ACTIVE) {
-			if (!order.getTarget().getName().equalsIgnoreCase(scanned)) {
-				throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-						"Wrong location. Scan location " + order.getTarget().getName());
-			}
-			moveLoadUnit(order.getLoadUnit(), order.getTarget());
-			order.setStatus(TransportOrderStatus.FINISHED);
-			if (Constants.TPT1.equals(order.getSource().getName())) {
-				releaseTPT1();
-			}
-		}
-		return toResponse(order);
+		}.run();
 	}
 
 	private void releaseTPT1() {
@@ -199,20 +209,25 @@ public class TransportOrderService {
 	}
 
 	public TransportOrderResponse reportError(Long id, TransportOrderErrorReason reason, String user) {
-		TransportOrder order = ownedOrder(id, user);
+		return new WithSessionAndTransaction<TransportOrderResponse>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				TransportOrder order = ownedOrder(session, id, user);
 
-		boolean allowed = switch (reason) {
-		case LOCATION_EMPTY, WRONG_PALLET -> order.getStatus() == TransportOrderStatus.NEW;
-		case TARGET_LOCATION_OCCUPIED -> order.getStatus() == TransportOrderStatus.ACTIVE;
-		};
-		if (!allowed) {
-			throw new ResponseStatusException(HttpStatus.CONFLICT,
-					"Error " + reason + " cannot be reported for an order with status " + order.getStatus());
-		}
+				boolean allowed = switch (reason) {
+				case LOCATION_EMPTY, WRONG_PALLET -> order.getStatus() == TransportOrderStatus.NEW;
+				case TARGET_LOCATION_OCCUPIED -> order.getStatus() == TransportOrderStatus.ACTIVE;
+				};
+				if (!allowed) {
+					throw new ResponseStatusException(HttpStatus.CONFLICT,
+							"Error " + reason + " cannot be reported for an order with status " + order.getStatus());
+				}
 
-		order.setErrorReason(reason);
-		order.setStatus(TransportOrderStatus.ERROR);
-		return toResponse(order);
+				order.setErrorReason(reason);
+				order.setStatus(TransportOrderStatus.ERROR);
+				setReturnValue(toResponse(order));
+			}
+		}.run();
 	}
 
 	private void moveLoadUnit(LoadUnit loadUnit, Location target) {
@@ -231,11 +246,9 @@ public class TransportOrderService {
 				order.getSource().getName(), order.getTarget().getName(), loadUnitLocation);
 	}
 
-	public TransportOrderResponse createTransportOrder(LoadUnit loadUnit, Location target) {
+	public TransportOrderResponse createTransportOrder(Session session, LoadUnit loadUnit, Location target) {
 		TransportOrder order = new TransportOrder(loadUnit.getLocation(), target, TransportOrderStatus.NEW, loadUnit);
-
-		transportOrderRepository.save(order);
-
+		new TransportOrderRepository(session).insert(order);
 		return toResponse(order);
 	}
 }
