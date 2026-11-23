@@ -17,8 +17,8 @@
             where o.shippingUser = :user and o.status = :status
         ]]>
 	</query>
-	
-		<query name="LoadUnit.findByLocationName">
+
+	<query name="LoadUnit.findByLocationName">
         <![CDATA[
             from LoadUnit lu
             where lu.location.name = :name
@@ -34,6 +34,13 @@
         	and not exists (select t.id from TransportOrder t
                  			where t.loadUnit = u and t.status in :open)
     	]]>
+	</query>
+
+	<query name="TransportOrder.findActiveByLoadUnit">
+	    <![CDATA[
+	        from TransportOrder t
+	        where t.loadUnit = :loadUnit and t.status = :active
+	    ]]>
 	</query>
 
 	<query name="TransportOrder.countActiveByLoadUnit">
@@ -250,7 +257,7 @@
 	        where j.status = :status and j.printer.type = :printerType
 	    ]]>
 	</query>
-	
+
 	<query name="PrintJob.findLatestByOrderId">
 		<![CDATA[
 			from PrintJob j
