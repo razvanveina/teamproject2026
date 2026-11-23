@@ -6,14 +6,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.hibernate.Session;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import ro.demo.usersbackend.common.Constants;
+import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
 import ro.demo.usersbackend.dto.LoadUnitResponse;
 import ro.demo.usersbackend.dto.ScannedPackage;
 import ro.demo.usersbackend.dto.StockItemResponse;
@@ -35,73 +34,40 @@ import ro.demo.usersbackend.repository.ArticlePackagingUnitTypeRepository;
 import ro.demo.usersbackend.repository.DestinationToGateRepository;
 import ro.demo.usersbackend.repository.LoadUnitRepository;
 import ro.demo.usersbackend.repository.LocationRepository;
+import ro.demo.usersbackend.repository.RetrievalOrderRepository;
 import ro.demo.usersbackend.repository.StockItemRepository;
 
 @Service
-@Transactional
 public class LoadUnitService {
-	@PersistenceContext
-	private EntityManager entityManager;
-
-	private final StockItemRepository stockItemRepository;
-	private final LoadUnitRepository loadUnitRepository;
-	private final LocationRepository locationRepository;
-	private final DestinationToGateRepository destinationToGateRepository;
-	private final ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository;
-	private final TransportOrderService transportOrderService;
 	private final PrintJobService printJobService;
+	private final TransportOrderService transportOrderService;
 
-	private RetrievalOrder orderOf(LoadUnit loadUnit) {
+	public LoadUnitService() {
+		super();
+		printJobService = new PrintJobService();
+		transportOrderService = new TransportOrderService();
+	}
+
+	private LoadUnit findLoadUnitByBarcode(Session session, String barcode) {
+		return new LoadUnitRepository(session).findByBarcode(barcode)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+						"Cannot find load unit with the barcode: " + barcode));
+	}
+
+	private Location findLocationByName(Session session, String name) {
+		return new LocationRepository(session).findByName(name)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+						"Location " + name + " is missing"));
+	}
+
+	private RetrievalOrder findOrderOfLoadUnit(LoadUnit loadUnit) {
 		return loadUnit.getStockItems().stream().filter(s -> s.getReservation() != null)
 				.map(s -> s.getReservation().getRetrievalOrderLine().getOrder()).findFirst()
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
 						"Load unit " + loadUnit.getBarcode() + " does not belong to any order"));
 	}
 
-	private LoadUnit findLoadUnit(String barcode) {
-		return loadUnitRepository.findByBarcode(barcode)
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
-						"Cannot find load unit with the barcode: " + barcode));
-	}
-
-	public LoadUnitService(EntityManager entityManager, StockItemRepository stockItemRepository,
-			LoadUnitRepository loadUnitRepository, LocationRepository locationRepository,
-			DestinationToGateRepository destinationToGateRepository,
-			ArticlePackagingUnitTypeRepository articlePackagingUnitTypeRepository,
-			TransportOrderService transportOrderService, PrintJobService printJobService) {
-		super();
-		this.entityManager = entityManager;
-		this.stockItemRepository = stockItemRepository;
-		this.loadUnitRepository = loadUnitRepository;
-		this.locationRepository = locationRepository;
-		this.destinationToGateRepository = destinationToGateRepository;
-		this.articlePackagingUnitTypeRepository = articlePackagingUnitTypeRepository;
-		this.transportOrderService = transportOrderService;
-		this.printJobService = printJobService;
-	}
-
-	// Deletes a load unit together with its stock items (and their reservations).
-	// Transport orders block the delete; order lines and the storage location only
-	// lose their link, so inventory orders and stock adjustments stay.
-	// Returns the refusal message, or null when the load unit was deleted.
-	public String deleteLoadUnit(Long id) {
-		Integer transports = ((Number) entityManager.createNamedQuery("TransportOrder.countByLoadUnitId")
-				.setParameter("loadUnitId", id).getSingleResult()).intValue();
-		if (transports != null && transports > 0) {
-			return "Cannot delete load unit " + id + ": it is still used in TRANSPORT_ORDER (" + transports + " rows)";
-		}
-
-		entityManager.createNamedQuery("releaseReservationsForLoadUnit").setParameter("loadUnitId", id).executeUpdate();
-		entityManager.createNamedQuery("Reservation.deleteByLoadUnitId").setParameter("loadUnitId", id).executeUpdate();
-		entityManager.createNamedQuery("StockItem.deleteByLoadUnitId").setParameter("loadUnitId", id).executeUpdate();
-		entityManager.createNamedQuery("InvetoryOrderLine.deleteByLoadUnitId").setParameter("loadUnitId", id)
-				.executeUpdate();
-		entityManager.createNamedQuery("LoadUnit.deleteById").setParameter("id", id).executeUpdate();
-
-		return null;
-	}
-
-	private void checkLocation(LoadUnit loadUnit, String targetLocation) {
+	private void checkLoadUnitIsAt(LoadUnit loadUnit, String targetLocation) {
 		String location = loadUnit.getLocation() == null ? "nowhere" : loadUnit.getLocation().getName();
 		if (!targetLocation.equals(location)) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Load unit " + loadUnit.getBarcode() + " is at "
@@ -109,20 +75,14 @@ public class LoadUnitService {
 		}
 	}
 
-	private Location location(String name) {
-		return locationRepository.findByName(name)
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-						"Location " + name + " is missing"));
-	}
-
-	private void checkShippable(LoadUnit loadUnit) {
+	private void checkIsCartonOrTote(LoadUnit loadUnit) {
 		if (loadUnit.getType() != LoadUnitType.CARTON && loadUnit.getType() != LoadUnitType.TOTE) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
 					"Load unit " + loadUnit.getBarcode() + " is a " + loadUnit.getType() + ". Scan a carton or a tote");
 		}
 	}
 
-	private void checkOwner(RetrievalOrder order, String user, String barcode) {
+	private void checkShippedByUser(RetrievalOrder order, String user, String barcode) {
 		if (!user.equals(order.getShippingUser())) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT,
 					order.getShippingUser() == null ? "Scan the load unit " + barcode + " first"
@@ -130,251 +90,13 @@ public class LoadUnitService {
 		}
 	}
 
-	private LoadUnit cartonFor(String cartonBarcode) {
-		String barcode = cartonBarcode.trim();
-		Optional<LoadUnit> existing = loadUnitRepository.findByBarcode(barcode);
-
-		if (existing.isPresent()) {
-			LoadUnit carton = existing.get();
-			if (carton.getType() != LoadUnitType.CARTON) {
-				throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-						barcode + " is a " + carton.getType() + ", not a carton");
-			}
-			if (!carton.getStockItems().isEmpty()) {
-				throw new ResponseStatusException(HttpStatus.CONFLICT,
-						"Carton " + barcode + " is already used. Take an empty carton");
-			}
-			carton.setLocation(location(Constants.OUT));
-			return carton;
-		}
-
-		LoadUnit carton = new LoadUnit();
-		carton.setBarcode(barcode);
-		carton.setType(LoadUnitType.CARTON);
-		carton.setStockItems(new ArrayList<>());
-		carton.setLocation(location(Constants.OUT));
-		return loadUnitRepository.save(carton);
-	}
-
-	public LoadUnit createEmptyLoadUnit(String barcode, LoadUnitType type) {
-		if (loadUnitRepository.findByBarcode(barcode).isPresent()) {
-			throw new ResponseStatusException(HttpStatus.CONFLICT,
-					"A load unit with the barcode " + barcode + " already exists");
-		}
-
-		LoadUnit loadUnit = new LoadUnit();
-		loadUnit.setLocation(location(Constants.CONVEYOR));
-		loadUnit.setBarcode(barcode);
-		loadUnit.setType(type);
-
-		loadUnitRepository.save(loadUnit);
-
-		return loadUnit;
-	}
-
-	public LoadUnit createLoadUnit(List<ScannedPackage> scannedPackages) {
-
-		Location in = locationRepository.findByName(Constants.IN).orElseThrow(
-				() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot find location " + Constants.IN));
-
-		// nr de package uri per tipul de package
-		// se aduna daca e acelasi tip de package scanat iar
-		Map<ArticlePackagingUnitType, Integer> packagesPerType = new LinkedHashMap<>();
-		for (ScannedPackage scanned : scannedPackages) {
-			ArticlePackagingUnitType pack = articlePackagingUnitTypeRepository.findByBarcode(scanned.packageBarcode())
-					.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
-							"Could not find package with barcode " + scanned.packageBarcode()));
-
-			int total = packagesPerType.getOrDefault(pack, 0);
-			packagesPerType.put(pack, total + scanned.packages());
-		}
-
-		LoadUnit loadUnit = new LoadUnit();
-		loadUnit.setBarcode(generateLoadUnitBarcode());
-		loadUnit.setType(LoadUnitType.PALLET);
-		loadUnit.setLocation(in);
-		loadUnitRepository.save(loadUnit);
-
-		// un stock item per package type
-		// cantitatea e nr de package uri acum
-		for (Map.Entry<ArticlePackagingUnitType, Integer> entry : packagesPerType.entrySet()) {
-			stockItemRepository.save(new StockItem(entry.getKey(), entry.getValue(), loadUnit));
-		}
-		return loadUnit;
-	}
-
-	public LoadUnitResponse findByBarcode(String barcode, String user) {
-		LoadUnit loadUnit = findLoadUnit(barcode);
-		checkShippable(loadUnit);
-		checkLocation(loadUnit, Constants.OUT);
-		RetrievalOrder order = orderOf(loadUnit);
-
-		if (order.getStatus() == RetrievalOrderStatus.FINISHED) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-					"The order for this load unit is already finished");
-		}
-		if (order.getStatus() != RetrievalOrderStatus.PICKED) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Order status must be PICKED");
-		}
-		if (order.getShippingUser() != null && !order.getShippingUser().equals(user)) {
-			throw new ResponseStatusException(HttpStatus.CONFLICT,
-					"Load unit " + barcode + " is being shipped by " + order.getShippingUser());
-		}
-
-		List<RetrievalOrder> mine = entityManager
-				.createNamedQuery("RetrievalOrder.findOrderIdsByStatus", RetrievalOrder.class)
-				.setParameter("user", user).setParameter("status", RetrievalOrderStatus.PICKED).getResultList();
-		for (RetrievalOrder other : mine) {
-			if (!other.getId().equals(order.getId())) {
-				other.setShippingUser(null);
-			}
-		}
-
-		order.setShippingUser(user);
-		return new LoadUnitResponse(loadUnit.getBarcode(), loadUnit.getType().toString(),
-				loadUnit.getLocation().getName(), createItems(loadUnit.getStockItems()));
-	}
-
-	public LoadUnitResponse chooseCarton(String toteBarcode, String cartonBarcode, String user) {
-		LoadUnit tote = findLoadUnit(toteBarcode);
-		if (tote.getType() != LoadUnitType.TOTE) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only a tote needs a carton");
-		}
-		checkLocation(tote, Constants.OUT);
-		RetrievalOrder order = orderOf(tote);
-		checkOwner(order, user, toteBarcode);
-
-		LoadUnit carton = cartonFor(cartonBarcode);
-		return new LoadUnitResponse(carton.getBarcode(), carton.getType().toString(), carton.getLocation().getName(),
-				createItems(carton.getStockItems()));
-	}
-
-	public boolean finishLoadUnit(String barcode, String user, String cartonBarcode) {
-		LoadUnit loadUnit = findLoadUnit(barcode);
-		checkShippable(loadUnit);
-		checkLocation(loadUnit, Constants.OUT);
-		RetrievalOrder order = orderOf(loadUnit);
-
-		checkOwner(order, user, barcode);
-
-		if (order.getStatus() != RetrievalOrderStatus.PICKED) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Order status must be PICKED");
-		}
-
-		findGateForOrder(order);
-
-		if (isOrderPacked(order)) {
-			PrintJob latestPrintJob = printJobService.findLatestPrintJobForOrder(order.getOrderId());
-			if (latestPrintJob == null || latestPrintJob.getStatus() == PrintJobStatus.ERROR) {
-				printJobService.createShippingLabel(order);
-			}
-			return false;
-		}
-
-		LoadUnit carton = loadUnit;
-		if (loadUnit.getType() == LoadUnitType.TOTE) {
-			if (cartonBarcode == null || cartonBarcode.isBlank()) {
-				throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-						"Scan a carton for the items of tote " + barcode + " first");
-			}
-			carton = cartonFor(cartonBarcode);
-			for (StockItem item : new ArrayList<>(loadUnit.getStockItems())) {
-				item.setLoadUnit(carton);
-			}
-		}
-
-		int lineCount = 0;
-		for (RetrievalOrderLine line : order.getLines()) {
-			if (line.getStatus() == RetrievalOrderLineStatus.PICKED) {
-				line.setStatus(RetrievalOrderLineStatus.FINISHED);
-			} else {
-				lineCount++;
-			}
-		}
-
-		if (lineCount == 0) {
-			printJobService.createShippingLabel(order);
-			if (loadUnit.getType() == LoadUnitType.TOTE) {
-				if (order.isAutomatic()) {
-					return true; // tote de pe banda, deci controllerul il elibereaza din OUT dupa commit
-				}
-				transportOrderService.createTransportOrder(loadUnit, location(Constants.EMPTY_TOTES)); // flux manual
-			}
-			return false;
-		} else {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-					"All lines status must be PICKED. There are " + lineCount + " lines with a different status");
-		}
-	}
-
-	public String getLabelStatus(String barcode, String user) {
-		LoadUnit carton = findLoadUnit(barcode);
-		RetrievalOrder order = orderOf(carton);
-		checkOwner(order, user, barcode);
-
-		PrintJob latestPrintJob = printJobService.findLatestPrintJobForOrder(order.getOrderId());
-		return latestPrintJob == null ? Constants.STATUS_MISSING : latestPrintJob.getStatus().toString();
-	}
-
-	public void confirmLabelAndSendCartonToGate(String barcode, String scannedLabel, String user) {
-		LoadUnit carton = findLoadUnit(barcode);
-		RetrievalOrder order = findOrderOfPackedCarton(carton, barcode, user);
-
-		PrintJob latestPrintJob = printJobService.findLatestPrintJobForOrder(order.getOrderId());
-		if (latestPrintJob == null || latestPrintJob.getStatus() != PrintJobStatus.PRINTED) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-					"The label for order " + order.getOrderId() + " is not printed yet");
-		}
-
-		if (scannedLabel == null || !scannedLabel.trim().equals(order.getOrderId())) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-					"Label " + scannedLabel + " does not belong to carton " + barcode + ". Scan the printed label");
-		}
-
-		order.setStatus(RetrievalOrderStatus.FINISHED);
-		carton.setLocation(findGateForOrder(order));
-	}
-
-	public void reprintLabel(String barcode, String user) {
-		LoadUnit carton = findLoadUnit(barcode);
-		RetrievalOrder order = findOrderOfPackedCarton(carton, barcode, user);
-
-		PrintJob latestPrintJob = printJobService.findLatestPrintJobForOrder(order.getOrderId());
-		if (latestPrintJob == null) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-					"There is no label to reprint for order " + order.getOrderId());
-		}
-		if (latestPrintJob.getStatus() == PrintJobStatus.NEW) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-					"The label for order " + order.getOrderId() + " is still printing");
-		}
-
-		printJobService.resetPrintJobForReprint(latestPrintJob);
-	}
-
-	private RetrievalOrder findOrderOfPackedCarton(LoadUnit carton, String barcode, String user) {
-		if (carton.getType() != LoadUnitType.CARTON) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-					"Load unit " + barcode + " is a " + carton.getType() + ". Only a carton gets a label");
-		}
-		checkLocation(carton, Constants.OUT);
-		RetrievalOrder order = orderOf(carton);
-		checkOwner(order, user, barcode);
-
-		if (order.getStatus() != RetrievalOrderStatus.PICKED || !isOrderPacked(order)) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-					"Confirm the items of carton " + barcode + " first");
-		}
-		return order;
-	}
-
-	private boolean isOrderPacked(RetrievalOrder order) {
+	private boolean areAllOrderLinesFinished(RetrievalOrder order) {
 		return order.getLines().stream()
 				.allMatch(orderLine -> orderLine.getStatus() == RetrievalOrderLineStatus.FINISHED);
 	}
 
-	private Location findGateForOrder(RetrievalOrder order) {
-		DestinationToGate destinationToGate = destinationToGateRepository
+	private Location findGateForOrder(Session session, RetrievalOrder order) {
+		DestinationToGate destinationToGate = new DestinationToGateRepository(session)
 				.findByDestinationName(order.getDestination().getName())
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
 						"Could not find a DestinationToGate object from the name: "
@@ -382,22 +104,14 @@ public class LoadUnitService {
 		return destinationToGate.getGate();
 	}
 
-	public void releaseLoadUnit(String barcode, String user) {
-		LoadUnit loadUnit = findLoadUnit(barcode);
-		RetrievalOrder order = orderOf(loadUnit);
-		if (user.equals(order.getShippingUser()) && order.getStatus() == RetrievalOrderStatus.PICKED) {
-			order.setShippingUser(null);
-		}
+	private String generateLoadUnitBarcode(Session session) {
+		Long next = session
+				.createNativeQuery("SELECT " + Constants.LOAD_UNIT_SEQUENCE + ".NEXTVAL FROM DUAL", Long.class)
+				.getSingleResult();
+		return String.format(Constants.LOAD_UNIT_BARCODE, next);
 	}
 
-	private String generateLoadUnitBarcode() {
-		Number result = (Number) entityManager
-				.createNativeQuery("SELECT " + Constants.LOAD_UNIT_SEQUENCE + ".NEXTVAL FROM DUAL").getSingleResult();
-
-		return String.format(Constants.LOAD_UNIT_BARCODE, result.longValue());
-	}
-
-	private List<StockItemResponse> createItems(List<StockItem> items) {
+	private List<StockItemResponse> toStockItemResponses(List<StockItem> items) {
 		List<StockItemResponse> responseItems = new ArrayList<>();
 
 		for (StockItem item : items) {
@@ -409,5 +123,314 @@ public class LoadUnitService {
 		}
 
 		return responseItems;
+	}
+
+	private LoadUnit findOrCreateEmptyCarton(Session session, String cartonBarcode) {
+		String barcode = cartonBarcode.trim();
+		Optional<LoadUnit> existing = new LoadUnitRepository(session).findByBarcode(barcode);
+
+		if (existing.isPresent()) {
+			LoadUnit carton = existing.get();
+			if (carton.getType() != LoadUnitType.CARTON) {
+				throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+						barcode + " is a " + carton.getType() + ", not a carton");
+			}
+			if (!carton.getStockItems().isEmpty()) {
+				throw new ResponseStatusException(HttpStatus.CONFLICT,
+						"Carton " + barcode + " is already used. Take an empty carton");
+			}
+			carton.setLocation(findLocationByName(session, Constants.OUT));
+			return carton;
+		}
+
+		LoadUnit carton = new LoadUnit();
+		carton.setBarcode(barcode);
+		carton.setType(LoadUnitType.CARTON);
+		carton.setStockItems(new ArrayList<>());
+		carton.setLocation(findLocationByName(session, Constants.OUT));
+		new LoadUnitRepository(session).insert(carton);
+		return carton;
+	}
+
+	private RetrievalOrder findOrderReadyForLabel(LoadUnit carton, String barcode, String user) {
+		if (carton.getType() != LoadUnitType.CARTON) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+					"Load unit " + barcode + " is a " + carton.getType() + ". Only a carton gets a label");
+		}
+		checkLoadUnitIsAt(carton, Constants.OUT);
+		RetrievalOrder order = findOrderOfLoadUnit(carton);
+		checkShippedByUser(order, user, barcode);
+
+		if (order.getStatus() != RetrievalOrderStatus.PICKED || !areAllOrderLinesFinished(order)) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+					"Confirm the items of carton " + barcode + " first");
+		}
+		return order;
+	}
+
+	// paletul nou de la receiving, cu un stock item pentru fiecare tip de ambalaj
+	// scanat
+	// primeste sesiunea apelantului, ca ReceivingService sa il poata folosi in
+	// tranzactia lui
+	public LoadUnit createLoadUnit(Session session, List<ScannedPackage> scannedPackages) {
+		Location in = new LocationRepository(session).findByName(Constants.IN).orElseThrow(
+				() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot find location " + Constants.IN));
+		ArticlePackagingUnitTypeRepository packRepository = new ArticlePackagingUnitTypeRepository(session);
+
+		// nr de package uri per tipul de package
+		// se aduna daca e acelasi tip de package scanat iar
+		Map<ArticlePackagingUnitType, Integer> packagesPerType = new LinkedHashMap<>();
+		for (ScannedPackage scanned : scannedPackages) {
+			ArticlePackagingUnitType pack = packRepository.findByBarcode(scanned.packageBarcode())
+					.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+							"Could not find package with barcode " + scanned.packageBarcode()));
+
+			int total = packagesPerType.getOrDefault(pack, 0);
+			packagesPerType.put(pack, total + scanned.packages());
+		}
+
+		LoadUnit loadUnit = new LoadUnit();
+		loadUnit.setBarcode(generateLoadUnitBarcode(session));
+		loadUnit.setType(LoadUnitType.PALLET);
+		loadUnit.setLocation(in);
+		new LoadUnitRepository(session).insert(loadUnit);
+
+		// un stock item per package type
+		// cantitatea e nr de package uri acum
+		StockItemRepository stockItemRepository = new StockItemRepository(session);
+		for (Map.Entry<ArticlePackagingUnitType, Integer> entry : packagesPerType.entrySet()) {
+			stockItemRepository.insert(new StockItem(entry.getKey(), entry.getValue(), loadUnit));
+		}
+		return loadUnit;
+	}
+
+	public LoadUnit createEmptyLoadUnit(String barcode, LoadUnitType type) {
+		return new WithSessionAndTransaction<LoadUnit>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				LoadUnitRepository loadUnitRepository = new LoadUnitRepository(session);
+				if (loadUnitRepository.findByBarcode(barcode).isPresent()) {
+					throw new ResponseStatusException(HttpStatus.CONFLICT,
+							"A load unit with the barcode " + barcode + " already exists");
+				}
+
+				LoadUnit loadUnit = new LoadUnit();
+				loadUnit.setLocation(findLocationByName(session, Constants.CONVEYOR));
+				loadUnit.setBarcode(barcode);
+				loadUnit.setType(type);
+				loadUnitRepository.insert(loadUnit);
+				setReturnValue(loadUnit);
+			}
+		}.run();
+	}
+
+	public String getLabelStatus(String barcode, String user) {
+		return new WithSessionAndTransaction<String>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				LoadUnit carton = findLoadUnitByBarcode(session, barcode);
+				RetrievalOrder order = findOrderOfLoadUnit(carton);
+				checkShippedByUser(order, user, barcode);
+
+				PrintJob latestPrintJob = printJobService.findLatestPrintJobForOrder(order.getOrderId());
+				setReturnValue(
+						latestPrintJob == null ? Constants.STATUS_MISSING : latestPrintJob.getStatus().toString());
+			}
+		}.run();
+	}
+
+	public void releaseLoadUnit(String barcode, String user) {
+		new WithSessionAndTransaction<Void>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				LoadUnit loadUnit = findLoadUnitByBarcode(session, barcode);
+				RetrievalOrder order = findOrderOfLoadUnit(loadUnit);
+				if (user.equals(order.getShippingUser()) && order.getStatus() == RetrievalOrderStatus.PICKED) {
+					order.setShippingUser(null);
+				}
+			}
+		}.run();
+	}
+
+	// pentru apelantii fara tranzactie proprie; deschide una si foloseste varianta
+	// cu sesiune
+	public LoadUnit createLoadUnit(List<ScannedPackage> scannedPackages) {
+		return new WithSessionAndTransaction<LoadUnit>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				setReturnValue(createLoadUnit(session, scannedPackages));
+			}
+		}.run();
+	}
+
+	public LoadUnitResponse findByBarcode(String barcode, String user) {
+		return new WithSessionAndTransaction<LoadUnitResponse>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				LoadUnit loadUnit = findLoadUnitByBarcode(session, barcode);
+				checkIsCartonOrTote(loadUnit);
+				checkLoadUnitIsAt(loadUnit, Constants.OUT);
+				RetrievalOrder order = findOrderOfLoadUnit(loadUnit);
+
+				if (order.getStatus() == RetrievalOrderStatus.FINISHED) {
+					throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+							"The order for this load unit is already finished");
+				}
+				if (order.getStatus() != RetrievalOrderStatus.PICKED) {
+					throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Order status must be PICKED");
+				}
+				if (order.getShippingUser() != null && !order.getShippingUser().equals(user)) {
+					throw new ResponseStatusException(HttpStatus.CONFLICT,
+							"Load unit " + barcode + " is being shipped by " + order.getShippingUser());
+				}
+
+				// userul lucreaza pe un singur order: celelalte ordere PICKED ale lui sunt
+				// eliberate
+				for (RetrievalOrder other : new RetrievalOrderRepository(session)
+						.findByStatusOrderByIdAsc(RetrievalOrderStatus.PICKED)) {
+					if (user.equals(other.getShippingUser()) && !other.getId().equals(order.getId())) {
+						other.setShippingUser(null);
+					}
+				}
+
+				order.setShippingUser(user);
+				setReturnValue(new LoadUnitResponse(loadUnit.getBarcode(), loadUnit.getType().toString(),
+						loadUnit.getLocation().getName(), toStockItemResponses(loadUnit.getStockItems())));
+			}
+		}.run();
+	}
+
+	public LoadUnitResponse chooseCarton(String toteBarcode, String cartonBarcode, String user) {
+		return new WithSessionAndTransaction<LoadUnitResponse>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				LoadUnit tote = findLoadUnitByBarcode(session, toteBarcode);
+				if (tote.getType() != LoadUnitType.TOTE) {
+					throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only a tote needs a carton");
+				}
+				checkLoadUnitIsAt(tote, Constants.OUT);
+				RetrievalOrder order = findOrderOfLoadUnit(tote);
+				checkShippedByUser(order, user, toteBarcode);
+
+				LoadUnit carton = findOrCreateEmptyCarton(session, cartonBarcode);
+				setReturnValue(new LoadUnitResponse(carton.getBarcode(), carton.getType().toString(),
+						carton.getLocation().getName(), toStockItemResponses(carton.getStockItems())));
+			}
+		}.run();
+	}
+
+	// true = tote automat, controllerul il elibereaza din OUT; run() a facut deja
+	// commit cand ajunge acolo
+	public boolean finishLoadUnit(String barcode, String user, String cartonBarcode) {
+		return new WithSessionAndTransaction<Boolean>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				LoadUnit loadUnit = findLoadUnitByBarcode(session, barcode);
+				checkIsCartonOrTote(loadUnit);
+				checkLoadUnitIsAt(loadUnit, Constants.OUT);
+				RetrievalOrder order = findOrderOfLoadUnit(loadUnit);
+
+				checkShippedByUser(order, user, barcode);
+
+				if (order.getStatus() != RetrievalOrderStatus.PICKED) {
+					throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Order status must be PICKED");
+				}
+
+				findGateForOrder(session, order);
+
+				if (areAllOrderLinesFinished(order)) {
+					PrintJob latestPrintJob = printJobService.findLatestPrintJobForOrder(order.getOrderId());
+					if (latestPrintJob == null || latestPrintJob.getStatus() == PrintJobStatus.ERROR) {
+						printJobService.createShippingLabel(order);
+					}
+					setReturnValue(false);
+					return;
+				}
+
+				if (loadUnit.getType() == LoadUnitType.TOTE) {
+					if (cartonBarcode == null || cartonBarcode.isBlank()) {
+						throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+								"Scan a carton for the items of tote " + barcode + " first");
+					}
+					LoadUnit carton = findOrCreateEmptyCarton(session, cartonBarcode);
+					for (StockItem item : new ArrayList<>(loadUnit.getStockItems())) {
+						item.setLoadUnit(carton);
+					}
+				}
+
+				int lineCount = 0;
+				for (RetrievalOrderLine line : order.getLines()) {
+					if (line.getStatus() == RetrievalOrderLineStatus.PICKED) {
+						line.setStatus(RetrievalOrderLineStatus.FINISHED);
+					} else {
+						lineCount++;
+					}
+				}
+
+				if (lineCount != 0) {
+					throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+							"All lines status must be PICKED. There are " + lineCount
+									+ " lines with a different status");
+				}
+
+				printJobService.createShippingLabel(order);
+				if (loadUnit.getType() == LoadUnitType.TOTE) {
+					if (order.isAutomatic()) {
+						setReturnValue(true); // tote de pe banda, deci controllerul il elibereaza din OUT dupa commit
+						return;
+					}
+					// flux manual: tote-ul gol merge cu stivuitorul la EMPTY_TOTES
+					transportOrderService.createTransportOrder(session, loadUnit,
+							findLocationByName(session, Constants.EMPTY_TOTES));
+				}
+				setReturnValue(false);
+			}
+		}.run();
+	}
+
+	public void confirmLabelAndSendCartonToGate(String barcode, String scannedLabel, String user) {
+		new WithSessionAndTransaction<Void>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				LoadUnit carton = findLoadUnitByBarcode(session, barcode);
+				RetrievalOrder order = findOrderReadyForLabel(carton, barcode, user);
+
+				PrintJob latestPrintJob = printJobService.findLatestPrintJobForOrder(order.getOrderId());
+				if (latestPrintJob == null || latestPrintJob.getStatus() != PrintJobStatus.PRINTED) {
+					throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+							"The label for order " + order.getOrderId() + " is not printed yet");
+				}
+
+				if (scannedLabel == null || !scannedLabel.trim().equals(order.getOrderId())) {
+					throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Label " + scannedLabel
+							+ " does not belong to carton " + barcode + ". Scan the printed label");
+				}
+
+				order.setStatus(RetrievalOrderStatus.FINISHED);
+				carton.setLocation(findGateForOrder(session, order));
+			}
+		}.run();
+	}
+
+	public void reprintLabel(String barcode, String user) {
+		new WithSessionAndTransaction<Void>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				LoadUnit carton = findLoadUnitByBarcode(session, barcode);
+				RetrievalOrder order = findOrderReadyForLabel(carton, barcode, user);
+
+				PrintJob latestPrintJob = printJobService.findLatestPrintJobForOrder(order.getOrderId());
+				if (latestPrintJob == null) {
+					throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+							"There is no label to reprint for order " + order.getOrderId());
+				}
+				if (latestPrintJob.getStatus() == PrintJobStatus.NEW) {
+					throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+							"The label for order " + order.getOrderId() + " is still printing");
+				}
+
+				printJobService.resetPrintJobForReprint(latestPrintJob);
+			}
+		}.run();
 	}
 }
