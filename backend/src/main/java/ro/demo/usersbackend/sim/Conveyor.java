@@ -3,9 +3,9 @@ package ro.demo.usersbackend.sim;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.Shape;
 import java.awt.geom.Path2D;
-import java.awt.geom.Point2D;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
@@ -51,10 +51,12 @@ public class Conveyor extends Entity {
 	private volatile boolean ready;
 	private TimeKeeper timeKeeper = TimeKeeper.getInstance();
 
-	private Point2D labelPositon;
+	private Point labelPositon;
 	private int[] pathCoordonates;
+	private Shape shape;
+	private Shape anchor;
 
-	public Conveyor(String name, long travelTime, int capacity, Point2D labelPositon, int... xy) {
+	public Conveyor(String name, long travelTime, int capacity, Point labelPositon, int... xy) {
 		super(name);
 		this.travelTime = travelTime;
 		this.capacity = capacity;
@@ -253,7 +255,16 @@ public class Conveyor extends Entity {
 			tote(g, toteOnBelt.loadUnit(), totePosition[0], totePosition[1]);
 		}
 
-		return beltStroke.createStrokedShape(beltPath);
+		shape = beltStroke.createStrokedShape(beltPath);
+		return shape;
+	}
+
+	public void drawAnchors(Graphics2D g) {
+		for (int i = 0; i < pathCoordonates.length / 2; i++) {
+			g.setColor(Color.RED);
+//			Rectangle2D anchor = new Rectangle2D(pathCoordonates[i * 2] - 5, pathCoordonates[i * 2 + 1] - 5, 10, 10);
+			g.drawRoundRect(pathCoordonates[i * 2] - 5, pathCoordonates[i * 2 + 1] - 5, 10, 10, 7, 7);
+		}
 	}
 
 	// toPath and trimEnds are both used for drawing the conveyor and points so they

@@ -233,8 +233,22 @@ public class SimWindow extends JPanel {
 		for (Entity entity : sim.getEntities()) {
 			if (entity instanceof Conveyor conveyor) {
 				conveyorShapes.put(conveyor.getName(), conveyor.draw(g));
+				if (timeKeeper.isPaused()) {
+					conveyor.drawAnchors(g);
+				}
 			} else {
 				pointShapes.put(entity.getName(), ((ServerPoint) entity).draw(g));
+			}
+		}
+
+		if (timeKeeper.isPaused()) {
+			for (Entity entity : sim.getEntities()) {
+				if (entity instanceof Conveyor conveyor) {
+					conveyorShapes.put(conveyor.getName(), conveyor.draw(g));
+					conveyor.drawAnchors(g);
+				} else {
+					break;
+				}
 			}
 		}
 
