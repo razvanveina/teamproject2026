@@ -11,7 +11,6 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import jakarta.transaction.Transactional;
 import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
 import ro.demo.usersbackend.entity.Article;
 import ro.demo.usersbackend.entity.ArticlePackagingUnitType;
@@ -28,7 +27,6 @@ public class DemoTestDataCreator implements CommandLineRunner {
 	private EntityManager entityManager;
 
 	@Override
-	@Transactional
 	public void run(String... args) {
 		new WithSessionAndTransaction<Void>() {
 			@Override

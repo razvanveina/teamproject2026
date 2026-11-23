@@ -16,8 +16,12 @@ public class DecisionPoint extends ServerPoint {
 	private JMSConsumer consumer;
 	private TimeKeeper timeKeeper = TimeKeeper.getInstance();
 
-	public DecisionPoint(String name) {
-		super(name);
+	public DecisionPoint(String name, int x, int y) {
+		super(name, x, y);
+	}
+
+	public DecisionPoint(String name, int x, int y, boolean labelBelow) {
+		super(name, x, y, labelBelow);
 	}
 
 	@Override
@@ -41,8 +45,7 @@ public class DecisionPoint extends ServerPoint {
 			if (message instanceof TextMessage text) {
 				String reply = text.getText().trim();
 				decision = getTarget().get(toIndex(reply));
-				log.info(
-						name + ": " + loadUnit.barcode() + " reply " + reply + ", goes to " + decision.getName());
+				log.info(name + ": " + loadUnit.barcode() + " reply " + reply + ", goes to " + decision.getName());
 			} else if (timeKeeper.currentSimulationTime() - askedAt >= Constants.DECISION_TIMEOUT) {
 				decision = getTarget().get(0);
 				log.info(name + ": " + loadUnit.barcode() + " no reply, goes to " + decision.getName());

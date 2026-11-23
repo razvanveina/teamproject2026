@@ -7,8 +7,12 @@ public class InfoPoint extends ServerPoint {
 	private long arrivedAt;
 	private TimeKeeper timeKeeper = TimeKeeper.getInstance();
 
-	public InfoPoint(String name) {
-		super(name);
+	public InfoPoint(String name, int x, int y) {
+		super(name, x, y);
+	}
+
+	public InfoPoint(String name, int x, int y, boolean labelBelow) {
+		super(name, x, y, labelBelow);
 	}
 
 	@Override

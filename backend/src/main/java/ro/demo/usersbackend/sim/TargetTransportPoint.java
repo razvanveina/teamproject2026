@@ -7,8 +7,12 @@ public class TargetTransportPoint extends ServerPoint {
 
 	private JMSConsumer consumer;
 
-	public TargetTransportPoint(String name) {
-		super(name);
+	public TargetTransportPoint(String name, int x, int y) {
+		super(name, x, y);
+	}
+
+	public TargetTransportPoint(String name, int x, int y, boolean labelBelow) {
+		super(name, x, y, labelBelow);
 	}
 
 	@Override

@@ -1,5 +1,10 @@
 package ro.demo.usersbackend.sim;
 
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.Shape;
+import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,6 +14,7 @@ import org.apache.logging.log4j.Logger;
 
 import jakarta.jms.JMSContext;
 import jakarta.jms.Queue;
+import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.messaging.Broker;
 import ro.demo.usersbackend.messaging.MfsMessages;
 import ro.demo.usersbackend.messaging.MfsMessages.Arrived;
@@ -23,8 +29,21 @@ public abstract class ServerPoint extends Entity {
 	private Queue outQueue;
 	private TimeKeeper timeKeeper = TimeKeeper.getInstance();
 
-	public ServerPoint(String name) {
+	private boolean labelBelow;
+	private int x, y;
+
+	public ServerPoint(String name, int x, int y) {
 		super(name);
+		this.x = x;
+		this.y = y;
+		labelBelow = false;
+	}
+
+	public ServerPoint(String name, int x, int y, boolean labelBelow) {
+		super(name);
+		this.x = x;
+		this.y = y;
+		this.labelBelow = labelBelow;
 	}
 
 	public void put(String message) {
@@ -119,4 +138,31 @@ public abstract class ServerPoint extends Entity {
 	protected void announceLU(SimLoadUnit arrivedLoadUnit) {
 		put(MfsMessages.toJson(new Arrived("ARRIVED", name, arrivedLoadUnit.barcode())));
 	}
+
+	public Shape draw(Graphics2D g) {
+		int h = SimWindow.POINT / 2;
+		double boxLeft = x - SimWindow.POINT / 2.0;
+		double boxTop = y - SimWindow.POINT / 2.0;
+		double borderWidth = (SimWindow.CONV - (SimWindow.CONV - 5)) / 2.0;
+		Rectangle2D pointBox = new Rectangle2D.Double(boxLeft, boxTop, SimWindow.POINT, SimWindow.POINT);
+		g.setColor(Color.WHITE);
+		g.fill(pointBox);
+		g.setColor(Color.BLACK);
+		g.setStroke(new BasicStroke((float) borderWidth));
+		g.draw(new Rectangle2D.Double(boxLeft + borderWidth / 2, boxTop + borderWidth / 2,
+				SimWindow.POINT - borderWidth, SimWindow.POINT - borderWidth));
+		g.setFont(SimWindow.NAME);
+		int nameWidth = g.getFontMetrics().stringWidth(name);
+		if (name.equals("EMPTY") || name.equals("DP3") || name.equals(Constants.IP3)) {
+			g.drawString(name, x - h - 4 - nameWidth, y + 4);
+		} else if (labelBelow) {
+			g.drawString(name, x - nameWidth / 2, y + h + 13);
+		} else {
+			g.drawString(name, x - nameWidth / 2, y - h - 4);
+		}
+		tote(g, loadUnit, x, y);
+
+		return pointBox;
+	}
+
 }

@@ -10,8 +10,12 @@ public class StationPoint extends ServerPoint {
 	private boolean released;
 	private JMSConsumer consumer;
 
-	public StationPoint(String name) {
-		super(name);
+	public StationPoint(String name, int x, int y) {
+		super(name, x, y);
+	}
+
+	public StationPoint(String name, int x, int y, boolean labelBelow) {
+		super(name, x, y, labelBelow);
 	}
 
 	@Override

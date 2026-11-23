@@ -18,8 +18,13 @@ public class SourceTransportPoint extends ServerPoint {
 	// coada din care punctul isi ia GET-urile, fiecare intrare are coada ei
 	private final String requestQueue;
 
-	public SourceTransportPoint(String name, String requestQueue) {
-		super(name);
+	public SourceTransportPoint(String name, String requestQueue, int x, int y) {
+		super(name, x, y);
+		this.requestQueue = requestQueue;
+	}
+
+	public SourceTransportPoint(String name, String requestQueue, int x, int y, boolean labelBelow) {
+		super(name, x, y, labelBelow);
 		this.requestQueue = requestQueue;
 	}
 
