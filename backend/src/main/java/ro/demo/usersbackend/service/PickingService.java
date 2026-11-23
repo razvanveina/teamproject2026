@@ -59,40 +59,54 @@ public class PickingService {
 	// ordinea: STARTED apoi ACTIVE, cel mai vechi primul; doar manuale si cu toata
 	// marfa in picking
 	public PickingOrderResponse findNextOrder(String user) {
-		return new WithSessionAndTransaction<PickingOrderResponse>() {
-			@Override
-			protected void executeBusinessLogic(Session session) {
-				List<RetrievalOrder> orders = findReady(session, user);
-				if (orders.isEmpty()) {
-					setReturnValue(null);
-					return;
-				}
-				for (RetrievalOrder order : orders) {
-					if (user.equals(order.getPickedBy())) {
-						setReturnValue(toResponse(order));
+		try {
+			return new WithSessionAndTransaction<PickingOrderResponse>() {
+				@Override
+				protected void executeBusinessLogic(Session session) {
+					List<RetrievalOrder> orders = findReady(session, user);
+					if (orders.isEmpty()) {
+						setReturnValue(null);
 						return;
 					}
+					for (RetrievalOrder order : orders) {
+						if (user.equals(order.getPickedBy())) {
+							setReturnValue(toResponse(order));
+							return;
+						}
+					}
+					RetrievalOrder order = orders.get(0);
+					order.setPickedBy(user);
+					log.info("Picking: order {} is now taken by {}", order.getOrderId(), user);
+					setReturnValue(toResponse(order));
 				}
-				RetrievalOrder order = orders.get(0);
-				order.setPickedBy(user);
-				log.info("Picking: order {} is now taken by {}", order.getOrderId(), user);
-				setReturnValue(toResponse(order));
+			}.run();
+		} catch (RuntimeException e) {
+			if (e.getCause() instanceof ResponseStatusException) {
+				throw (ResponseStatusException) e.getCause();
 			}
-		}.run();
+			throw e;
+		}
 	}
 
 	// toate orderele gata de picking, pentru lista din butonul Select order
 	public List<PickingOrderResponse> findReadyOrders(String user) {
-		return new WithSessionAndTransaction<List<PickingOrderResponse>>() {
-			@Override
-			protected void executeBusinessLogic(Session session) {
-				List<PickingOrderResponse> ready = new ArrayList<>();
-				for (RetrievalOrder order : findReady(session, user)) {
-					ready.add(toResponse(order));
+		try {
+			return new WithSessionAndTransaction<List<PickingOrderResponse>>() {
+				@Override
+				protected void executeBusinessLogic(Session session) {
+					List<PickingOrderResponse> ready = new ArrayList<>();
+					for (RetrievalOrder order : findReady(session, user)) {
+						ready.add(toResponse(order));
+					}
+					setReturnValue(ready);
 				}
-				setReturnValue(ready);
+			}.run();
+		} catch (RuntimeException e) {
+			if (e.getCause() instanceof ResponseStatusException) {
+				throw (ResponseStatusException) e.getCause();
 			}
-		}.run();
+			throw e;
+		}
 	}
 
 	// orderele gata de picking, fara cele luate de alt user
@@ -115,30 +129,44 @@ public class PickingService {
 	// userul a ales un order din Select order: devine al lui
 	// orderele lui neincepute se elibereaza, ca sa le poata lua altcineva
 	public void takeOrder(String orderId, String user) {
-		new WithSessionAndTransaction<Void>() {
-			@Override
-			protected void executeBusinessLogic(Session session) {
-				RetrievalOrder order = findOrder(session, orderId);
-				if (order.getPickedBy() != null && !order.getPickedBy().equals(user)) {
-					throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-							"Order " + orderId + " is already taken by " + order.getPickedBy());
+		try {
+			new WithSessionAndTransaction<Void>() {
+				@Override
+				protected void executeBusinessLogic(Session session) {
+					RetrievalOrder order = findOrder(session, orderId);
+					if (order.getPickedBy() != null && !order.getPickedBy().equals(user)) {
+						throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+								"Order " + orderId + " is already taken by " + order.getPickedBy());
+					}
+					releaseOrders(session, user);
+					order.setPickedBy(user);
+					log.info("Picking: order {} is now taken by {}", orderId, user);
 				}
-				releaseOrders(session, user);
-				order.setPickedBy(user);
-				log.info("Picking: order {} is now taken by {}", orderId, user);
+			}.run();
+		} catch (RuntimeException e) {
+			if (e.getCause() instanceof ResponseStatusException) {
+				throw (ResponseStatusException) e.getCause();
 			}
-		}.run();
+			throw e;
+		}
 	}
 
 	// elibereaza orderele userului la care n-a scanat inca cutia (le-a vazut doar
 	// pe ecran)
 	public void releaseOrders(String user) {
-		new WithSessionAndTransaction<Void>() {
-			@Override
-			protected void executeBusinessLogic(Session session) {
-				releaseOrders(session, user);
+		try {
+			new WithSessionAndTransaction<Void>() {
+				@Override
+				protected void executeBusinessLogic(Session session) {
+					releaseOrders(session, user);
+				}
+			}.run();
+		} catch (RuntimeException e) {
+			if (e.getCause() instanceof ResponseStatusException) {
+				throw (ResponseStatusException) e.getCause();
 			}
-		}.run();
+			throw e;
+		}
 	}
 
 	private void releaseOrders(Session session, String user) {
@@ -163,44 +191,58 @@ public class PickingService {
 	}
 
 	public PickingOrderResponse findOrderDetails(String orderId) {
-		return new WithSessionAndTransaction<PickingOrderResponse>() {
-			@Override
-			protected void executeBusinessLogic(Session session) {
-				setReturnValue(toResponse(findOrder(session, orderId)));
+		try {
+			return new WithSessionAndTransaction<PickingOrderResponse>() {
+				@Override
+				protected void executeBusinessLogic(Session session) {
+					setReturnValue(toResponse(findOrder(session, orderId)));
+				}
+			}.run();
+		} catch (RuntimeException e) {
+			if (e.getCause() instanceof ResponseStatusException) {
+				throw (ResponseStatusException) e.getCause();
 			}
-		}.run();
+			throw e;
+		}
 	}
 
 	// muncitorul a scanat cutia: o cream ca load unit CARTON in zona PICKING
 	// tot acum orderul devine al lui (pickedBy), daca nu l-a luat deja altcineva
 	public String createBox(String orderId, String barcode, String user) {
-		return new WithSessionAndTransaction<String>() {
-			@Override
-			protected void executeBusinessLogic(Session session) {
-				LoadUnitRepository loadUnits = new LoadUnitRepository(session);
-				if (loadUnits.findByBarcode(barcode).isPresent()) {
-					throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Box " + barcode + " already exists");
-				}
-				RetrievalOrder order = findOrder(session, orderId);
-				if (order.getPickedBy() != null && !order.getPickedBy().equals(user)) {
-					throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-							"Order " + orderId + " is already taken by " + order.getPickedBy());
-				}
-				order.setPickedBy(user);
+		try {
+			return new WithSessionAndTransaction<String>() {
+				@Override
+				protected void executeBusinessLogic(Session session) {
+					LoadUnitRepository loadUnits = new LoadUnitRepository(session);
+					if (loadUnits.findByBarcode(barcode).isPresent()) {
+						throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Box " + barcode + " already exists");
+					}
+					RetrievalOrder order = findOrder(session, orderId);
+					if (order.getPickedBy() != null && !order.getPickedBy().equals(user)) {
+						throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+								"Order " + orderId + " is already taken by " + order.getPickedBy());
+					}
+					order.setPickedBy(user);
 
-				LoadUnit box = new LoadUnit();
-				box.setBarcode(barcode);
-				box.setType(LoadUnitType.CARTON);
-				Location picking = new LocationRepository(session).findByName(Constants.PICKING)
-						.orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-								"Location " + Constants.PICKING + " is missing"));
-				box.setLocation(picking);
-				loadUnits.save(box);
-				order.setStatus(RetrievalOrderStatus.STARTED);
-				log.info("Picking: box {} created for order {}", barcode, orderId);
-				setReturnValue("Box " + barcode + " ready");
+					LoadUnit box = new LoadUnit();
+					box.setBarcode(barcode);
+					box.setType(LoadUnitType.CARTON);
+					Location picking = new LocationRepository(session).findByName(Constants.PICKING)
+							.orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+									"Location " + Constants.PICKING + " is missing"));
+					box.setLocation(picking);
+					loadUnits.save(box);
+					order.setStatus(RetrievalOrderStatus.STARTED);
+					log.info("Picking: box {} created for order {}", barcode, orderId);
+					setReturnValue("Box " + barcode + " ready");
+				}
+			}.run();
+		} catch (RuntimeException e) {
+			if (e.getCause() instanceof ResponseStatusException) {
+				throw (ResponseStatusException) e.getCause();
 			}
-		}.run();
+			throw e;
+		}
 	}
 
 	// muncitorul a apasat confirm: stock itemul din pasul de pe ecran intra in
@@ -209,12 +251,19 @@ public class PickingService {
 	// linia devine PICKED cand e toata in cutie, altfel STARTED (are doar o parte
 	// in cutie)
 	public void moveItemToBox(Long stockItemId, String boxBarcode) {
-		new WithSessionAndTransaction<Void>() {
-			@Override
-			protected void executeBusinessLogic(Session session) {
-				moveItemToBox(session, stockItemId, boxBarcode);
+		try {
+			new WithSessionAndTransaction<Void>() {
+				@Override
+				protected void executeBusinessLogic(Session session) {
+					moveItemToBox(session, stockItemId, boxBarcode);
+				}
+			}.run();
+		} catch (RuntimeException e) {
+			if (e.getCause() instanceof ResponseStatusException) {
+				throw (ResponseStatusException) e.getCause();
 			}
-		}.run();
+			throw e;
+		}
 	}
 
 	private void moveItemToBox(Session session, Long stockItemId, String boxBarcode) {
@@ -243,38 +292,45 @@ public class PickingService {
 	// linia ramane deschisa, iar orderul trece pe NEW ca rezervarea sa caute doar
 	// partea lipsa
 	public void reportError(Long stockItemId, String boxBarcode, String reason, int found) {
-		new WithSessionAndTransaction<Void>() {
-			@Override
-			protected void executeBusinessLogic(Session session) {
-				StockItem item = findStockItem(session, stockItemId);
-				if (found < 0 || found >= item.getQuantity()) {
-					throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-							"Found quantity must be less than " + item.getQuantity());
-				}
-				LoadUnit tote = item.getLoadUnit();
-				RetrievalOrder order = item.getReservation().getRetrievalOrderLine().getOrder();
-				saveStockAdjustment(session, item, found, reason);
-				log.warn("Picking: error {} for stock item {} ({}) in {}: found {} of {}", reason, stockItemId,
-						item.getArticlePackagingUnitType().getArticle().getDescription(), tote.getBarcode(), found,
-						item.getQuantity());
+		try {
+			new WithSessionAndTransaction<Void>() {
+				@Override
+				protected void executeBusinessLogic(Session session) {
+					StockItem item = findStockItem(session, stockItemId);
+					if (found < 0 || found >= item.getQuantity()) {
+						throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+								"Found quantity must be less than " + item.getQuantity());
+					}
+					LoadUnit tote = item.getLoadUnit();
+					RetrievalOrder order = item.getReservation().getRetrievalOrderLine().getOrder();
+					saveStockAdjustment(session, item, found, reason);
+					log.warn("Picking: error {} for stock item {} ({}) in {}: found {} of {}", reason, stockItemId,
+							item.getArticlePackagingUnitType().getArticle().getDescription(), tote.getBarcode(), found,
+							item.getQuantity());
 
-				if (found > 0) {
-					item.setQuantity(found);
-					moveItemToBox(session, stockItemId, boxBarcode);
-				} else {
-					Reservation reservation = item.getReservation();
-					reservation.getRetrievalOrderLine().getReservations().remove(reservation);
-					item.setReservation(null);
-					new ReservationRepository(session).delete(reservation);
-					new StockItemRepository(session).delete(item);
-					log.info("Picking: stock item {} deleted, nothing was found", stockItemId);
-					sendToteIfEmpty(session, tote);
-				}
+					if (found > 0) {
+						item.setQuantity(found);
+						moveItemToBox(session, stockItemId, boxBarcode);
+					} else {
+						Reservation reservation = item.getReservation();
+						reservation.getRetrievalOrderLine().getReservations().remove(reservation);
+						item.setReservation(null);
+						new ReservationRepository(session).delete(reservation);
+						new StockItemRepository(session).delete(item);
+						log.info("Picking: stock item {} deleted, nothing was found", stockItemId);
+						sendToteIfEmpty(session, tote);
+					}
 
-				order.setStatus(RetrievalOrderStatus.NEW);
-				log.info("Picking: order {} is NEW again, the missing part will be reserved", order.getOrderId());
+					order.setStatus(RetrievalOrderStatus.NEW);
+					log.info("Picking: order {} is NEW again, the missing part will be reserved", order.getOrderId());
+				}
+			}.run();
+		} catch (RuntimeException e) {
+			if (e.getCause() instanceof ResponseStatusException) {
+				throw (ResponseStatusException) e.getCause();
 			}
-		}.run();
+			throw e;
+		}
 	}
 
 	// aceeasi inregistrare ca la inventar: o verificare pe tote si diferenta gasita
@@ -348,25 +404,32 @@ public class PickingService {
 	// muncitorul a scanat iar cutia: daca toate liniile sunt gata, cutia merge la
 	// OUT si comanda devine PICKED
 	public String closeBox(String orderId, String boxBarcode) {
-		return new WithSessionAndTransaction<String>() {
-			@Override
-			protected void executeBusinessLogic(Session session) {
-				long open = new RetrievalOrderLineRepository(session).countByOrderOrderIdAndStatusNot(orderId,
-						RetrievalOrderLineStatus.PICKED);
-				if (open > 0) {
-					throw new ResponseStatusException(HttpStatus.BAD_REQUEST, open + " lines are not finished yet");
+		try {
+			return new WithSessionAndTransaction<String>() {
+				@Override
+				protected void executeBusinessLogic(Session session) {
+					long open = new RetrievalOrderLineRepository(session).countByOrderOrderIdAndStatusNot(orderId,
+							RetrievalOrderLineStatus.PICKED);
+					if (open > 0) {
+						throw new ResponseStatusException(HttpStatus.BAD_REQUEST, open + " lines are not finished yet");
+					}
+
+					Location out = new LocationRepository(session).findByName(Constants.OUT)
+							.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+									"Cannot find location " + Constants.OUT));
+					transportOrderService.createTransportOrder(session, findBox(session, boxBarcode), out);
+
+					findOrder(session, orderId).setStatus(RetrievalOrderStatus.PICKED);
+					log.info("Picking: box {} closed, transport order to {}", boxBarcode, Constants.OUT);
+					setReturnValue("Box " + boxBarcode + " goes to " + Constants.OUT);
 				}
-
-				Location out = new LocationRepository(session).findByName(Constants.OUT)
-						.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
-								"Cannot find location " + Constants.OUT));
-				transportOrderService.createTransportOrder(session, findBox(session, boxBarcode), out);
-
-				findOrder(session, orderId).setStatus(RetrievalOrderStatus.PICKED);
-				log.info("Picking: box {} closed, transport order to {}", boxBarcode, Constants.OUT);
-				setReturnValue("Box " + boxBarcode + " goes to " + Constants.OUT);
+			}.run();
+		} catch (RuntimeException e) {
+			if (e.getCause() instanceof ResponseStatusException) {
+				throw (ResponseStatusException) e.getCause();
 			}
-		}.run();
+			throw e;
+		}
 	}
 
 	// toate liniile au destule bucati rezervate in locatii PICK (getTotalQuantity =
