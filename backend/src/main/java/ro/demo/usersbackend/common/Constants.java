@@ -80,6 +80,7 @@ public final class Constants {
 	public static final long INFO_POINT_DWELL = 1000; // cat sta un tote pe un info point
 	public static final long TPS1_ACK_DELAY = 2000; // TPS1 confirma GET dupa asta
 	public static final long ACK_GET_WAIT = 1000; // cat asteapta sv pentru urmatorul reply
+	public static final long GATE_DWELL = 2000; // cat sta un carton pe gate inainte sa iasa din sim
 
 	// load unit types din sim
 	public static final String TOTE_TYPE = "TOTE";
