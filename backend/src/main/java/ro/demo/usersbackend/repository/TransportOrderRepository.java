@@ -26,10 +26,8 @@ public class TransportOrderRepository extends BaseRepository<TransportOrder, Lon
 
 	public List<TransportOrder> findByStatusAndAssignedToOrderByIdAsc(String assignedTo,
 			Collection<TransportOrderStatus> statuses) {
-
 		return session
-				.createNamedQuery(TransportOrder.FIND_BY_STATUS_AND_ASSIGNED_TO_IS_NULL_ODERED_BY_ID,
-						TransportOrder.class)
+				.createNamedQuery(TransportOrder.FIND_BY_STATUS_AND_ASSIGNED_TO_ODERED_BY_ID, TransportOrder.class)
 				.setParameter("assignedTo", assignedTo).setParameterList("statuses", statuses).getResultList();
 	}
 
