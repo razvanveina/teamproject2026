@@ -25,6 +25,7 @@ import ro.demo.usersbackend.entity.RetrievalOrder;
 import ro.demo.usersbackend.entity.RetrievalOrderLine;
 import ro.demo.usersbackend.entity.RetrievalOrderLineStatus;
 import ro.demo.usersbackend.entity.RetrievalOrderStatus;
+import ro.demo.usersbackend.repository.RetrievalOrderRepository;
 import ro.demo.usersbackend.server.process.AbstractProcess;
 
 public class HostRetrievalProcess extends AbstractProcess {
@@ -87,10 +88,9 @@ public class HostRetrievalProcess extends AbstractProcess {
 
 				@Override
 				protected void executeBusinessLogic(Session session) {
-					Long existing = session.createNamedQuery("RetrievalOrder.findByOrderId", Long.class)
-							.setParameter("id", orderId).getSingleResult();
-					if (existing > 0) {
+					if (new RetrievalOrderRepository(session).findByOrderId(orderId).isPresent()) {
 						setReturnValue(false);
+						return;
 					}
 
 					RetrievalOrder order = new RetrievalOrder();

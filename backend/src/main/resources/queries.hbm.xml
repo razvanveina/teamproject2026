@@ -87,7 +87,7 @@
 	        join u.location l
 	        join s.articlePackagingUnitType p
 	        where p.article = :article and s.reservation is null and type(l) = StorageLocation
-	        order by case when l.name like 'PICK%' then 0 else 1 end, s.id
+	        order by case when l.name like :pick then 0 else 1 end, s.id
 	    ]]>
 	</query>
 
