@@ -9,7 +9,6 @@ import org.apache.logging.log4j.Logger;
 import org.hibernate.Session;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import ro.demo.usersbackend.common.Constants;
@@ -36,19 +35,11 @@ import ro.demo.usersbackend.server.picking.StationChooser;
 
 // statia de picking din simulator: tote-ul sursa sta pe PTTS1, tote-ul tinta pe PTTT1
 @Service
-@Transactional
 public class SimPickingService {
 	public static final Logger log = LogManager.getLogger("application");
 
-	private final LoadUnitRepository loadUnitRepository;
-	private final LocationRepository locationRepository;
-	private final TransportOrderRepository transportOrderRepository;
-
-	public SimPickingService(LoadUnitRepository loadUnitRepository, LocationRepository locationRepository,
-			TransportOrderRepository transportOrderRepository) {
-		this.loadUnitRepository = loadUnitRepository;
-		this.locationRepository = locationRepository;
-		this.transportOrderRepository = transportOrderRepository;
+	public SimPickingService() {
+		super();
 	}
 
 	public int stationCount() {
@@ -56,24 +47,28 @@ public class SimPickingService {
 	}
 
 	// ce e acum in statie, sus si jos, si orderul pe care lucreaza statia
-	@Transactional(readOnly = true)
 	public SimStationResponse findStation(int station) {
-		LoadUnit source = findToteAt(stationPoint(Constants.PTTS_POINTS, station));
-		LoadUnit target = findToteAt(stationPoint(Constants.PTTT_POINTS, station));
+		return new WithSessionAndTransaction<SimStationResponse>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				LoadUnit source = findToteAt(session, stationPoint(Constants.PTTS_POINTS, station));
+				LoadUnit target = findToteAt(session, stationPoint(Constants.PTTT_POINTS, station));
 
-		String orderId = null;
-		if (source != null && target != null) {
-			RetrievalOrder order = chooseOrder(source, target);
-			if (order != null) {
-				orderId = order.getOrderId();
+				String orderId = null;
+				if (source != null && target != null) {
+					RetrievalOrder order = chooseOrder(source, target);
+					if (order != null) {
+						orderId = order.getOrderId();
+					}
+				}
+				setReturnValue(new SimStationResponse(toResponse(source), toResponse(target), orderId));
 			}
-		}
-		return new SimStationResponse(toResponse(source), toResponse(target), orderId);
+		}.run();
 	}
 
 	// tote-ul care are locatia egala cu punctul; null daca nu e niciunul
-	private LoadUnit findToteAt(String point) {
-		List<LoadUnit> totes = loadUnitRepository.findByLocationName(point);
+	private LoadUnit findToteAt(Session session, String point) {
+		List<LoadUnit> totes = new LoadUnitRepository(session).findByLocationName(point);
 		if (totes.isEmpty()) {
 			return null;
 		}
@@ -107,43 +102,53 @@ public class SimPickingService {
 	// sursa primeste un TO dupa ce a ramas in ea (routeSource), apoi release
 	// tinta primeste release (spre OUT) doar cand orderul e complet
 	public String confirm(int station, String sourceBarcode, String targetBarcode) {
-		String ptts = stationPoint(Constants.PTTS_POINTS, station);
-		String pttt = stationPoint(Constants.PTTT_POINTS, station);
-		LoadUnit source = findToteAt(sourceBarcode, ptts);
-		LoadUnit target = findToteAt(targetBarcode, pttt);
+		return new WithSessionAndTransaction<String>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				String ptts = stationPoint(Constants.PTTS_POINTS, station);
+				String pttt = stationPoint(Constants.PTTT_POINTS, station);
+				LoadUnit source = findToteAt(session, sourceBarcode, ptts);
+				LoadUnit target = findToteAt(session, targetBarcode, pttt);
 
-		RetrievalOrder order = chooseOrder(source, target);
-		if (order == null) {
-			routeSource(source, ptts);
-			release(ptts);
-			return "Tote " + sourceBarcode + " has nothing to pick here, it goes on";
-		}
+				RetrievalOrder order = chooseOrder(source, target);
+				if (order == null) {
+					routeSource(session, source, ptts);
+					release(ptts);
+					setReturnValue("Tote " + sourceBarcode + " has nothing to pick here, it goes on");
+					return;
+				}
 
-		int moved = 0;
-		for (StockItem item : source.getStockItems()) {
-			if (item.getReservation() != null && item.getReservation().getRetrievalOrderLine().getOrder().getOrderId()
-					.equals(order.getOrderId())) {
-				item.setLoadUnit(target);
-				moved++;
-				log.info("Sim picking: stock item {} moved from {} to {} for order {}", item.getId(), sourceBarcode,
-						targetBarcode, order.getOrderId());
+				int moved = 0;
+				for (StockItem item : source.getStockItems()) {
+					if (item.getReservation() != null && item.getReservation().getRetrievalOrderLine().getOrder()
+							.getOrderId().equals(order.getOrderId())) {
+						item.setLoadUnit(target);
+						moved++;
+						log.info("Sim picking: stock item {} moved from {} to {} for order {}", item.getId(),
+								sourceBarcode, targetBarcode, order.getOrderId());
+					}
+				}
+
+				if (moved == 0) {
+					routeSource(session, source, ptts);
+					release(ptts);
+					setReturnValue(
+							"Tote " + sourceBarcode + " has nothing for order " + order.getOrderId() + ", it goes on");
+					return;
+				}
+
+				updateStatus(order, target);
+				routeSource(session, source, ptts);
+				release(ptts);
+				if (order.getStatus() == RetrievalOrderStatus.PICKED) {
+					release(pttt);
+					setReturnValue("Order " + order.getOrderId() + " is complete, tote " + targetBarcode + " goes to "
+							+ Constants.OUT);
+					return;
+				}
+				setReturnValue("Moved to " + targetBarcode + ", the order " + order.getOrderId() + " needs more totes");
 			}
-		}
-
-		if (moved == 0) {
-			routeSource(source, ptts);
-			release(ptts);
-			return "Tote " + sourceBarcode + " has nothing for order " + order.getOrderId() + ", it goes on";
-		}
-
-		updateStatus(order, target);
-		routeSource(source, ptts);
-		release(ptts);
-		if (order.getStatus() == RetrievalOrderStatus.PICKED) {
-			release(pttt);
-			return "Order " + order.getOrderId() + " is complete, tote " + targetBarcode + " goes to " + Constants.OUT;
-		}
-		return "Moved to " + targetBarcode + ", the order " + order.getOrderId() + " needs more totes";
+		}.run();
 	}
 
 	private String stationPoint(List<String> points, int station) {
@@ -160,7 +165,7 @@ public class SimPickingService {
 	// in picking
 	// e creat direct ACTIVE: tote-ul e deja pe banda, il inchide PointHandler cand
 	// ajunge
-	private void routeSource(LoadUnit source, String from) {
+	private void routeSource(Session session, LoadUnit source, String from) {
 		boolean empty = true;
 		Long automaticOrder = null;
 		// source.getStockItems() inca vede ce tocmai am mutat in tinta, deci numaram
@@ -181,9 +186,9 @@ public class SimPickingService {
 		String barcode = source.getBarcode();
 		String next;
 		if (empty) {
-			next = chooseStation(StationChooser::freeTargetStation);
+			next = chooseStation(session, StationChooser::freeTargetStation);
 		} else if (orderId != null) {
-			next = chooseStation(session -> StationChooser.sourceStationFor(session, orderId, barcode));
+			next = chooseStation(session, s -> StationChooser.sourceStationFor(s, orderId, barcode));
 		} else {
 			next = Constants.TPT1;
 		}
@@ -192,27 +197,22 @@ public class SimPickingService {
 			log.info("Sim picking: empty tote {} has no free target zone, it goes on without a TO", barcode);
 			return;
 		}
-		transportOrderRepository
-				.save(new TransportOrder(location(from), location(next), TransportOrderStatus.ACTIVE, source));
+		new TransportOrderRepository(session).insert(new TransportOrder(location(session, from),
+				location(session, next), TransportOrderStatus.ACTIVE, source));
 		log.info("Sim picking: tote {} goes from {} to {}", barcode, from, next);
 	}
 
-	private String chooseStation(Function<Session, String> choice) {
+	private String chooseStation(Session session, Function<Session, String> choice) {
 		try {
-			return new WithSessionAndTransaction<String>() {
-				@Override
-				protected void executeBusinessLogic(Session session) {
-					setReturnValue(choice.apply(session));
-				}
-			}.run();
+			return choice.apply(session);
 		} catch (RuntimeException e) {
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
 					"Cannot choose a picking zone: " + e.getMessage());
 		}
 	}
 
-	private Location location(String name) {
-		return locationRepository.findByName(name)
+	private Location location(Session session, String name) {
+		return new LocationRepository(session).findByName(name)
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
 						"Location " + name + " is missing"));
 	}
@@ -231,8 +231,8 @@ public class SimPickingService {
 	}
 
 	// tote-ul cu barcode-ul dat trebuie sa fie chiar in punctul asteptat
-	private LoadUnit findToteAt(String barcode, String point) {
-		LoadUnit tote = loadUnitRepository.findByBarcode(barcode)
+	private LoadUnit findToteAt(Session session, String barcode, String point) {
+		LoadUnit tote = new LoadUnitRepository(session).findByBarcode(barcode)
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot find tote " + barcode));
 		if (!tote.getLocation().getName().equals(point)) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
