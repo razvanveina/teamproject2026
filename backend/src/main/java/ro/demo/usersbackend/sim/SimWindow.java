@@ -8,6 +8,7 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
+import java.awt.GridLayout;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
@@ -18,14 +19,24 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.NoninvertibleTransformException;
+import java.awt.geom.Point2D;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
@@ -110,14 +121,14 @@ public class SimWindow extends JPanel {
 			public void mousePressed(MouseEvent e) {
 				last = e.getPoint();
 				if (e.isPopupTrigger()) {
-//					showAddLoadUnitMenu(e);
+					showAddLoadUnitMenu(e);
 				}
 			}
 
 			@Override
 			public void mouseReleased(MouseEvent e) {
 				if (e.isPopupTrigger()) {
-//					showAddLoadUnitMenu(e);
+					showAddLoadUnitMenu(e);
 				}
 			}
 
@@ -141,59 +152,59 @@ public class SimWindow extends JPanel {
 		addMouseWheelListener(mouse);
 	}
 
-//	private void showAddLoadUnitMenu(MouseEvent e) {
-//		entityAt(e.getPoint()).ifPresent(entityName -> {
-//			JMenuItem addLoadUnit = new JMenuItem(Constants.ADD_LOAD_UNIT);
-//			addLoadUnit.addActionListener(a -> showAddLoadUnitDialog(entityName));
-//
-//			JPopupMenu menu = new JPopupMenu();
-//			menu.add(addLoadUnit);
-//			menu.show(this, e.getX(), e.getY());
-//		});
-//	}
-//
-//	private Optional<String> entityAt(Point screenPoint) {
-//		Point2D drawingPoint;
-//		try {
-//			drawingPoint = drawingTransform.inverseTransform(screenPoint, null);
-//		} catch (NoninvertibleTransformException e) {
-//			return Optional.empty();
-//		}
-//		return Stream.of(pointShapes, conveyorShapes).flatMap(shapes -> shapes.entrySet().stream())
-//				.filter(entry -> entry.getValue().contains(drawingPoint)).map(Map.Entry::getKey).findFirst();
-//	}
-//
-//	private void showAddLoadUnitDialog(String entityName) {
-//		JTextField barcodeField = new JTextField(12);
-//		JComboBox<String> typeBox = new JComboBox<>(new String[] { Constants.TOTE_TYPE, Constants.CARTON_TYPE });
-//
-//		JPanel form = new JPanel(new GridLayout(0, 2, 8, 8));
-//		form.add(new JLabel("Barcode"));
-//		form.add(barcodeField);
-//		form.add(new JLabel("Type"));
-//		form.add(typeBox);
-//
-//		int choice = JOptionPane.showConfirmDialog(this, form, entityName, JOptionPane.OK_CANCEL_OPTION,
-//				JOptionPane.PLAIN_MESSAGE);
-//		if (choice != JOptionPane.OK_OPTION) {
-//			return;
-//		}
-//
-//		String barcode = barcodeField.getText().trim();
-//		if (barcode.isEmpty()) {
-//			JOptionPane.showMessageDialog(this, "Barcode is required", Constants.ADD_LOAD_UNIT,
-//					JOptionPane.WARNING_MESSAGE);
-//			return;
-//		}
-//
-//		Entity entity = byName.get(entityName);
-//		boolean isCreated = entity.addLoadUnit(new SimLoadUnit(barcode, (String) typeBox.getSelectedItem()));
-//		if (!isCreated) {
-//			String occupiedPlace = entity instanceof Conveyor ? "First slot of " + entityName : entityName;
-//			JOptionPane.showMessageDialog(this, occupiedPlace + " is occupied, try again later",
-//					Constants.ADD_LOAD_UNIT, JOptionPane.WARNING_MESSAGE);
-//		}
-//	}
+	private void showAddLoadUnitMenu(MouseEvent e) {
+		entityAt(e.getPoint()).ifPresent(entityName -> {
+			JMenuItem addLoadUnit = new JMenuItem(Constants.ADD_LOAD_UNIT);
+			addLoadUnit.addActionListener(a -> showAddLoadUnitDialog(entityName));
+
+			JPopupMenu menu = new JPopupMenu();
+			menu.add(addLoadUnit);
+			menu.show(this, e.getX(), e.getY());
+		});
+	}
+
+	private Optional<String> entityAt(Point screenPoint) {
+		Point2D drawingPoint;
+		try {
+			drawingPoint = drawingTransform.inverseTransform(screenPoint, null);
+		} catch (NoninvertibleTransformException e) {
+			return Optional.empty();
+		}
+		return Stream.of(pointShapes, conveyorShapes).flatMap(shapes -> shapes.entrySet().stream())
+				.filter(entry -> entry.getValue().contains(drawingPoint)).map(Map.Entry::getKey).findFirst();
+	}
+
+	private void showAddLoadUnitDialog(String entityName) {
+		JTextField barcodeField = new JTextField(12);
+		JComboBox<String> typeBox = new JComboBox<>(new String[] { Constants.TOTE_TYPE, Constants.CARTON_TYPE });
+
+		JPanel form = new JPanel(new GridLayout(0, 2, 8, 8));
+		form.add(new JLabel("Barcode"));
+		form.add(barcodeField);
+		form.add(new JLabel("Type"));
+		form.add(typeBox);
+
+		int choice = JOptionPane.showConfirmDialog(this, form, entityName, JOptionPane.OK_CANCEL_OPTION,
+				JOptionPane.PLAIN_MESSAGE);
+		if (choice != JOptionPane.OK_OPTION) {
+			return;
+		}
+
+		String barcode = barcodeField.getText().trim();
+		if (barcode.isEmpty()) {
+			JOptionPane.showMessageDialog(this, "Barcode is required", Constants.ADD_LOAD_UNIT,
+					JOptionPane.WARNING_MESSAGE);
+			return;
+		}
+
+		Entity entity = byName.get(entityName);
+		boolean isCreated = entity.addLoadUnit(new SimLoadUnit(barcode, (String) typeBox.getSelectedItem()));
+		if (!isCreated) {
+			String occupiedPlace = entity instanceof Conveyor ? "First slot of " + entityName : entityName;
+			JOptionPane.showMessageDialog(this, occupiedPlace + " is occupied, try again later",
+					Constants.ADD_LOAD_UNIT, JOptionPane.WARNING_MESSAGE);
+		}
+	}
 
 	private void reset() {
 		zoom = 1;
