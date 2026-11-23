@@ -109,7 +109,9 @@ public class AutomaticRetrievalService extends AbstractProcess {
 			@Override
 			protected void executeBusinessLogic(Session session) {
 				List<Long> ids = new ArrayList<>();
-				for (String station : Constants.PTTS_POINTS) {
+				List<String> targets = new ArrayList<>(Constants.PTTS_POINTS);
+				targets.add(Constants.TPT1);
+				for (String station : targets) {
 					ids.addAll(session.createNamedQuery("TransportOrder.findIdsByStatusAndTargetName", Long.class)
 							.setParameter("status", TransportOrderStatus.NEW).setParameter("target", station)
 							.getResultList());

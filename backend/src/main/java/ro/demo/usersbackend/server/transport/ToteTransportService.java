@@ -66,14 +66,14 @@ public class ToteTransportService extends AbstractProcess {
 	// AutomaticRetrievalService pe coada lui TPS2
 	private void sendToConveyor(Session session, LoadUnit tote) {
 		Location conveyor = session.createNamedQuery("Location.findByName", Location.class)
-				.setParameter("name", Constants.CONVEYOR).uniqueResultOptional().orElse(null);
+				.setParameter("name", Constants.TPT1).uniqueResultOptional().orElse(null);
 		if (conveyor == null) {
-			log.error("Tote transport: location {} is missing", Constants.CONVEYOR);
+			log.error("Tote transport: location {} is missing", Constants.TPT1);
 			return;
 		}
 		session.persist(new TransportOrder(tote.getLocation(), conveyor, TransportOrderStatus.NEW, tote));
 		log.info("Tote transport: tote {} goes from {} to {}", tote.getBarcode(), tote.getLocation().getName(),
-				Constants.CONVEYOR);
+				Constants.TPT1);
 	}
 
 	// un tote are un singur articol, deci locatia de picking vine din articolul
