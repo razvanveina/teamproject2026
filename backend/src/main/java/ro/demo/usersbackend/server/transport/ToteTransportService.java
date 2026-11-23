@@ -55,7 +55,7 @@ public class ToteTransportService extends AbstractProcess {
 			// de la decanting tote-ul pleaca singur pe banda (prin TPS2), de la TPT1 merge
 			// la picking
 			if (Constants.DECANTING.equals(tote.getLocation().getName())) {
-				sendToConveyor(session, tote);
+				sendToPicking(session, tote);
 			} else {
 				sendToPicking(session, tote);
 			}
@@ -101,7 +101,7 @@ public class ToteTransportService extends AbstractProcess {
 			session.persist(new ArticlePickingLocation(article, target));
 		}
 
-		session.persist(new TransportOrder(tote.getLocation(), target, TransportOrderStatus.NEW, tote));
+		session.persist(new TransportOrder(tote.getLocation(), target, TransportOrderStatus.ACTIVE, tote));
 		log.info("Tote transport: tote {} goes to {}", tote.getBarcode(), target.getName());
 	}
 
