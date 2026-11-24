@@ -5,10 +5,12 @@ import org.hibernate.Session;
 import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
 import ro.demo.usersbackend.entity.LoadUnit;
+import ro.demo.usersbackend.entity.StorageLocation;
 import ro.demo.usersbackend.entity.TransportOrder;
 import ro.demo.usersbackend.entity.TransportOrderStatus;
 import ro.demo.usersbackend.messaging.MfsMessages;
 import ro.demo.usersbackend.messaging.MfsMessages.Arrived;
+import ro.demo.usersbackend.server.transport.ToteTransportService;
 
 public class TPT1Handler extends PointHandler {
 	public TPT1Handler() {
@@ -53,6 +55,20 @@ public class TPT1Handler extends PointHandler {
 				return true;
 			}
 		}
-		return false;
+
+		if (loadUnit.getStockItems().isEmpty()) {
+			return false;
+		}
+
+		StorageLocation place = ToteTransportService.choosePickingPlace(session, loadUnit);
+		if (place == null) {
+			log.warn("{}: no free picking location for load unit {}, it stays", Constants.TPT1, barcode);
+			return false;
+		}
+
+		session.persist(new TransportOrder(loadUnit.getLocation(), place, TransportOrderStatus.FINISHED, loadUnit));
+		loadUnit.setLocation(place);
+		log.info("{}: load unit {} delivered to {}", Constants.TPT1, barcode, place.getName());
+		return true;
 	}
 }

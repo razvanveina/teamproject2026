@@ -44,24 +44,34 @@ public class ToteTransportService extends AbstractProcess {
 
 	private void moveTotes(Session session) {
 		List<LoadUnit> totes = session.createNamedQuery("LoadUnit.findByTypeInDecantingOrTpt1", LoadUnit.class)
-				.setParameter("type", LoadUnitType.TOTE)
-				.setParameterList("places", List.of(Constants.DECANTING, Constants.TPT1)).getResultList();
+				.setParameter("type", LoadUnitType.TOTE).setParameterList("places", List.of(Constants.DECANTING))
+				.getResultList();
 
 		for (LoadUnit tote : totes) {
 			if (tote.getStockItems().isEmpty() || hasOpenTransport(session, tote)) {
 				continue;
 			}
-			// de la decanting tote-ul pleaca singur pe banda (prin TPS2), de la TPT1 merge
-			// la picking
-			if (Constants.DECANTING.equals(tote.getLocation().getName())) {
-				sendToPicking(session, tote);
-			}
+			sendToPicking(session, tote);
 		}
 	}
 
 	// un tote are un singur articol, deci locatia de picking vine din articolul
 	// primului stock item
 	private void sendToPicking(Session session, LoadUnit tote) {
+		StorageLocation target = choosePickingPlace(session, tote);
+		if (target == null) {
+			log.warn("Tote transport: no free picking location, tote {} stays", tote.getBarcode());
+			return;
+		}
+
+		TransportOrderStatus status = Constants.DECANTING.equals(tote.getLocation().getName())
+				? TransportOrderStatus.NEW
+				: TransportOrderStatus.ACTIVE;
+		session.persist(new TransportOrder(tote.getLocation(), target, TransportOrderStatus.NEW, tote));
+		log.info("Tote transport: tote {} goes to {}", tote.getBarcode(), target.getName());
+	}
+
+	public static StorageLocation choosePickingPlace(Session session, LoadUnit tote) {
 		Article article = tote.getStockItems().get(0).getArticlePackagingUnitType().getArticle();
 		List<ArticlePickingLocation> places = session
 				.createNamedQuery("ArticlePickingLocation.findByArticle", ArticlePickingLocation.class)
@@ -77,24 +87,16 @@ public class ToteTransportService extends AbstractProcess {
 		}
 		if (target == null) {
 			target = findNearestFreePlace(session, from);
-			if (target == null) {
-				log.warn("Tote transport: no free picking location, tote {} stays", tote.getBarcode());
-				return;
+			if (target != null) {
+				session.persist(new ArticlePickingLocation(article, target));
 			}
-			session.persist(new ArticlePickingLocation(article, target));
 		}
-
-		TransportOrderStatus status = Constants.DECANTING.equals(tote.getLocation().getName())
-				? TransportOrderStatus.NEW
-				: TransportOrderStatus.ACTIVE;
-		session.persist(new TransportOrder(tote.getLocation(), target, status, tote));
-
-		log.info("Tote transport: tote {} goes to {}", tote.getBarcode(), target.getName());
+		return target;
 	}
 
 	// prima locatie a articolului pe care nu e niciun tote si spre care nu vine
 	// niciunul
-	private StorageLocation findFreePlace(Session session, List<ArticlePickingLocation> places) {
+	private static StorageLocation findFreePlace(Session session, List<ArticlePickingLocation> places) {
 		for (ArticlePickingLocation place : places) {
 			StorageLocation location = place.getLocation();
 			if (location.getLoadUnit() == null && !hasTransportTo(session, location)) {
@@ -106,7 +108,7 @@ public class ToteTransportService extends AbstractProcess {
 
 	// cea mai apropiata locatie de picking libera care nu apartine deja altui
 	// articol
-	private StorageLocation findNearestFreePlace(Session session, StorageLocation from) {
+	private static StorageLocation findNearestFreePlace(Session session, StorageLocation from) {
 		List<StorageLocation> free = session
 				.createNamedQuery("StorageLocation.findFreePickingLocations", StorageLocation.class)
 				.setParameter("pick", Constants.PICK_PREFIX + "%").getResultList();
@@ -122,14 +124,14 @@ public class ToteTransportService extends AbstractProcess {
 	}
 
 	// fara loc de plecare masuram de la inceputul zonei (x = 0, y = 0)
-	private int distance(StorageLocation a, StorageLocation b) {
+	private static int distance(StorageLocation a, StorageLocation b) {
 		if (a == null) {
 			return b.getX() + b.getY() + b.getZ();
 		}
 		return Math.abs(a.getX() - b.getX()) + Math.abs(a.getY() - b.getY()) + Math.abs(a.getZ() - b.getZ());
 	}
 
-	private boolean hasTransportTo(Session session, StorageLocation location) {
+	private static boolean hasTransportTo(Session session, StorageLocation location) {
 		Long open = session.createNamedQuery("TransportOrder.countActiveByTarget", Long.class)
 				.setParameter("location", location).setParameterList("open", Constants.OPEN_TRANSPORT_STATUSES)
 				.getSingleResult();
