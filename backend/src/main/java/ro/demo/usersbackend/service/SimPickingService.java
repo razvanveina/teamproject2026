@@ -100,7 +100,7 @@ public class SimPickingService {
 	// mutam in tinta doar marfa rezervata pentru orderul ales de chooseOrder
 	// (acelasi order pe care il arata si ecranul)
 	// sursa primeste un TO dupa ce a ramas in ea (routeSource), apoi release
-	// tinta primeste release (spre OUT) doar cand orderul e complet
+	// tinta primeste un TO spre OUT si release doar cand orderul e complet
 	public String confirm(int station, String sourceBarcode, String targetBarcode) {
 		return new WithSessionAndTransaction<String>() {
 			@Override
@@ -141,6 +141,8 @@ public class SimPickingService {
 				routeSource(session, source, ptts);
 				release(ptts);
 				if (order.getStatus() == RetrievalOrderStatus.PICKED) {
+					new TransportOrderRepository(session).insert(new TransportOrder(location(session, pttt),
+							location(session, Constants.OUT), TransportOrderStatus.ACTIVE, target));
 					release(pttt);
 					setReturnValue("Order " + order.getOrderId() + " is complete, tote " + targetBarcode + " goes to "
 							+ Constants.OUT);

@@ -168,7 +168,8 @@ public class Sim {
 		Conveyor c14 = add(new Conveyor("C14", 2, new Point(1580, 392), 1660, 430, 1500, 430));
 		Conveyor c15 = add(new Conveyor("C15", 10, new Point(1130, 345), 1500, 430, 1500, 300, 768, 300));
 
-		Conveyor c16 = add(new Conveyor("C16", 3, new Point(498, 840), 560, 900, 560, 770, 664, 770));
+		Conveyor c16 = add(
+				new Conveyor("C16", Constants.PTTT_LANE_SLOTS, new Point(498, 840), 560, 900, 560, 770, 664, 770));
 		Conveyor c17 = add(new Conveyor("C17", 3, new Point(804, 805), 664, 770, 768, 770, 768, 900));
 		Conveyor c18 = add(new Conveyor("C18", 3, new Point(650, 945), 560, 900, 768, 900));
 		Conveyor c19 = add(new Conveyor("C19", 2, new Point(808, 524), 768, 560, 880, 560));
@@ -180,11 +181,13 @@ public class Sim {
 		Conveyor c25 = add(new Conveyor("C25", 3, new Point(1444, 630), 1304, 690, 1408, 690, 1408, 560));
 		Conveyor c26 = add(new Conveyor("C26", 3, new Point(1290, 524), 1200, 560, 1408, 560));
 		Conveyor c27 = add(new Conveyor("C27", 2, new Point(808, 945), 768, 900, 880, 900));
-		Conveyor c28 = add(new Conveyor("C28", 3, new Point(828, 865), 880, 900, 880, 770, 984, 770));
+		Conveyor c28 = add(
+				new Conveyor("C28", Constants.PTTT_LANE_SLOTS, new Point(828, 865), 880, 900, 880, 770, 984, 770));
 		Conveyor c29 = add(new Conveyor("C29", 3, new Point(1124, 805), 984, 770, 1088, 770, 1088, 900));
 		Conveyor c30 = add(new Conveyor("C30", 3, new Point(970, 945), 880, 900, 1088, 900));
 		Conveyor c31 = add(new Conveyor("C31", 2, new Point(1128, 945), 1088, 900, 1200, 900));
-		Conveyor c32 = add(new Conveyor("C32", 3, new Point(1148, 865), 1200, 900, 1200, 770, 1304, 770));
+		Conveyor c32 = add(
+				new Conveyor("C32", Constants.PTTT_LANE_SLOTS, new Point(1148, 865), 1200, 900, 1200, 770, 1304, 770));
 		Conveyor c33 = add(new Conveyor("C33", 3, new Point(1444, 805), 1304, 770, 1408, 770, 1408, 900));
 		Conveyor c34 = add(new Conveyor("C34", 3, new Point(1290, 945), 1200, 900, 1408, 900));
 		Conveyor c35 = add(new Conveyor("C35", 5, new Point(1640, 1010), 1540, 900, 1700, 900, 1700, 1120, 1600, 1120));

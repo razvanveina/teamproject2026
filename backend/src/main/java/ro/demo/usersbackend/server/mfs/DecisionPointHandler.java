@@ -9,6 +9,8 @@ import jakarta.jms.JMSContext;
 import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
 import ro.demo.usersbackend.entity.LoadUnit;
+import ro.demo.usersbackend.entity.Location;
+import ro.demo.usersbackend.entity.TransportOrder;
 import ro.demo.usersbackend.entity.TransportOrderStatus;
 import ro.demo.usersbackend.messaging.Broker;
 import ro.demo.usersbackend.messaging.MfsMessages;
@@ -41,8 +43,8 @@ public abstract class DecisionPointHandler extends PointHandler {
 		String target = activeTarget(arrived.loadUnit());
 		if (target == null && hasStock(arrived.loadUnit())) {
 			sendReply(Constants.HOLD);
-			log.error("{}: load unit {} has stock but no active transport order, held at {}", point,
-					arrived.loadUnit(), point);
+			log.error("{}: load unit {} has stock but no active transport order, held at {}", point, arrived.loadUnit(),
+					point);
 			return;
 		}
 
@@ -86,6 +88,40 @@ public abstract class DecisionPointHandler extends PointHandler {
 				setReturnValue(session.createNamedQuery("TransportOrder.findActiveTargetName", String.class)
 						.setParameter("barcode", loadUnit).setParameter("active", TransportOrderStatus.ACTIVE)
 						.setMaxResults(1).uniqueResultOptional().orElse(null));
+			}
+		}.run();
+	}
+
+	// pentru DP-urile din fata unui PTTT (DP4, DP6, DP8): 0 = in zona, 1 = mai
+	// departe
+	// cu TO: intra doar daca TO-ul e spre PTTT-ul lui, altfel trece (spre OUT sau
+	// alt PTTT)
+	// fara TO (tote gol): intra daca mai e loc in PTTT sau pe banda din fata lui si
+	// primeste un TO spre PTTT, ca sa fie numarat in zona pana ajunge
+	protected int decideForZone(String loadUnit, String target, String pttt) {
+		if (target != null) {
+			return pttt.equals(target) ? 0 : 1;
+		}
+
+		return new WithSessionAndTransaction<Integer>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				long inZone = session.createNamedQuery("LoadUnit.countByLocationName", Long.class)
+						.setParameter("name", pttt).getSingleResult()
+						+ session.createNamedQuery("TransportOrder.countOpenByTargetName", Long.class)
+								.setParameter("target", pttt)
+								.setParameterList("open", Constants.OPEN_TRANSPORT_STATUSES).getSingleResult();
+				if (inZone >= Constants.PTTT_LANE_SLOTS + 1) {
+					setReturnValue(1);
+					return;
+				}
+
+				LoadUnit tote = session.createNamedQuery(LoadUnit.BY_BARCODE, LoadUnit.class)
+						.setParameter("barcode", loadUnit).getSingleResult();
+				Location zone = session.createNamedQuery("Location.findByName", Location.class)
+						.setParameter("name", pttt).getSingleResult();
+				session.persist(new TransportOrder(tote.getLocation(), zone, TransportOrderStatus.ACTIVE, tote));
+				setReturnValue(0);
 			}
 		}.run();
 	}

@@ -41,10 +41,11 @@ public class TransportOrderService {
 		return Constants.DECANTING.equals(source) || Constants.TPT1.equals(source);
 	}
 
-	// TO-urile spre un punct de pe banda le face simulatorul, nu un muncitor, adica
-	// nu apar pe ecranele de transport
+	// TO-urile spre un punct de pe banda, tote-urile de la decanting si cele care
+	// pleaca din PTTT spre OUT le face simulatorul, nu un muncitor
 	private boolean isAutomatic(TransportOrder order) {
 		return Constants.CONVEYOR_POINTS.contains(order.getTarget().getName())
+				|| Constants.PTTT_POINTS.contains(order.getSource().getName())
 				|| (Constants.DECANTING.equals(order.getSource().getName())
 						&& order.getLoadUnit().getType() == LoadUnitType.TOTE);
 	}
