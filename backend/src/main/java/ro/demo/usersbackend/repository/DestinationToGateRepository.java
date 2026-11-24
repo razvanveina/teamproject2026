@@ -19,6 +19,6 @@ public class DestinationToGateRepository extends BaseRepository<DestinationToGat
 
 	public Optional<DestinationToGate> findByDestinationName(String name) {
 		return session.createNamedQuery(DestinationToGate.BY_DESTINATION_NAME, DestinationToGate.class)
-				.setParameter("destination", name).uniqueResultOptional();
+				.setParameter("name", name).uniqueResultOptional();
 	}
 }
