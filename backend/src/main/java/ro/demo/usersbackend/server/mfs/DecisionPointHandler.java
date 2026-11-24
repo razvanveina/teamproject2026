@@ -130,7 +130,6 @@ public abstract class DecisionPointHandler extends PointHandler {
 		}.run();
 	}
 
-	// cate tote-uri are zona: in PTTT + pe drum spre el (cu TO deschis)
 	private long countInZone(Session session, String pttt) {
 		return session.createNamedQuery("LoadUnit.countByLocationName", Long.class).setParameter("name", pttt)
 				.getSingleResult()
