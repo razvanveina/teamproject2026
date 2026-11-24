@@ -64,9 +64,6 @@ public class ToteTransportService extends AbstractProcess {
 			return;
 		}
 
-		TransportOrderStatus status = Constants.DECANTING.equals(tote.getLocation().getName())
-				? TransportOrderStatus.NEW
-				: TransportOrderStatus.ACTIVE;
 		session.persist(new TransportOrder(tote.getLocation(), target, TransportOrderStatus.NEW, tote));
 		log.info("Tote transport: tote {} goes to {}", tote.getBarcode(), target.getName());
 	}
