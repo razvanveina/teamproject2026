@@ -108,7 +108,7 @@ public class SimWindow extends JPanel {
 		});
 		add(pause);
 
-		JComboBox<Double> conveyorSpeedBox = new JComboBox<>(Constants.CONVEYOR_SPEEDSPEED_FACTORS);
+		JComboBox<Double> conveyorSpeedBox = new JComboBox<>(Constants.CONVEYOR_SPEED_FACTORS);
 		conveyorSpeedBox.setSelectedItem(1.0);
 		conveyorSpeedBox.setRenderer(new DefaultListCellRenderer() {
 			private static final long serialVersionUID = 1L;
@@ -116,8 +116,7 @@ public class SimWindow extends JPanel {
 			@Override
 			public Component getListCellRendererComponent(JList<?> list, Object speedFactor, int index,
 					boolean isSelected, boolean hasFocus) {
-				return super.getListCellRendererComponent(list, speedFactor + "x",
-						index, isSelected, hasFocus);
+				return super.getListCellRendererComponent(list, speedFactor + "x", index, isSelected, hasFocus);
 			}
 		});
 		conveyorSpeedBox.addActionListener(e -> applyConveyorSpeedFactor((Double) conveyorSpeedBox.getSelectedItem()));
