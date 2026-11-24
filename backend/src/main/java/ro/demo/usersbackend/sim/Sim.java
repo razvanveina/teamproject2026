@@ -277,14 +277,7 @@ public class Sim {
 		dp3.getTarget().add(c11);
 
 		// DP1: 0 = C7 spre PTTS1 (default), 1 = C2 spre IP2 (bucla)
-		dp1.getTarget().add(c7);
-		dp1.getTarget().add(c2);
-
-		c2.getSource().add(dp1);
-		c7.getSource().add(dp1);
-
-		ip2.getSource().add(c2);
-		ip2.getSource().add(c8);
+		zone(dp1, c7, ptts1, c8, c2, ip2);
 
 		c19.getSource().add(ip2);
 		dp5.getSource().add(c19);
@@ -317,9 +310,6 @@ public class Sim {
 		e.getSource().add(c11);
 		e.getSource().add(c13);
 		c12.getSource().add(e);
-
-		ptts1.getSource().add(c7);
-		c8.getSource().add(ptts1);
 
 		dp4.getSource().add(c12);
 		zone(dp4, c16, pttt1, c17, c18, ip4);
