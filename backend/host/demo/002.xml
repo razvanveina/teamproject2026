@@ -1,0 +1,16 @@
+<order>
+	<id>001</id>
+	<destination>Bucharest</destination>
+	<lines>
+		<line>
+			<nr>30</nr>
+			<article>111</article>
+			<quantity>10</quantity>
+		</line>
+		<line>
+			<nr>2</nr>
+			<article>112</article>
+			<quantity>12</quantity>
+		</line>
+	</lines>
+</order>
