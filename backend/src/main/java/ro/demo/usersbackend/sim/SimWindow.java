@@ -136,6 +136,17 @@ public class SimWindow extends JPanel {
 		add(new JLabel("Conveyor speed"));
 		add(conveyorSpeedBox);
 
+		JButton resetButton = new JButton("Reset");
+		resetButton.setFocusPainted(false);
+		resetButton.addActionListener(e -> {
+			int answer = JOptionPane.showConfirmDialog(this, "Remove all load units from the simulator?", "Reset",
+					JOptionPane.YES_NO_OPTION);
+			if (answer == JOptionPane.YES_OPTION) {
+				new Thread(sim::clearLoadUnits, "simReset").start();
+			}
+		});
+		add(resetButton);
+
 		MouseAdapter mouse = new MouseAdapter() {
 			@Override
 			public void mouseWheelMoved(MouseWheelEvent e) {

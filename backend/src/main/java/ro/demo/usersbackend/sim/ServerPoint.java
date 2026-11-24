@@ -114,8 +114,8 @@ public abstract class ServerPoint extends Entity {
 			if (pendingLoadUnit != null) {
 				SimLoadUnit addedLoadUnit = pendingLoadUnit;
 				pendingLoadUnit = null;
-				put(MfsMessages.toJson(
-						new Created(Constants.CREATED, name, addedLoadUnit.barcode(), addedLoadUnit.type())));
+				put(MfsMessages
+						.toJson(new Created(Constants.CREATED, name, addedLoadUnit.barcode(), addedLoadUnit.type())));
 				return addedLoadUnit;
 			}
 		}
@@ -137,6 +137,12 @@ public abstract class ServerPoint extends Entity {
 	public synchronized void restore(EntityState state) {
 		loadUnit = state.loadUnits().isEmpty() ? null : state.loadUnits().get(0);
 		transportOrderId = state.transportOrderId();
+	}
+
+	@Override
+	public synchronized void clear() {
+		pendingLoadUnit = null;
+		super.clear();
 	}
 
 	public Long getTransportOrderId() {
@@ -177,5 +183,4 @@ public abstract class ServerPoint extends Entity {
 
 		return pointBox;
 	}
-
 }

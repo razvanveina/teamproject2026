@@ -421,4 +421,9 @@ public class Conveyor extends Entity {
 		}
 		return new double[] { xy[0], xy[1] };
 	}
+
+	@Override
+	public synchronized void clear() {
+		totes.clear();
+	}
 }

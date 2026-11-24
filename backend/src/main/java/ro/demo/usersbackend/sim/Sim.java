@@ -135,6 +135,24 @@ public class Sim {
 		}
 	}
 
+	void clearLoadUnits() {
+		Lock lock = Entity.LOCK.writeLock();
+		try {
+			if (!lock.tryLock(2, TimeUnit.SECONDS)) {
+				log.warn("simulator reset skipped, entities busy");
+				return;
+			}
+			try {
+				entities.forEach(Entity::clear);
+			} finally {
+				lock.unlock();
+			}
+			log.info("simulator reset: all load units removed");
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
+	}
+
 	@SuppressWarnings("unchecked")
 	private void restore() {
 		if (!Files.exists(SNAPSHOT)) {

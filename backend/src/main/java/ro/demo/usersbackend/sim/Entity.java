@@ -118,4 +118,7 @@ public abstract class Entity implements Runnable {
 		g.drawString(barcode, (int) x - w / 2, (int) y + 3);
 	}
 
+	public void clear() {
+		restore(new EntityState(name, List.of(), null, false));
+	}
 }
