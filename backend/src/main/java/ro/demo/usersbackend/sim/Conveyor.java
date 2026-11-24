@@ -47,6 +47,7 @@ public class Conveyor extends Entity {
 	private long travelTime;
 	private int capacity;
 	private long slotTravelTime;
+	private double speedFactor = 1.0;
 	private Deque<Tote> totes;
 	private volatile boolean ready;
 	private TimeKeeper timeKeeper = TimeKeeper.getInstance();
@@ -56,16 +57,21 @@ public class Conveyor extends Entity {
 	private Shape shape;
 	private Shape anchor;
 
-	public Conveyor(String name, long travelTime, int capacity, Point labelPositon, int... xy) {
+
+	public Conveyor(String name, int capacity, Point labelPositon, int... xy) {
 		super(name);
-		this.travelTime = travelTime;
 		this.capacity = capacity;
-		this.slotTravelTime = capacity > 1 ? travelTime / (capacity - 1) : travelTime;
 		this.totes = new ArrayDeque<>();
 		ready = true;
 
 		this.labelPositon = labelPositon;
 		pathCoordonates = Arrays.stream(xy).toArray();
+		computeTravelTimes();
+	}
+
+	private void computeTravelTimes() {
+		travelTime = Math.round(length(pathCoordonates) / (Constants.CONVEYOR_SPEED * speedFactor) * 1000);
+		slotTravelTime = capacity > 1 ? travelTime / (capacity - 1) : travelTime;
 	}
 
 	public long getTravelTime() {
@@ -74,6 +80,11 @@ public class Conveyor extends Entity {
 
 	public int getCapacity() {
 		return capacity;
+	}
+
+	public synchronized void setSpeedFactor(double speedFactor) {
+		this.speedFactor = speedFactor;
+		computeTravelTimes();
 	}
 
 	public synchronized boolean createLU(SimLoadUnit createdLoadUnit) {
@@ -245,7 +256,7 @@ public class Conveyor extends Entity {
 
 		g.setColor(Color.BLACK);
 		g.setFont(SimWindow.CONV_LABEL);
-		g.drawString(name, (int) labelPositon.getX(), (int) labelPositon.getY());
+		g.drawString(name, labelPositon.x, labelPositon.y);
 
 //		Conveyor conveyor = (Conveyor) byName.get(name);
 		double margin = SimWindow.POINT / 2.0 + SimWindow.TOTE / 2.0 + 2;

@@ -2,6 +2,7 @@ package ro.demo.usersbackend.sim;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
@@ -28,10 +29,12 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -105,6 +108,22 @@ public class SimWindow extends JPanel {
 		});
 		add(pause);
 
+		JComboBox<Double> conveyorSpeedBox = new JComboBox<>(Constants.CONVEYOR_SPEEDSPEED_FACTORS);
+		conveyorSpeedBox.setSelectedItem(1.0);
+		conveyorSpeedBox.setRenderer(new DefaultListCellRenderer() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public Component getListCellRendererComponent(JList<?> list, Object speedFactor, int index,
+					boolean isSelected, boolean hasFocus) {
+				return super.getListCellRendererComponent(list, speedFactor + "x",
+						index, isSelected, hasFocus);
+			}
+		});
+		conveyorSpeedBox.addActionListener(e -> applyConveyorSpeedFactor((Double) conveyorSpeedBox.getSelectedItem()));
+		add(new JLabel("Conveyor speed"));
+		add(conveyorSpeedBox);
+
 		MouseAdapter mouse = new MouseAdapter() {
 			@Override
 			public void mouseWheelMoved(MouseWheelEvent e) {
@@ -150,6 +169,14 @@ public class SimWindow extends JPanel {
 		addMouseListener(mouse);
 		addMouseMotionListener(mouse);
 		addMouseWheelListener(mouse);
+	}
+
+	private void applyConveyorSpeedFactor(double speedFactor) {
+		for (Entity entity : sim.getEntities()) {
+			if (entity instanceof Conveyor conveyor) {
+				conveyor.setSpeedFactor(speedFactor);
+			}
+		}
 	}
 
 	private void showAddLoadUnitMenu(MouseEvent e) {
