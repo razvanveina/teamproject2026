@@ -37,8 +37,8 @@ public class InitialDataCreator implements CommandLineRunner {
 					createTransitLocations(session);
 					createPickingLocations(session);
 					createPrinters(session);
-					createSimulatorData(session);
 				}
+				createSimulatorData(session);
 				createTransitLocationIfMissing(session, Constants.EMPTY_TOTES);
 				createDestinations(session);
 				createDestinationGates(session);
@@ -166,7 +166,7 @@ public class InitialDataCreator implements CommandLineRunner {
 
 	private void createSimulatorData(Session session) {
 		for (String name : Constants.CONVEYOR_POINTS) {
-			createTransitLocation(session, name);
+			createTransitLocationIfMissing(session, name);
 		}
 	}
 
