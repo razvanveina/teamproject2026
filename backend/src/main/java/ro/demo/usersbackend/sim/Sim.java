@@ -91,9 +91,8 @@ public class Sim {
 					} else if (request.startsWith(Constants.CREATE_LU)) {
 						String[] s = request.split(" ");
 						entities.forEach(e -> {
-							if (e.getName().equals(s[2]) && e.getClass() == Conveyor.class) {
-								((Conveyor) e)
-										.createLU(new SimLoadUnit(s[1], s.length > 3 ? s[3] : Constants.TOTE_TYPE));
+							if (e.getName().equals(s[2])) {
+								e.addLoadUnit(new SimLoadUnit(s[1], s.length > 3 ? s[3] : Constants.TOTE_TYPE));
 							}
 						});
 					}

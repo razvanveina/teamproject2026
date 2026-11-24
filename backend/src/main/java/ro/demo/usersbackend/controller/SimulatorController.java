@@ -77,7 +77,6 @@ public class SimulatorController {
 			loadUnitService.createEmptyLoadUnit(barcode, type);
 		}
 		simulatorService.createLU(barcode, location, type);
-		loadUnitService.createEmptyLoadUnit(barcode, type);
 
 		return ResponseEntity.ok().build();
 	}

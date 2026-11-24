@@ -12,7 +12,6 @@ import ro.demo.usersbackend.entity.Article;
 import ro.demo.usersbackend.entity.ArticlePickingLocation;
 import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.LoadUnitType;
-import ro.demo.usersbackend.entity.Location;
 import ro.demo.usersbackend.entity.StorageLocation;
 import ro.demo.usersbackend.entity.TransportOrder;
 import ro.demo.usersbackend.entity.TransportOrderStatus;
@@ -56,24 +55,8 @@ public class ToteTransportService extends AbstractProcess {
 			// la picking
 			if (Constants.DECANTING.equals(tote.getLocation().getName())) {
 				sendToPicking(session, tote);
-			} else {
-				sendToPicking(session, tote);
 			}
 		}
-	}
-
-	// transport automat decanting -> conveyor; GET-ul il trimite
-	// AutomaticRetrievalService pe coada lui TPS2
-	private void sendToConveyor(Session session, LoadUnit tote) {
-		Location conveyor = session.createNamedQuery("Location.findByName", Location.class)
-				.setParameter("name", Constants.TPT1).uniqueResultOptional().orElse(null);
-		if (conveyor == null) {
-			log.error("Tote transport: location {} is missing", Constants.TPT1);
-			return;
-		}
-		session.persist(new TransportOrder(tote.getLocation(), conveyor, TransportOrderStatus.NEW, tote));
-		log.info("Tote transport: tote {} goes from {} to {}", tote.getBarcode(), tote.getLocation().getName(),
-				Constants.TPT1);
 	}
 
 	// un tote are un singur articol, deci locatia de picking vine din articolul
@@ -105,6 +88,7 @@ public class ToteTransportService extends AbstractProcess {
 				? TransportOrderStatus.NEW
 				: TransportOrderStatus.ACTIVE;
 		session.persist(new TransportOrder(tote.getLocation(), target, status, tote));
+
 		log.info("Tote transport: tote {} goes to {}", tote.getBarcode(), target.getName());
 	}
 

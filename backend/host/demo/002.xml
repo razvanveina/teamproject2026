@@ -1,5 +1,6 @@
 <order>
 	<id>001</id>
+	<automatic>true</automatic>
 	<destination>Bucharest</destination>
 	<lines>
 		<line>
