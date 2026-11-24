@@ -164,8 +164,7 @@ public class Sim {
 		Conveyor c10 = add(new Conveyor("C10", 7, new Point(325, 605), 120, 560, 560, 560));
 		Conveyor c11 = add(new Conveyor("C11", 5, new Point(58, 730), 120, 560, 120, 900));
 		Conveyor c12 = add(new Conveyor("C12", 7, new Point(325, 945), 120, 900, 560, 900));
-		Conveyor c13 = add(
-				new Conveyor("C13", 27, new Point(790, 1045), 1540, 900, 1540, 1000, 120, 1000, 120, 900));
+		Conveyor c13 = add(new Conveyor("C13", 27, new Point(790, 1045), 1540, 900, 1540, 1000, 120, 1000, 120, 900));
 		Conveyor c14 = add(new Conveyor("C14", 2, new Point(1580, 392), 1660, 430, 1500, 430));
 		Conveyor c15 = add(new Conveyor("C15", 10, new Point(1130, 345), 1500, 430, 1500, 300, 768, 300));
 
@@ -188,6 +187,14 @@ public class Sim {
 		Conveyor c32 = add(new Conveyor("C32", 3, new Point(1148, 865), 1200, 900, 1200, 770, 1304, 770));
 		Conveyor c33 = add(new Conveyor("C33", 3, new Point(1444, 805), 1304, 770, 1408, 770, 1408, 900));
 		Conveyor c34 = add(new Conveyor("C34", 3, new Point(1290, 945), 1200, 900, 1408, 900));
+		Conveyor c35 = add(new Conveyor("C35", 5, new Point(1640, 1010), 1540, 900, 1700, 900, 1700, 1120, 1600, 1120));
+		Conveyor c36 = add(new Conveyor("C36", 3, new Point(1490, 1165), 1600, 1120, 1380, 1120));
+		Conveyor c37 = add(new Conveyor("C37", 3, new Point(1270, 1165), 1380, 1120, 1160, 1120));
+		Conveyor c38 = add(new Conveyor("C38", 3, new Point(1050, 1165), 1160, 1120, 940, 1120));
+		Conveyor c39 = add(new Conveyor("C39", 2, new Point(1542, 1180), 1600, 1120, 1600, 1240));
+		Conveyor c40 = add(new Conveyor("C40", 2, new Point(1322, 1180), 1380, 1120, 1380, 1240));
+		Conveyor c41 = add(new Conveyor("C41", 2, new Point(1102, 1180), 1160, 1120, 1160, 1240));
+		Conveyor c42 = add(new Conveyor("C42", 2, new Point(882, 1180), 940, 1120, 940, 1240));
 
 		InfoPoint ip1 = add(new InfoPoint(Constants.IP1, 560, 300, true));
 		InfoPoint ip2 = add(new InfoPoint(Constants.IP2, 768, 560));
@@ -207,6 +214,10 @@ public class Sim {
 		DecisionPoint dp6 = add(new DecisionPoint(Constants.DP6, 880, 900, true));
 		DecisionPoint dp7 = add(new DecisionPoint(Constants.DP7, 1200, 560));
 		DecisionPoint dp8 = add(new DecisionPoint(Constants.DP8, 1200, 900, true));
+		DecisionPoint gp1 = add(new DecisionPoint(Constants.GP1, 1600, 1120));
+		DecisionPoint gp2 = add(new DecisionPoint(Constants.GP2, 1380, 1120));
+		DecisionPoint gp3 = add(new DecisionPoint(Constants.GP3, 1160, 1120));
+		DecisionPoint gp4 = add(new DecisionPoint(Constants.GP4, 940, 1120));
 
 		SourceTransportPoint tps1 = add(new SourceTransportPoint(Constants.TPS1, MfsMessages.REQUEST_QUEUE, 560, 130));
 		SourceTransportPoint tps2 = add(
@@ -221,6 +232,10 @@ public class Sim {
 		StationPoint ptts3 = add(new StationPoint(Constants.PTTS3, 1304, 690));
 		StationPoint pttt3 = add(new StationPoint(Constants.PTTT3, 1304, 770));
 		StationPoint out = add(new StationPoint(Constants.OUT, 1540, 900));
+		GatePoint gate1 = add(new GatePoint(Constants.CONVEYOR_GATES.get(0), 1600, 1240, true));
+		GatePoint gate2 = add(new GatePoint(Constants.CONVEYOR_GATES.get(1), 1380, 1240, true));
+		GatePoint gate3 = add(new GatePoint(Constants.CONVEYOR_GATES.get(2), 1160, 1240, true));
+		GatePoint gate4 = add(new GatePoint(Constants.CONVEYOR_GATES.get(3), 940, 1240, true));
 
 		c6.getSource().add(tps1);
 		ip1.getSource().add(c6);
@@ -289,6 +304,32 @@ public class Sim {
 		dp8.getSource().add(c31);
 		zone(dp8, c32, pttt3, c33, c34, ip8);
 		c9.getSource().add(ip8);
+
+		gp1.getSource().add(c35);
+		c36.getSource().add(gp1);
+		gp2.getSource().add(c36);
+		c37.getSource().add(gp2);
+		gp3.getSource().add(c37);
+		c38.getSource().add(gp3);
+		gp4.getSource().add(c38);
+
+		gp1.getTarget().add(c36);
+		gp1.getTarget().add(c39);
+		gp2.getTarget().add(c37);
+		gp2.getTarget().add(c40);
+		gp3.getTarget().add(c38);
+		gp3.getTarget().add(c41);
+		gp4.getTarget().add(c42);
+
+		c39.getSource().add(gp1);
+		c40.getSource().add(gp2);
+		c41.getSource().add(gp3);
+		c42.getSource().add(gp4);
+
+		gate1.getSource().add(c39);
+		gate2.getSource().add(c40);
+		gate3.getSource().add(c41);
+		gate4.getSource().add(c42);
 
 		restore();
 		entities.forEach(Entity::start);

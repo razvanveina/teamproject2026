@@ -46,6 +46,10 @@ public final class Constants {
 	public static final String PTTS3 = "PTTS3";
 	public static final String PTTT2 = "PTTT2";
 	public static final String PTTT3 = "PTTT3";
+	public static final String GP1 = "GP1";
+	public static final String GP2 = "GP2";
+	public static final String GP3 = "GP3";
+	public static final String GP4 = "GP4";
 
 	public static final List<String> PTTS_POINTS = List.of(PTTS1, PTTS2, PTTS3);
 	public static final List<String> PTTT_POINTS = List.of(PTTT1, PTTT2, PTTT3);
@@ -58,6 +62,9 @@ public final class Constants {
 	public static final String PICK_NAME = "PICK%03d%02d"; // x, y
 	public static final String HBW_NAME = "HBW%02d%03d%02d%02d"; // aisle, x, y, z
 	public static final String GATE_NAME = "GATE%02d";
+
+	public static final List<String> CONVEYOR_GATES = List.of(String.format(GATE_NAME, 1), String.format(GATE_NAME, 2),
+			String.format(GATE_NAME, 3), String.format(GATE_NAME, 4));
 
 	// to care nu sunt finalizate (new sau active)
 	public static final List<TransportOrderStatus> OPEN_TRANSPORT_STATUSES = List.of(TransportOrderStatus.NEW,

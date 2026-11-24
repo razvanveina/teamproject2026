@@ -57,7 +57,7 @@ public class SimWindow extends JPanel {
 	private static final double K = 1.15;
 	private static final int TOP = 80;
 	private static final int DESIGN_W = 1760;
-	private static final int DESIGN_H = 1060 - TOP;
+	private static final int DESIGN_H = 1300 - TOP;
 	private static final double MIN_ZOOM = 0.25;
 	private static final double MAX_ZOOM = 8;
 
