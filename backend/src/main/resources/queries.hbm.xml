@@ -301,5 +301,15 @@
 	        select count(u) from LoadUnit u where u.location.name = :name and u.barcode <> :barcode
 	    ]]>
 	</query>
+	
+	<query name="TransportOrder.findIdsToSendToConveyor">
+    <![CDATA[
+        select t.id from TransportOrder t
+        where t.status = :status
+        and (t.target.name in :stations
+             or (t.source.name = :decanting and t.loadUnit.type = :tote))
+        order by t.id
+    ]]>
+</query>
 
 </hibernate-mapping>

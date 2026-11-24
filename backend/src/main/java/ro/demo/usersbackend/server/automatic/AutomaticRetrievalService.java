@@ -1,7 +1,5 @@
 package ro.demo.usersbackend.server.automatic;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
@@ -108,20 +106,18 @@ public class AutomaticRetrievalService extends AbstractProcess {
 		List<Long> orderIds = new WithSessionAndTransaction<List<Long>>() {
 			@Override
 			protected void executeBusinessLogic(Session session) {
-				List<Long> ids = new ArrayList<>();
-				List<String> targets = new ArrayList<>(Constants.PTTS_POINTS);
-				targets.add(Constants.TPT1);
-				for (String station : targets) {
-					ids.addAll(session.createNamedQuery("TransportOrder.findIdsByStatusAndTargetName", Long.class)
-							.setParameter("status", TransportOrderStatus.NEW).setParameter("target", station)
-							.getResultList());
-				}
-				Collections.sort(ids);
-				setReturnValue(ids);
+				setReturnValue(session.createNamedQuery("TransportOrder.findIdsToSendToConveyor", Long.class)
+						.setParameter("status", TransportOrderStatus.NEW)
+						.setParameterList("stations", Constants.PTTS_POINTS)
+						.setParameter("decanting", Constants.DECANTING).setParameter("tote", LoadUnitType.TOTE)
+						.getResultList());
 			}
 		}.run();
+		log.info("Automatic retrieval: {} orders to send {}", orderIds.size(), orderIds);
 
-		for (Long orderId : orderIds) {
+		for (
+
+		Long orderId : orderIds) {
 			try {
 				Get message = new WithSessionAndTransaction<Get>() {
 					@Override

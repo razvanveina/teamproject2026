@@ -13,6 +13,7 @@ import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
 import ro.demo.usersbackend.dto.TransportOrderResponse;
 import ro.demo.usersbackend.entity.LoadUnit;
+import ro.demo.usersbackend.entity.LoadUnitType;
 import ro.demo.usersbackend.entity.Location;
 import ro.demo.usersbackend.entity.StorageLocation;
 import ro.demo.usersbackend.entity.TransportOrder;
@@ -43,7 +44,9 @@ public class TransportOrderService {
 	// TO-urile spre un punct de pe banda le face simulatorul, nu un muncitor, adica
 	// nu apar pe ecranele de transport
 	private boolean isAutomatic(TransportOrder order) {
-		return Constants.CONVEYOR_POINTS.contains(order.getTarget().getName());
+		return Constants.CONVEYOR_POINTS.contains(order.getTarget().getName())
+				|| (Constants.DECANTING.equals(order.getSource().getName())
+						&& order.getLoadUnit().getType() == LoadUnitType.TOTE);
 	}
 
 	private TransportOrder find(Session session, Long id) {
