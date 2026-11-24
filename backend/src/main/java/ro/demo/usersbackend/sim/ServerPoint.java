@@ -3,6 +3,7 @@ package ro.demo.usersbackend.sim;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.Shape;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
@@ -45,6 +46,15 @@ public abstract class ServerPoint extends Entity {
 		this.x = x;
 		this.y = y;
 		this.labelBelow = labelBelow;
+	}
+
+	public boolean isAt(Point position) {
+		return x == position.x && y == position.y;
+	}
+
+	public void moveTo(Point position) {
+		x = position.x;
+		y = position.y;
 	}
 
 	public void put(String message) {

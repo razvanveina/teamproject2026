@@ -4,6 +4,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.Path2D;
 import java.util.ArrayDeque;
@@ -57,7 +58,6 @@ public class Conveyor extends Entity {
 	private Shape shape;
 	private Shape anchor;
 
-
 	public Conveyor(String name, int capacity, Point labelPositon, int... xy) {
 		super(name);
 		this.capacity = capacity;
@@ -105,8 +105,8 @@ public class Conveyor extends Entity {
 	}
 
 	private void announceCreated(SimLoadUnit createdLoadUnit) {
-		String message = MfsMessages.toJson(
-				new Created(Constants.CREATED, name, createdLoadUnit.barcode(), createdLoadUnit.type()));
+		String message = MfsMessages
+				.toJson(new Created(Constants.CREATED, name, createdLoadUnit.barcode(), createdLoadUnit.type()));
 		try (JMSContext context = new ActiveMQConnectionFactory(Broker.URL).createContext()) {
 			context.createProducer().send(context.createQueue(MfsMessages.RESPONSE_QUEUE), message);
 		}
@@ -259,7 +259,7 @@ public class Conveyor extends Entity {
 		g.drawString(name, labelPositon.x, labelPositon.y);
 
 //		Conveyor conveyor = (Conveyor) byName.get(name);
-		double margin = SimWindow.POINT / 2.0 + SimWindow.TOTE / 2.0 + 2;
+		double margin = slotMargin();
 		double usable = length(pathCoordonates) - 2 * margin;
 		for (Conveyor.ToteOnBelt toteOnBelt : getTotesOnBelt()) {
 			double[] totePosition = pointAt(pathCoordonates, margin + toteOnBelt.progress() * usable);
@@ -276,6 +276,85 @@ public class Conveyor extends Entity {
 //			Rectangle2D anchor = new Rectangle2D(pathCoordonates[i * 2] - 5, pathCoordonates[i * 2 + 1] - 5, 10, 10);
 			g.drawRoundRect(pathCoordonates[i * 2] - 5, pathCoordonates[i * 2 + 1] - 5, 10, 10, 7, 7);
 		}
+	}
+
+	public int anchorIndexAt(Point drawingPoint) {
+		for (int anchorIndex = 0; anchorIndex < pathCoordonates.length / 2; anchorIndex++) {
+			if (anchorShape(anchorIndex).contains(drawingPoint)) {
+				return anchorIndex;
+			}
+		}
+		return Constants.NO_ANCHOR;
+	}
+
+	public Point getAnchorPosition(int anchorIndex) {
+		return new Point(pathCoordonates[anchorIndex * 2], pathCoordonates[anchorIndex * 2 + 1]);
+	}
+
+	public void moveAnchor(int anchorIndex, Point newPosition) {
+		pathCoordonates[anchorIndex * 2] = newPosition.x;
+		pathCoordonates[anchorIndex * 2 + 1] = newPosition.y;
+	}
+
+	public boolean isFirstAnchor(int anchorIndex) {
+		return anchorIndex == 0;
+	}
+
+	public boolean isLastAnchor(int anchorIndex) {
+		return anchorIndex == getLastAnchorIndex();
+	}
+
+	public int getLastAnchorIndex() {
+		return pathCoordonates.length / 2 - 1;
+	}
+
+	public int addAnchorAtEnd() {
+		int lastAnchorX = pathCoordonates[pathCoordonates.length - 2];
+		int lastAnchorY = pathCoordonates[pathCoordonates.length - 1];
+		pathCoordonates = Arrays.copyOf(pathCoordonates, pathCoordonates.length + 2);
+		pathCoordonates[pathCoordonates.length - 2] = lastAnchorX;
+		pathCoordonates[pathCoordonates.length - 1] = lastAnchorY;
+		return pathCoordonates.length / 2 - 1;
+	}
+
+	public boolean canRemoveAnchor() {
+		return pathCoordonates.length / 2 > Constants.MIN_ANCHOR_COUNT;
+	}
+
+	public void removeLastAnchor() {
+		pathCoordonates = Arrays.copyOf(pathCoordonates, pathCoordonates.length - 2);
+	}
+
+	public synchronized void recalculateCapacity() {
+		double usableLength = length(pathCoordonates) - 2 * slotMargin();
+		int slotGapCount = (int) (usableLength / Constants.TOTE_SPACING);
+		int capacityFromLength = Math.max(Constants.MIN_CONVEYOR_CAPACITY, slotGapCount + 1);
+		capacity = Math.max(capacityFromLength, totes.size());
+		computeTravelTimes();
+		putTotesInSlotsFromEnd();
+	}
+
+	private void putTotesInSlotsFromEnd() {
+		long currentTime = timeKeeper.currentSimulationTime();
+		int toteIndex = 0;
+		for (Tote tote : totes) {
+			tote.slotIndex = capacity - 1 - toteIndex;
+			tote.startPosition = slotPosition(tote.slotIndex);
+			tote.moveStartedAt = currentTime;
+			tote.moveDuration = 0;
+			toteIndex++;
+		}
+	}
+
+	private double slotMargin() {
+		return SimWindow.POINT / 2.0 + SimWindow.TOTE / 2.0 + 2;
+	}
+
+	private Rectangle anchorShape(int anchorIndex) {
+		int halfAnchorSize = Constants.ANCHOR_SIZE / 2;
+		int anchorLeft = pathCoordonates[anchorIndex * 2] - halfAnchorSize;
+		int anchorTop = pathCoordonates[anchorIndex * 2 + 1] - halfAnchorSize;
+		return new Rectangle(anchorLeft, anchorTop, Constants.ANCHOR_SIZE, Constants.ANCHOR_SIZE);
 	}
 
 	// toPath and trimEnds are both used for drawing the conveyor and points so they

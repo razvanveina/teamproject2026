@@ -76,7 +76,7 @@ public class SimulatorController {
 		if (!loadUnitService.existsByBarcode(barcode)) {
 			loadUnitService.createEmptyLoadUnit(barcode, type);
 		}
-		simulatorService.createLU(barcode, location, type);
+		simulatorService.requestLoadUnit(barcode, location, type); // sends request to draw LU in sim
 
 		return ResponseEntity.ok().build();
 	}

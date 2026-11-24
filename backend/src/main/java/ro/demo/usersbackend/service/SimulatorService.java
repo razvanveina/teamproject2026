@@ -52,7 +52,7 @@ public class SimulatorService {
 		return entities;
 	}
 
-	public void createLU(String barcode, String locationName, LoadUnitType type) {
+	public void requestLoadUnit(String barcode, String locationName, LoadUnitType type) {
 		context.createProducer().send(outQueue, Constants.CREATE_LU + " " + barcode + " " + locationName + " " + type.name());
 	}
 }

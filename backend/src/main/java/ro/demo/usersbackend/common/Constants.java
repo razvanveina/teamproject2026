@@ -102,6 +102,11 @@ public final class Constants {
 	public static final long GATE_DWELL = 2000; // cat sta un carton pe gate inainte sa iasa din sim
 	public static final double CONVEYOR_SPEED = 70; // viteza generala a benzilor, pixeli pe secunda
 	public static final Double[] CONVEYOR_SPEED_FACTORS = { 0.25, 0.5, 1.0, 2.0, 3.0, 5.0, 10.0 };
+	public static final int ANCHOR_SIZE = 10;
+	public static final int NO_ANCHOR = -1;
+	public static final int MIN_ANCHOR_COUNT = 2;
+	public static final int TOTE_SPACING = 52; // tote + gap
+	public static final int MIN_CONVEYOR_CAPACITY = 1;
 
 	// load unit types din sim
 	public static final String TOTE_TYPE = "TOTE";

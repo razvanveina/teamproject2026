@@ -22,7 +22,9 @@ import java.awt.event.WindowEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Point2D;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -71,6 +73,17 @@ public class SimWindow extends JPanel {
 	private final Map<String, Shape> conveyorShapes = new HashMap<>();
 	private final Map<String, Shape> pointShapes = new HashMap<>();
 	private AffineTransform drawingTransform = new AffineTransform();
+	private Conveyor draggedConveyor;
+	private int draggedAnchorIndex;
+	private Point dragStart;
+	private Point anchorStart;
+	private boolean isExtendingConveyor;
+	private boolean hasMovedAnchor;
+	private ServerPoint draggedPoint;
+	private final List<AttachedAnchor> attachedAnchors = new ArrayList<>();
+
+	private record AttachedAnchor(Conveyor conveyor, int anchorIndex) {
+	}
 
 	public void open(Runnable action) {
 		SwingUtilities.invokeLater(() -> {
@@ -138,22 +151,43 @@ public class SimWindow extends JPanel {
 			@Override
 			public void mousePressed(MouseEvent e) {
 				last = e.getPoint();
+				if (isDeleteAnchorClick(e)) {
+					deleteAnchor(e.getPoint());
+					return;
+				}
 				if (e.isPopupTrigger()) {
 					showAddLoadUnitMenu(e);
+				}
+				if (SwingUtilities.isLeftMouseButton(e) && timeKeeper.isPaused()) {
+					boolean isExtending = e.isControlDown();
+					boolean isMovingStackedTogether = e.isShiftDown();
+					grabAnchor(e.getPoint(), isExtending, isMovingStackedTogether);
 				}
 			}
 
 			@Override
 			public void mouseReleased(MouseEvent e) {
-				if (e.isPopupTrigger()) {
+				if (e.isPopupTrigger() && !isDeleteAnchorClick(e)) {
 					showAddLoadUnitMenu(e);
 				}
+				if (hasMovedAnchor) {
+					recalculateEditedConveyors();
+				}
+				hasMovedAnchor = false;
+				draggedConveyor = null;
+				isExtendingConveyor = false;
+				draggedPoint = null;
+				attachedAnchors.clear();
 			}
 
 			@Override
 			public void mouseDragged(MouseEvent e) {
-				panX += e.getX() - last.x;
-				panY += e.getY() - last.y;
+				if (draggedConveyor != null) {
+					dragAnchor(e.getPoint());
+				} else {
+					panX += e.getX() - last.x;
+					panY += e.getY() - last.y;
+				}
 				repaint();
 				last = e.getPoint();
 			}
@@ -187,6 +221,146 @@ public class SimWindow extends JPanel {
 			menu.add(addLoadUnit);
 			menu.show(this, e.getX(), e.getY());
 		});
+	}
+
+	private void grabAnchor(Point screenPoint, boolean isExtending, boolean isMovingStackedTogether) {
+		Point drawingPoint = toDrawingPoint(screenPoint);
+		if (drawingPoint == null) {
+			return;
+		}
+		for (Entity entity : sim.getEntities()) {
+			if (entity instanceof Conveyor conveyor) {
+				int anchorIndex = conveyor.anchorIndexAt(drawingPoint);
+				boolean isAnchorHit = anchorIndex != Constants.NO_ANCHOR;
+				boolean canGrab = isAnchorHit && (!isExtending || conveyor.isLastAnchor(anchorIndex));
+				if (canGrab) {
+					draggedConveyor = conveyor;
+					draggedAnchorIndex = anchorIndex;
+					dragStart = drawingPoint;
+					anchorStart = conveyor.getAnchorPosition(anchorIndex);
+					isExtendingConveyor = isExtending;
+					if (isMovingStackedTogether) {
+						draggedPoint = serverPointAt(anchorStart);
+						collectAnchorsAttachedTo(draggedPoint);
+					} else if (conveyor.isFirstAnchor(anchorIndex)) {
+						draggedPoint = pointFeeding(conveyor, anchorStart);
+					}
+					return;
+				}
+			}
+		}
+	}
+
+	private void dragAnchor(Point screenPoint) {
+		Point drawingPoint = toDrawingPoint(screenPoint);
+		if (drawingPoint == null) {
+			return;
+		}
+		int distanceX = drawingPoint.x - dragStart.x;
+		int distanceY = drawingPoint.y - dragStart.y;
+		boolean isHorizontalDrag = Math.abs(distanceX) >= Math.abs(distanceY);
+
+		Point newAnchorPosition;
+		if (isHorizontalDrag) {
+			newAnchorPosition = new Point(anchorStart.x + distanceX, anchorStart.y);
+		} else {
+			newAnchorPosition = new Point(anchorStart.x, anchorStart.y + distanceY);
+		}
+
+		if (isExtendingConveyor) {
+			if (newAnchorPosition.equals(anchorStart)) {
+				return;
+			}
+			draggedAnchorIndex = draggedConveyor.addAnchorAtEnd();
+			isExtendingConveyor = false;
+		}
+		draggedConveyor.moveAnchor(draggedAnchorIndex, newAnchorPosition);
+		hasMovedAnchor = true;
+		if (draggedPoint != null) {
+			draggedPoint.moveTo(newAnchorPosition);
+		}
+		for (AttachedAnchor attachedAnchor : attachedAnchors) {
+			attachedAnchor.conveyor().moveAnchor(attachedAnchor.anchorIndex(), newAnchorPosition);
+		}
+	}
+
+	private void recalculateEditedConveyors() {
+		draggedConveyor.recalculateCapacity();
+		for (AttachedAnchor attachedAnchor : attachedAnchors) {
+			attachedAnchor.conveyor().recalculateCapacity();
+		}
+	}
+
+	private ServerPoint pointFeeding(Conveyor conveyor, Point position) {
+		ServerPoint serverPoint = serverPointAt(position);
+		boolean isFeedingConveyor = serverPoint != null && conveyor.getSource().contains(serverPoint);
+		if (isFeedingConveyor) {
+			return serverPoint;
+		}
+		return null;
+	}
+
+	private ServerPoint serverPointAt(Point position) {
+		for (Entity entity : sim.getEntities()) {
+			if (entity instanceof ServerPoint serverPoint && serverPoint.isAt(position)) {
+				return serverPoint;
+			}
+		}
+		return null;
+	}
+
+	private void collectAnchorsAttachedTo(ServerPoint serverPoint) {
+		attachedAnchors.clear();
+		if (serverPoint == null) {
+			return;
+		}
+		int firstAnchorIndex = 0;
+		for (Entity entity : sim.getEntities()) {
+			if (entity instanceof Conveyor conveyor && conveyor != draggedConveyor) {
+				boolean startsAtPoint = conveyor.getSource().contains(serverPoint);
+				boolean endsAtPoint = serverPoint.getSource().contains(conveyor);
+				if (startsAtPoint) {
+					attachedAnchors.add(new AttachedAnchor(conveyor, firstAnchorIndex));
+				}
+				if (endsAtPoint) {
+					attachedAnchors.add(new AttachedAnchor(conveyor, conveyor.getLastAnchorIndex()));
+				}
+			}
+		}
+	}
+
+	private boolean isDeleteAnchorClick(MouseEvent e) {
+		return SwingUtilities.isRightMouseButton(e) && e.isControlDown() && timeKeeper.isPaused();
+	}
+
+	private void deleteAnchor(Point screenPoint) {
+		Point drawingPoint = toDrawingPoint(screenPoint);
+		if (drawingPoint == null) {
+			return;
+		}
+		for (Entity entity : sim.getEntities()) {
+			if (entity instanceof Conveyor conveyor) {
+				int anchorIndex = conveyor.anchorIndexAt(drawingPoint);
+				boolean isAnchorHit = anchorIndex != Constants.NO_ANCHOR;
+				boolean isLastAnchorHit = isAnchorHit && conveyor.isLastAnchor(anchorIndex);
+				if (isLastAnchorHit && conveyor.canRemoveAnchor()) {
+					conveyor.removeLastAnchor();
+					conveyor.recalculateCapacity();
+					repaint();
+					return;
+				}
+			}
+		}
+	}
+
+	private Point toDrawingPoint(Point screenPoint) {
+		Point drawingPoint = new Point();
+		try {
+			drawingTransform.inverseTransform(screenPoint, drawingPoint);
+		} catch (NoninvertibleTransformException e) {
+			return null;
+		}
+		return drawingPoint;
 	}
 
 	private Optional<String> entityAt(Point screenPoint) {
@@ -259,21 +433,19 @@ public class SimWindow extends JPanel {
 		for (Entity entity : sim.getEntities()) {
 			if (entity instanceof Conveyor conveyor) {
 				conveyorShapes.put(conveyor.getName(), conveyor.draw(g));
-				if (timeKeeper.isPaused()) {
-					conveyor.drawAnchors(g);
-				}
-			} else {
-				pointShapes.put(entity.getName(), ((ServerPoint) entity).draw(g));
+			}
+		}
+
+		for (Entity entity : sim.getEntities()) {
+			if (entity instanceof ServerPoint serverPoint) {
+				pointShapes.put(serverPoint.getName(), serverPoint.draw(g));
 			}
 		}
 
 		if (timeKeeper.isPaused()) {
 			for (Entity entity : sim.getEntities()) {
 				if (entity instanceof Conveyor conveyor) {
-					conveyorShapes.put(conveyor.getName(), conveyor.draw(g));
 					conveyor.drawAnchors(g);
-				} else {
-					break;
 				}
 			}
 		}
