@@ -1,5 +1,7 @@
 package ro.demo.usersbackend.server.mfs;
 
+import java.util.List;
+
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -96,8 +98,10 @@ public abstract class DecisionPointHandler extends PointHandler {
 	// departe
 	// cu TO: intra doar daca TO-ul e spre PTTT-ul lui, altfel trece (spre OUT sau
 	// alt PTTT)
-	// fara TO (tote gol): intra daca mai e loc in PTTT sau pe banda din fata lui si
-	// primeste un TO spre PTTT, ca sa fie numarat in zona pana ajunge
+	// fara TO (tote gol): intra daca zona lui e goala; daca are deja un tote, intra
+	// doar cand toate zonele de dupa el au cel putin unul si mai e loc, altfel
+	// merge mai departe sa umple intai zonele goale
+	// cand intra primeste un TO spre PTTT, ca sa fie numarat in zona
 	protected int decideForZone(String loadUnit, String target, String pttt) {
 		if (target != null) {
 			return pttt.equals(target) ? 0 : 1;
@@ -106,12 +110,12 @@ public abstract class DecisionPointHandler extends PointHandler {
 		return new WithSessionAndTransaction<Integer>() {
 			@Override
 			protected void executeBusinessLogic(Session session) {
-				long inZone = session.createNamedQuery("LoadUnit.countByLocationName", Long.class)
-						.setParameter("name", pttt).getSingleResult()
-						+ session.createNamedQuery("TransportOrder.countOpenByTargetName", Long.class)
-								.setParameter("target", pttt)
-								.setParameterList("open", Constants.OPEN_TRANSPORT_STATUSES).getSingleResult();
-				if (inZone >= Constants.PTTT_LANE_SLOTS + 1) {
+				long inZone = countInZone(session, pttt);
+				List<String> zonesAfter = Constants.PTTT_POINTS.subList(Constants.PTTT_POINTS.indexOf(pttt) + 1,
+						Constants.PTTT_POINTS.size());
+				boolean zonesAfterHaveOne = zonesAfter.stream().allMatch(next -> countInZone(session, next) > 0);
+
+				if (inZone >= Constants.PTTT_LANE_SLOTS + 1 || (inZone > 0 && !zonesAfterHaveOne)) {
 					setReturnValue(1);
 					return;
 				}
@@ -124,5 +128,14 @@ public abstract class DecisionPointHandler extends PointHandler {
 				setReturnValue(0);
 			}
 		}.run();
+	}
+
+	// cate tote-uri are zona: in PTTT + pe drum spre el (cu TO deschis)
+	private long countInZone(Session session, String pttt) {
+		return session.createNamedQuery("LoadUnit.countByLocationName", Long.class).setParameter("name", pttt)
+				.getSingleResult()
+				+ session.createNamedQuery("TransportOrder.countOpenByTargetName", Long.class)
+						.setParameter("target", pttt).setParameterList("open", Constants.OPEN_TRANSPORT_STATUSES)
+						.getSingleResult();
 	}
 }
