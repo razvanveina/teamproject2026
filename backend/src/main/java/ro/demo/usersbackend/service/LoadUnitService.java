@@ -6,11 +6,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.apache.activemq.ActiveMQConnectionFactory;
 import org.hibernate.Session;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import jakarta.jms.JMSContext;
 import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
 import ro.demo.usersbackend.dto.LoadUnitResponse;
@@ -30,12 +32,17 @@ import ro.demo.usersbackend.entity.RetrievalOrderLine;
 import ro.demo.usersbackend.entity.RetrievalOrderLineStatus;
 import ro.demo.usersbackend.entity.RetrievalOrderStatus;
 import ro.demo.usersbackend.entity.StockItem;
+import ro.demo.usersbackend.entity.TransportOrder;
+import ro.demo.usersbackend.entity.TransportOrderStatus;
+import ro.demo.usersbackend.messaging.Broker;
+import ro.demo.usersbackend.messaging.MfsMessages;
 import ro.demo.usersbackend.repository.ArticlePackagingUnitTypeRepository;
 import ro.demo.usersbackend.repository.DestinationToGateRepository;
 import ro.demo.usersbackend.repository.LoadUnitRepository;
 import ro.demo.usersbackend.repository.LocationRepository;
 import ro.demo.usersbackend.repository.RetrievalOrderRepository;
 import ro.demo.usersbackend.repository.StockItemRepository;
+import ro.demo.usersbackend.repository.TransportOrderRepository;
 
 @Service
 public class LoadUnitService {
@@ -150,6 +157,13 @@ public class LoadUnitService {
 		carton.setLocation(findLocationByName(session, Constants.OUT));
 		new LoadUnitRepository(session).insert(carton);
 		return carton;
+	}
+
+	private void sendCartonToGateLine(String cartonBarcode) {
+		try (JMSContext context = new ActiveMQConnectionFactory(Broker.URL).createContext()) {
+			context.createProducer().send(context.createQueue(MfsMessages.FRONTEND_REQUEST_QUEUE), Constants.CREATE_LU
+					+ " " + cartonBarcode + " " + Constants.GATE_LINE_START + " " + LoadUnitType.CARTON.name());
+		}
 	}
 
 	private RetrievalOrder findOrderReadyForLabel(LoadUnit carton, String barcode, String user) {
@@ -398,7 +412,9 @@ public class LoadUnitService {
 	}
 
 	public void confirmLabelAndSendCartonToGate(String barcode, String scannedLabel, String user) {
-		new WithSessionAndTransaction<Void>() {
+		// true = gate-ul e pe banda, cartonul trebuie pus pe linia de gate-uri dupa
+		// commit
+		boolean onConveyor = new WithSessionAndTransaction<Boolean>() {
 			@Override
 			protected void executeBusinessLogic(Session session) {
 				LoadUnit carton = findLoadUnitByBarcode(session, barcode);
@@ -416,9 +432,26 @@ public class LoadUnitService {
 				}
 
 				order.setStatus(RetrievalOrderStatus.FINISHED);
-				carton.setLocation(findGateForOrder(session, order));
+				Location gate = findGateForOrder(session, order);
+
+				if (!Constants.CONVEYOR_GATES.contains(gate.getName())) {
+					carton.setLocation(gate); // gate manual, ca inainte
+					setReturnValue(false);
+					return;
+				}
+
+				// gate pe banda: cartonul ramane pe OUT, TO-ul activ spune GP-urilor unde sa-l
+				// coboare
+				new TransportOrderRepository(session)
+						.insert(new TransportOrder(carton.getLocation(), gate, TransportOrderStatus.ACTIVE, carton));
+				setReturnValue(true);
 			}
 		}.run();
+
+		// run() a facut deja commit, deci TO-ul exista cand cartonul ajunge la GP1
+		if (onConveyor) {
+			sendCartonToGateLine(barcode);
+		}
 	}
 
 	public void reprintLabel(String barcode, String user) {
