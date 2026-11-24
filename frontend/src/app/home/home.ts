@@ -149,7 +149,7 @@ export class Home implements OnInit {
               const pack = packageById.get(Number(item['article_packaging_unit_type_id']));
               const article = articleById.get(Number(pack?.['article_id']));
               return {
-                barcode: String(article?.['barcode'] ?? ''),
+                barcode: String(pack?.['barcode'] ?? ''),
                 description: String(article?.['description'] ?? ''),
                 quantity: Number(item['quantity'])
               };
