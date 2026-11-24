@@ -45,6 +45,7 @@ public class TransportOrderService {
 	// pleaca din PTTT spre OUT le face simulatorul, nu un muncitor
 	private boolean isAutomatic(TransportOrder order) {
 		return Constants.CONVEYOR_POINTS.contains(order.getTarget().getName())
+				|| Constants.CONVEYOR_GATES.contains(order.getTarget().getName())
 				|| Constants.PTTT_POINTS.contains(order.getSource().getName())
 				|| (Constants.DECANTING.equals(order.getSource().getName())
 						&& order.getLoadUnit().getType() == LoadUnitType.TOTE);

@@ -37,7 +37,15 @@ public class TelegramHandling {
 			Map.entry(Constants.DP6, new DP6Handler()), Map.entry(Constants.DP7, new DP7Handler()),
 			Map.entry(Constants.DP8, new DP8Handler()), Map.entry(Constants.PTTS2, new PTTS2Handler()),
 			Map.entry(Constants.PTTS3, new PTTS3Handler()), Map.entry(Constants.PTTT2, new PTTT2Handler()),
-			Map.entry(Constants.PTTT3, new PTTT3Handler()));
+			Map.entry(Constants.PTTT3, new PTTT3Handler()),
+			Map.entry(Constants.GP1, new GatePointHandler(Constants.GP1, Constants.CONVEYOR_GATES.get(0))),
+			Map.entry(Constants.GP2, new GatePointHandler(Constants.GP2, Constants.CONVEYOR_GATES.get(1))),
+			Map.entry(Constants.GP3, new GatePointHandler(Constants.GP3, Constants.CONVEYOR_GATES.get(2))),
+			Map.entry(Constants.GP4, new GatePointHandler(Constants.GP4, null)),
+			Map.entry(Constants.CONVEYOR_GATES.get(0), new GateHandler(Constants.CONVEYOR_GATES.get(0))),
+			Map.entry(Constants.CONVEYOR_GATES.get(1), new GateHandler(Constants.CONVEYOR_GATES.get(1))),
+			Map.entry(Constants.CONVEYOR_GATES.get(2), new GateHandler(Constants.CONVEYOR_GATES.get(2))),
+			Map.entry(Constants.CONVEYOR_GATES.get(3), new GateHandler(Constants.CONVEYOR_GATES.get(3))));
 
 	// ia ca parametrii punctul si telegrama lui
 	// gaseste handleru punctului si ii paseaza telegrama
