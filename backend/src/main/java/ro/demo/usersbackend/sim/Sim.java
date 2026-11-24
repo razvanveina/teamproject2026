@@ -40,10 +40,12 @@ public class Sim {
 	private JMSConsumer consumer;
 	private JMSContext context;
 
+	private boolean skipSave = false;
+
 	public static void main(String[] args) throws IOException {
 		System.setProperty(Constants.LOG_CONFIGURATION_PROPERTY, Constants.LOG_CONFIGURATION_FILE);
 		Sim sim = new Sim();
-		sim.run();
+		sim.run(args);
 		SimWindow window = new SimWindow(sim);
 		window.open(sim::save);
 
@@ -109,6 +111,10 @@ public class Sim {
 	}
 
 	private synchronized void save() {
+		if (skipSave) {
+			return;
+		}
+
 		Lock lock = Entity.LOCK.writeLock();
 		try {
 			if (!lock.tryLock(2, TimeUnit.SECONDS)) {
@@ -150,7 +156,7 @@ public class Sim {
 		return entity;
 	}
 
-	public void run() {
+	public void run(String[] args) {
 		Conveyor c1 = add(new Conveyor("C01", 10, new Point(58, 440), 560, 300, 120, 300, 120, 560));
 		Conveyor c2 = add(new Conveyor("C02", 3, new Point(654, 524), 560, 560, 768, 560));
 		Conveyor c3 = add(new Conveyor("C03", 10, new Point(1536, 505), 1408, 560, 1500, 560, 1500, 430));
@@ -333,7 +339,19 @@ public class Sim {
 		gate3.getSource().add(c41);
 		gate4.getSource().add(c42);
 
-		restore();
+		if (args.length > 0) {
+			if ("--new".equals(args[0])) {
+				try {
+					Files.delete(SNAPSHOT);
+				} catch (IOException e1) {
+					e1.printStackTrace();
+				}
+			} else if ("--skipsave".equals(args[0])) {
+				skipSave = true;
+			}
+		} else {
+			restore();
+		}
 		entities.forEach(Entity::start);
 	}
 
