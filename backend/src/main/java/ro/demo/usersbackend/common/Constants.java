@@ -51,11 +51,14 @@ public final class Constants {
 	public static final String GP3 = "GP3";
 	public static final String GP4 = "GP4";
 
+	public static final String GATE_LINE_START = "C35";
+
 	public static final List<String> PTTS_POINTS = List.of(PTTS1, PTTS2, PTTS3);
 	public static final List<String> PTTT_POINTS = List.of(PTTT1, PTTT2, PTTT3);
 
 	public static final List<String> CONVEYOR_POINTS = List.of(TPS1, TPS2, TPT1, IP1, IP2, IP3, IP4, IP5, IP6, IP7, IP8,
-			DP1, DP2, DP3, DP4, DP5, DP6, DP7, DP8, EMPTY, PTTS1, PTTS2, PTTS3, PTTT1, PTTT2, PTTT3);
+			DP1, DP2, DP3, DP4, DP5, DP6, DP7, DP8, EMPTY, PTTS1, PTTS2, PTTS3, PTTT1, PTTT2, PTTT3, GP1, GP2, GP3,
+			GP4);
 
 	public static final int PTTT_LANE_SLOTS = 3;
 
