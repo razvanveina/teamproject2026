@@ -6,32 +6,43 @@ import org.springframework.stereotype.Component;
 
 import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
+import ro.demo.usersbackend.entity.Article;
+import ro.demo.usersbackend.entity.ArticlePackagingUnitType;
 import ro.demo.usersbackend.entity.Destination;
+import ro.demo.usersbackend.entity.DestinationToGate;
+import ro.demo.usersbackend.entity.Location;
+import ro.demo.usersbackend.entity.PackagingUnitType;
 import ro.demo.usersbackend.entity.Printer;
 import ro.demo.usersbackend.entity.PrinterType;
 import ro.demo.usersbackend.entity.StorageLocation;
 import ro.demo.usersbackend.entity.TransitLocation;
+import ro.demo.usersbackend.repository.ArticlePackagingUnitTypeRepository;
+import ro.demo.usersbackend.repository.ArticleRepository;
+import ro.demo.usersbackend.repository.DestinationToGateRepository;
 import ro.demo.usersbackend.repository.LocationRepository;
+import ro.demo.usersbackend.repository.PackagingUnitTypeRepository;
 
 @Component
 public class InitialDataCreator implements CommandLineRunner {
+	// destinatia de pe pozitia i merge la poarta GATE(i + 1)
+	private static final String[] DESTINATIONS = { "Bucharest", "Timisoara", "Brasov", "Iasi", "Arad" };
+
 	@Override
 	public void run(String... args) {
 		new WithSessionAndTransaction<Void>() {
 			@Override
 			protected void executeBusinessLogic(Session session) {
-				if (new LocationRepository(session).count() > 0) {
-					return;
+				if (new LocationRepository(session).count() == 0) {
+					createStorageLocations(session);
+					createTransitLocations(session);
+					createPickingLocations(session);
+					createPrinters(session);
+					createSimulatorData(session);
 				}
-				createStorageLocations(session);
-				createTransitLocations(session);
-				createPickingLocations(session);
+				createTransitLocationIfMissing(session, Constants.EMPTY_TOTES);
 				createDestinations(session);
-				createPrinters(session);
-				createSimulatorData(session);
-//				createArticles();
-//				createPackagingUnitTypes();
-//				createStock();
+				createDestinationGates(session);
+				createArticles(session);
 			}
 		}.run();
 	}
@@ -41,12 +52,76 @@ public class InitialDataCreator implements CommandLineRunner {
 	}
 
 	private void createDestinations(Session session) {
-		String[] destinations = { "Bucharest", "Timisoara", "Brasov", "Iasi", "Arad" };
+		for (String name : DESTINATIONS) {
+			if (findDestination(session, name) == null) {
+				session.persist(new Destination(name));
+			}
+		}
+	}
 
-		for (String name : destinations) {
-			Destination destination = new Destination();
-			destination.setName(name);
-			session.persist(destination);
+	private void createDestinationGates(Session session) {
+		DestinationToGateRepository destinationToGateRepository = new DestinationToGateRepository(session);
+		LocationRepository locationRepository = new LocationRepository(session);
+
+		for (int i = 0; i < DESTINATIONS.length; i++) {
+			if (destinationToGateRepository.findByDestinationName(DESTINATIONS[i]).isEmpty()) {
+				Destination destination = findDestination(session, DESTINATIONS[i]);
+				Location gate = locationRepository.findByName(String.format(Constants.GATE_NAME, i + 1)).get();
+				session.persist(new DestinationToGate(destination, gate));
+			}
+		}
+	}
+
+	private Destination findDestination(Session session, String name) {
+		return session.createNamedQuery("Destination.findByName", Destination.class).setParameter("name", name)
+				.uniqueResultOptional().orElse(null);
+	}
+
+	private void createArticles(Session session) {
+		createArticle(session, "111", "Mere");
+		createArticle(session, "112", "Pere");
+
+		createPackagingUnitType(session, "PIECE", 1);
+		createPackagingUnitType(session, "BAX3", 3);
+		createPackagingUnitType(session, "BAX6", 6);
+		createPackagingUnitType(session, "BAX12", 12);
+
+		createArticlePackaging(session, "111", "111", "PIECE");
+		createArticlePackaging(session, "111", "111003", "BAX3");
+		createArticlePackaging(session, "111", "111006", "BAX6");
+		createArticlePackaging(session, "112", "112", "PIECE");
+		createArticlePackaging(session, "112", "112003", "BAX3");
+		createArticlePackaging(session, "112", "112012", "BAX12");
+	}
+
+	private void createArticle(Session session, String barcode, String description) {
+		ArticleRepository articleRepository = new ArticleRepository(session);
+		if (articleRepository.findByBarcode(barcode).isEmpty()) {
+			articleRepository.insert(new Article(barcode, description));
+		}
+	}
+
+	private void createPackagingUnitType(Session session, String name, int quantity) {
+		PackagingUnitTypeRepository packagingUnitTypeRepository = new PackagingUnitTypeRepository(session);
+		if (packagingUnitTypeRepository.findByName(name).isEmpty()) {
+			packagingUnitTypeRepository.insert(new PackagingUnitType(name, quantity));
+		}
+	}
+
+	private void createArticlePackaging(Session session, String articleBarcode, String barcode,
+			String packagingName) {
+		ArticlePackagingUnitTypeRepository articlePackagingRepository = new ArticlePackagingUnitTypeRepository(
+				session);
+		if (articlePackagingRepository.findByBarcode(barcode).isEmpty()) {
+			Article article = new ArticleRepository(session).findByBarcode(articleBarcode).get();
+			PackagingUnitType packaging = new PackagingUnitTypeRepository(session).findByName(packagingName).get();
+			articlePackagingRepository.insert(new ArticlePackagingUnitType(barcode, article, packaging));
+		}
+	}
+
+	private void createTransitLocationIfMissing(Session session, String name) {
+		if (new LocationRepository(session).findByName(name).isEmpty()) {
+			createTransitLocation(session, name);
 		}
 	}
 
