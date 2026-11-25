@@ -147,6 +147,18 @@ public class SimWindow extends JPanel {
 		});
 		add(resetButton);
 
+		JButton setupButton = new JButton("Setup");
+		setupButton.setFocusPainted(false);
+		setupButton.addActionListener(e -> {
+			int answer = JOptionPane.showConfirmDialog(this,
+					"Remove all load units and load the ones the server has on conveyor points?", "Setup",
+					JOptionPane.YES_NO_OPTION);
+			if (answer == JOptionPane.YES_OPTION) {
+				new Thread(sim::setupFromServer, "simSetup").start();
+			}
+		});
+		add(setupButton);
+
 		MouseAdapter mouse = new MouseAdapter() {
 			@Override
 			public void mouseWheelMoved(MouseWheelEvent e) {

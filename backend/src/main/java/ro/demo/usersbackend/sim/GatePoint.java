@@ -1,7 +1,5 @@
 package ro.demo.usersbackend.sim;
 
-import ro.demo.usersbackend.common.Constants;
-
 // gate de la capatul liniei de dupa OUT: cartonul ajunge, anunta serverul (ARRIVED)
 // si dupa GATE_DWELL iese din sim, adica a fost incarcat in camion
 public class GatePoint extends ServerPoint {
@@ -19,12 +17,13 @@ public class GatePoint extends ServerPoint {
 
 	@Override
 	protected void step() throws InterruptedException {
-		synchronized (this) {
-			if (loadUnit != null && timeKeeper.currentSimulationTime() - arrivedAt >= Constants.GATE_DWELL) {
-				log.info("{} left the conveyor at {}", loadUnit.barcode(), name);
-				loadUnit = null;
-			}
-		}
+		// comentat temporar
+//		synchronized (this) {
+//			if (loadUnit != null && timeKeeper.currentSimulationTime() - arrivedAt >= Constants.GATE_DWELL) {
+//				log.info("{} left the conveyor at {}", loadUnit.barcode(), name);
+//				loadUnit = null;
+//			}
+//		}
 		if (isEmpty()) {
 			pull();
 		}

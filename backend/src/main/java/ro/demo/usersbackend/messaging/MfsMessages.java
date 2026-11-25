@@ -15,6 +15,9 @@ public final class MfsMessages {
 	public static final String FRONTEND_RESPONSE_QUEUE = "MFS_RESPONSE_FRONTEND";
 	// server -> simulator, doar pentru intrarea de la decanting (TPS2)
 	public static final String DECANTING_REQUEST_QUEUE = "MFS_REQUEST_DECANTING";
+	// simulator -> server, butonul Setup; raspunsul vine pe coada temporara din
+	// JMSReplyTo
+	public static final String SETUP_REQUEST_QUEUE = "MFS_SETUP_REQUEST";
 
 	private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -37,6 +40,10 @@ public final class MfsMessages {
 	// de ex
 	// {"type":"ARRIVED","point":"IP1","loadUnit":"00001","loadUnitType":"TOTE"}
 	public record Created(String type, String point, String loadUnit, String loadUnitType) {
+	}
+
+	// de ex {"point":"DP4","loadUnit":"000002","loadUnitType":"TOTE"}
+	public record SetupLoadUnit(String point, String loadUnit, String loadUnitType) {
 	}
 
 	public static String toJson(Object message) {

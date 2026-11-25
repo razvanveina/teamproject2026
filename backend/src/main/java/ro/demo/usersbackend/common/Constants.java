@@ -87,6 +87,7 @@ public final class Constants {
 	public static final String GET_ENTITIES = "getEntities";
 	public static final String CREATE_LU = "createLU";
 	public static final String CREATED = "Created";
+	public static final String SETUP = "SETUP";
 
 	// logging
 	public static final String LOG_CONFIGURATION_PROPERTY = "log4j2.configurationFile";
@@ -95,6 +96,7 @@ public final class Constants {
 	// timings
 	public static final long PROCESS_INTERVAL = 10000;
 	public static final long DECISION_TIMEOUT = 30000;
+	public static final long SETUP_TIMEOUT = 5000; // cat asteapta simulatorul raspunsul serverului la Setup
 	public static final long HOLD_RETRY_INTERVAL = 10000; // cat de des intreaba un DP pentru un tote oprit
 	public static final long INFO_POINT_DWELL = 1000; // cat sta un tote pe un info point
 	public static final long TPS1_ACK_DELAY = 2000; // TPS1 confirma GET dupa asta

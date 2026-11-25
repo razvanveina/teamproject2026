@@ -21,12 +21,15 @@ import org.apache.logging.log4j.Logger;
 
 import jakarta.jms.JMSConsumer;
 import jakarta.jms.JMSContext;
+import jakarta.jms.JMSException;
 import jakarta.jms.Message;
 import jakarta.jms.Queue;
+import jakarta.jms.TemporaryQueue;
 import jakarta.jms.TextMessage;
 import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.messaging.Broker;
 import ro.demo.usersbackend.messaging.MfsMessages;
+import ro.demo.usersbackend.messaging.MfsMessages.SetupLoadUnit;
 
 public class Sim {
 
@@ -174,6 +177,57 @@ public class Sim {
 		return entity;
 	}
 
+	// butonul Setup: golim simulatorul si punem pe puncte load unit-urile pe care
+	// DB-ul le are acolo
+	void setupFromServer() {
+		List<SetupLoadUnit> loadUnits = requestSetup();
+		if (loadUnits == null) {
+			return;
+		}
+		clearLoadUnits();
+
+		int placed = 0;
+		for (SetupLoadUnit setupLoadUnit : loadUnits) {
+			Entity point = entityNamed(setupLoadUnit.point());
+			if (point == null) {
+				log.warn("setup: point {} is not in the simulator, {} skipped", setupLoadUnit.point(),
+						setupLoadUnit.loadUnit());
+				continue;
+			}
+			// addLoadUnit = ca la Create LU: punctul anunta CREATED si ARRIVED, serverul
+			// decide din TO-ul activ
+			if (point.addLoadUnit(new SimLoadUnit(setupLoadUnit.loadUnit(), setupLoadUnit.loadUnitType()))) {
+				placed++;
+			} else {
+				log.warn("setup: {} already has a load unit, {} skipped", setupLoadUnit.point(),
+						setupLoadUnit.loadUnit());
+			}
+		}
+		log.info("setup: {} of {} load units placed", placed, loadUnits.size());
+	}
+
+	private List<SetupLoadUnit> requestSetup() {
+		try (JMSContext setupContext = new ActiveMQConnectionFactory(Broker.URL).createContext()) {
+			TemporaryQueue replyQueue = setupContext.createTemporaryQueue();
+			TextMessage request = setupContext.createTextMessage(Constants.SETUP);
+			request.setJMSReplyTo(replyQueue);
+
+			try (JMSConsumer replies = setupContext.createConsumer(replyQueue)) {
+				setupContext.createProducer().send(setupContext.createQueue(MfsMessages.SETUP_REQUEST_QUEUE), request);
+				// ActiveMQ Classic nu suporta receiveBody, luam mesajul si citim textul
+				Message reply = replies.receive(Constants.SETUP_TIMEOUT);
+				if (!(reply instanceof TextMessage text)) {
+					log.warn("setup: no reply from the server in {} ms", Constants.SETUP_TIMEOUT);
+					return null;
+				}
+				return List.of(MfsMessages.fromJson(text.getText(), SetupLoadUnit[].class));
+			}
+		} catch (JMSException e) {
+			log.error("setup: request failed", e);
+			return null;
+		}
+	}
+
 	public void run(String[] args) {
 		Conveyor c1 = add(new Conveyor("C01", 10, new Point(58, 440), 560, 300, 120, 300, 120, 560));
 		Conveyor c2 = add(new Conveyor("C02", 3, new Point(654, 524), 560, 560, 768, 560));
@@ -217,10 +271,10 @@ public class Sim {
 		Conveyor c36 = add(new Conveyor("C36", 3, new Point(1490, 1165), 1600, 1120, 1380, 1120));
 		Conveyor c37 = add(new Conveyor("C37", 3, new Point(1270, 1165), 1380, 1120, 1160, 1120));
 		Conveyor c38 = add(new Conveyor("C38", 3, new Point(1050, 1165), 1160, 1120, 940, 1120));
-		Conveyor c39 = add(new Conveyor("C39", 2, new Point(1542, 1180), 1600, 1120, 1600, 1240));
-		Conveyor c40 = add(new Conveyor("C40", 2, new Point(1322, 1180), 1380, 1120, 1380, 1240));
-		Conveyor c41 = add(new Conveyor("C41", 2, new Point(1102, 1180), 1160, 1120, 1160, 1240));
-		Conveyor c42 = add(new Conveyor("C42", 2, new Point(882, 1180), 940, 1120, 940, 1240));
+		Conveyor c39 = add(new Conveyor("C39", 5, new Point(1542, 1280), 1600, 1120, 1600, 1440));
+		Conveyor c40 = add(new Conveyor("C40", 5, new Point(1322, 1280), 1380, 1120, 1380, 1440));
+		Conveyor c41 = add(new Conveyor("C41", 5, new Point(1102, 1280), 1160, 1120, 1160, 1440));
+		Conveyor c42 = add(new Conveyor("C42", 5, new Point(882, 1280), 940, 1120, 940, 1440));
 
 		InfoPoint ip1 = add(new InfoPoint(Constants.IP1, 560, 300, true));
 		InfoPoint ip2 = add(new InfoPoint(Constants.IP2, 768, 560));
@@ -258,10 +312,10 @@ public class Sim {
 		StationPoint ptts3 = add(new StationPoint(Constants.PTTS3, 1304, 690));
 		StationPoint pttt3 = add(new StationPoint(Constants.PTTT3, 1304, 770));
 		StationPoint out = add(new StationPoint(Constants.OUT, 1540, 900));
-		GatePoint gate1 = add(new GatePoint(Constants.CONVEYOR_GATES.get(0), 1600, 1240, true));
-		GatePoint gate2 = add(new GatePoint(Constants.CONVEYOR_GATES.get(1), 1380, 1240, true));
-		GatePoint gate3 = add(new GatePoint(Constants.CONVEYOR_GATES.get(2), 1160, 1240, true));
-		GatePoint gate4 = add(new GatePoint(Constants.CONVEYOR_GATES.get(3), 940, 1240, true));
+		GatePoint gate1 = add(new GatePoint(Constants.CONVEYOR_GATES.get(0), 1600, 1440, true));
+		GatePoint gate2 = add(new GatePoint(Constants.CONVEYOR_GATES.get(1), 1380, 1440, true));
+		GatePoint gate3 = add(new GatePoint(Constants.CONVEYOR_GATES.get(2), 1160, 1440, true));
+		GatePoint gate4 = add(new GatePoint(Constants.CONVEYOR_GATES.get(3), 940, 1440, true));
 
 		c6.getSource().add(tps1);
 		ip1.getSource().add(c6);

@@ -10,6 +10,7 @@ import ro.demo.usersbackend.init.DemoTestDataCreator;
 import ro.demo.usersbackend.init.InitialDataCreator;
 import ro.demo.usersbackend.init.InitialDataCreatorApplication;
 import ro.demo.usersbackend.messaging.Broker;
+import ro.demo.usersbackend.server.mfs.SimSetupListener;
 import ro.demo.usersbackend.server.process.ProcessManager;
 
 @SpringBootApplication
@@ -19,6 +20,7 @@ public class UsersBackendApplication {
 	public static void main(String[] args) throws Exception {
 		Broker.start();
 		SpringApplication.run(UsersBackendApplication.class, args);
+		new SimSetupListener().start();
 		ProcessManager.getInstance().startAll();
 	}
 }
