@@ -1,4 +1,5 @@
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { SimPickingApi } from '../../services/sim-picking';
 import { LogService } from '../../services/log';
 
@@ -10,6 +11,7 @@ import { LogService } from '../../services/log';
 export class SimPicking implements OnInit, OnDestroy {
   private api = inject(SimPickingApi);
   private log = inject(LogService);
+  private route = inject(ActivatedRoute);
   private checker: any;
   private leaving = '';
   private targetLeaving = '';
@@ -23,6 +25,10 @@ export class SimPicking implements OnInit, OnDestroy {
   message = signal('');
 
   ngOnInit(): void {
+    const requested = Number(this.route.snapshot.queryParamMap.get('station'));
+    if (Number.isInteger(requested) && requested > 0) {
+      this.station.set(requested);
+    }
     this.api.getStationCount().subscribe({
       next: (count: number) => this.stations.set(Array.from({ length: count }, (_, i) => i + 1)),
     });

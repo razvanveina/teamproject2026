@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth';
+import { WORKPLACE_ROUTES } from '../workplaces';
 
 @Component({
   selector: 'app-login',
@@ -21,7 +22,14 @@ export class Login {
 
   login(): void {
     this.auth.login(this.username.trim(), this.password).subscribe({
-      next: () => this.router.navigate(['/home']),
+      next: res => {
+        const route = res.workplace ? WORKPLACE_ROUTES[res.workplace] : undefined;
+        if (route) {
+          this.router.navigate([route.path], { queryParams: route.queryParams });
+        } else {
+          this.router.navigate(['/home']);
+        }
+      },
       error: () => this.error.set('Login failed. Check your credentials.')
     });
   }

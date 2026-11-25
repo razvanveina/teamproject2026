@@ -34,7 +34,7 @@ export class AuthService {
   }
 
   login(username: string, password: string) {
-    return this.http.post<{ token: string }>(`${this.url}/login`, { username, password }).pipe(
+    return this.http.post<{ token: string; username: string; workplace: string | null }>(`${this.url}/login`, { username, password }).pipe(
       tap(res => {
         localStorage.setItem('token', res.token);
         this.tokenSignal.set(res.token);
