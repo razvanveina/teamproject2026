@@ -177,6 +177,15 @@ public class Sim {
 		return entity;
 	}
 
+	private Entity entityNamed(String name) {
+		for (Entity entity : entities) {
+			if (entity.getName().equals(name)) {
+				return entity;
+			}
+		}
+		return null;
+	}
+
 	// butonul Setup: golim simulatorul si punem pe puncte load unit-urile pe care
 	// DB-ul le are acolo
 	void setupFromServer() {
