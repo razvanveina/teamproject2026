@@ -1,6 +1,6 @@
 .container {
     display: grid;
-    grid-template-rows: auto auto 1fr 100px;
+    grid-template-rows: 1fr auto 100px;
     gap: 10px;
     height: 80vh;
     width: 90vw;
@@ -9,15 +9,24 @@
 
 .top {
     display: flex;
-    gap: 16px;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
 }
 
 .tote {
     flex: 1;
-    padding: 16px;
+    min-height: 0;
+    overflow: auto;
+    padding: 21px;
     background: white;
-    border: 6px solid #203b5e;
+    border: 1px solid #c9d1dc;
     border-radius: 16px;
+}
+
+.tote.present {
+    padding: 16px;
+    border: 6px solid #203b5e;
     box-shadow: 0 4px 18px rgb(20 37 63 / 10%);
 }
 
@@ -34,15 +43,11 @@
     font-weight: 700;
 }
 
-.empty {
-    color: #5b6b80;
-    font-size: 20px;
-}
-
 .arrow {
     align-self: center;
     color: #203b5e;
-    font-size: 48px;
+    font-size: 40px;
+    line-height: 1;
 }
 
 table {
@@ -113,23 +118,15 @@ button:disabled {
     background: linear-gradient(110deg, #172b4d, #203b5e);
 }
 
-.zones {
-    display: flex;
-    gap: 10px;
-}
-
-.zones button {
-    width: auto;
-    height: auto;
-    margin: 0;
-    padding: 8px 20px;
+.zone {
+    margin-left: auto;
+    margin-right: 20px;
+    padding: 8px 16px;
     color: #172b4d;
-    font-size: 18px;
+    font-size: 22px;
+    font-weight: 600;
     background: white;
     border: 2px solid #203b5e;
-}
-
-.zones button.active {
-    color: white;
-    background: linear-gradient(110deg, #172b4d, #203b5e);
+    border-radius: 10px;
+    cursor: pointer;
 }

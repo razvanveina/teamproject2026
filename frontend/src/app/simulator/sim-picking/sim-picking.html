@@ -1,14 +1,8 @@
 <div class="container">
-    <div class="zones">
-        @for (n of stations(); track n) {
-        <button [class.active]="n === station()" (click)="selectStation(n)">Zone {{ n }}</button>
-        }
-    </div>
-
     <div class="top">
-        <div class="tote">
+        @if (source(); as tote) {
+        <div class="tote present">
             <h3>Source tote (PTTS{{ station() }})</h3>
-            @if (source(); as tote) {
             <p class="barcode">{{ tote.barcode }}</p>
             <table>
                 <thead>
@@ -30,16 +24,16 @@
                     }
                 </tbody>
             </table>
-            } @else {
-            <p class="empty">No tote, waiting for the next one</p>
-            }
         </div>
+        } @else {
+        <div class="tote"></div>
+        }
 
-        <div class="arrow">➜</div>
+        <div class="arrow">⬇</div>
 
-        <div class="tote">
+        @if (target(); as tote) {
+        <div class="tote present">
             <h3>Target tote (PTTT{{ station() }})</h3>
-            @if (target(); as tote) {
             <p class="barcode">{{ tote.barcode }}</p>
             <table>
                 <thead>
@@ -61,10 +55,10 @@
                     }
                 </tbody>
             </table>
-            } @else {
-            <p class="empty">No tote, waiting for an empty one</p>
-            }
         </div>
+        } @else {
+        <div class="tote"></div>
+        }
     </div>
 
     <div class="left">
@@ -75,5 +69,10 @@
         <button (click)="onCancel()" class="cancel">Cancel</button>
         <button (click)="onConfirm()" class="confirm"
             [disabled]="source() === null || target() === null">Confirm</button>
+        <select class="zone" (change)="selectStation(+$any($event.target).value)">
+            @for (n of stations(); track n) {
+            <option [value]="n" [selected]="n === station()">Zone {{ n }}</option>
+            }
+        </select>
     </div>
 </div>
