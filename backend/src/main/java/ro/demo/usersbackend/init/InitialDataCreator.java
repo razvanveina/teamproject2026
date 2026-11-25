@@ -84,6 +84,7 @@ public class InitialDataCreator implements CommandLineRunner {
 	private void createArticles(Session session) {
 		createArticle(session, "111", "Mere");
 		createArticle(session, "112", "Pere");
+		createArticle(session, "113", "Prune");
 
 		createPackagingUnitType(session, "PIECE", 1);
 		createPackagingUnitType(session, "BAX3", 3);
@@ -96,6 +97,7 @@ public class InitialDataCreator implements CommandLineRunner {
 		createArticlePackaging(session, "112", "112", "PIECE");
 		createArticlePackaging(session, "112", "112003", "BAX3");
 		createArticlePackaging(session, "112", "112012", "BAX12");
+		createArticlePackaging(session, "113", "113", "PIECE");
 	}
 
 	private void createArticle(Session session, String barcode, String description) {
