@@ -111,11 +111,17 @@ public class LoadUnitService {
 		return destinationToGate.getGate();
 	}
 
+	// sarim peste barcode-urile folosite deja de alt load unit (create din SQL sau din dialog)
 	private String generateLoadUnitBarcode(Session session) {
-		Long next = session
-				.createNativeQuery("SELECT " + Constants.LOAD_UNIT_SEQUENCE + ".NEXTVAL FROM DUAL", Long.class)
-				.getSingleResult();
-		return String.format(Constants.LOAD_UNIT_BARCODE, next);
+		LoadUnitRepository loadUnitRepository = new LoadUnitRepository(session);
+		String barcode;
+		do {
+			Long next = session
+					.createNativeQuery("SELECT " + Constants.LOAD_UNIT_SEQUENCE + ".NEXTVAL FROM DUAL", Long.class)
+					.getSingleResult();
+			barcode = String.format(Constants.LOAD_UNIT_BARCODE, next);
+		} while (loadUnitRepository.findByBarcode(barcode).isPresent());
+		return barcode;
 	}
 
 	private List<StockItemResponse> toStockItemResponses(List<StockItem> items) {
