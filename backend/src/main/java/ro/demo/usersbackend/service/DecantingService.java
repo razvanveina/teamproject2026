@@ -19,9 +19,12 @@ import ro.demo.usersbackend.entity.ArticlePackagingUnitType;
 import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.LoadUnitType;
 import ro.demo.usersbackend.entity.Location;
+import ro.demo.usersbackend.entity.Reservation;
+import ro.demo.usersbackend.entity.RetrievalOrderLine;
 import ro.demo.usersbackend.entity.StockItem;
 import ro.demo.usersbackend.repository.LoadUnitRepository;
 import ro.demo.usersbackend.repository.LocationRepository;
+import ro.demo.usersbackend.repository.ReservationRepository;
 import ro.demo.usersbackend.repository.StockItemRepository;
 
 @Service
@@ -91,14 +94,14 @@ public class DecantingService {
 					if (left >= item.getQuantity()) {
 						left -= item.getQuantity();
 						item.setLoadUnit(tote);
-					} else if (item.getReservation() == null) {
-						item.setQuantity(item.getQuantity() - left);
-						new StockItemRepository(session)
-								.save(new StockItem(item.getArticlePackagingUnitType(), left, tote));
-						left = 0;
 					} else {
-						throw badRequest("Moving " + quantity + " would split stock reserved for an order. "
-								+ "Choose another quantity.");
+						item.setQuantity(item.getQuantity() - left);
+						StockItem splitItem = new StockItemRepository(session)
+								.save(new StockItem(item.getArticlePackagingUnitType(), left, tote));
+						if (item.getReservation() != null) {
+							reserveForSameLine(session, splitItem, item.getReservation().getRetrievalOrderLine());
+						}
+						left = 0;
 					}
 				}
 
@@ -110,6 +113,11 @@ public class DecantingService {
 
 	private List<StockItem> availableItems(Session session, LoadUnit loadUnit) {
 		return new StockItemRepository(session).findByLoadUnitOrderByIdAsc(loadUnit);
+	}
+
+	private void reserveForSameLine(Session session, StockItem splitItem, RetrievalOrderLine line) {
+		Reservation reservation = new ReservationRepository(session).save(new Reservation(splitItem, line));
+		splitItem.setReservation(reservation);
 	}
 
 	private LoadUnit createTote(Session session) {
