@@ -38,8 +38,11 @@ import ro.demo.usersbackend.server.picking.StationChooser;
 public class SimPickingService {
 	public static final Logger log = LogManager.getLogger("application");
 
-	public SimPickingService() {
+	private final PickingLocks locks;
+
+	public SimPickingService(PickingLocks locks) {
 		super();
+		this.locks = locks;
 	}
 
 	public int stationCount() {
@@ -47,7 +50,12 @@ public class SimPickingService {
 	}
 
 	// ce e acum in statie, sus si jos, si orderul pe care lucreaza statia
-	public SimStationResponse findStation(int station) {
+	public SimStationResponse findStation(int station, String user) {
+		stationPoint(Constants.PTTS_POINTS, station);
+		String takenBy = locks.occupyZone(station, user);
+		if (takenBy != null) {
+			return new SimStationResponse(null, null, null, takenBy);
+		}
 		return new WithSessionAndTransaction<SimStationResponse>() {
 			@Override
 			protected void executeBusinessLogic(Session session) {
@@ -61,7 +69,7 @@ public class SimPickingService {
 						orderId = order.getOrderId();
 					}
 				}
-				setReturnValue(new SimStationResponse(toResponse(source), toResponse(target), orderId));
+				setReturnValue(new SimStationResponse(toResponse(source), toResponse(target), orderId, null));
 			}
 		}.run();
 	}
@@ -101,7 +109,12 @@ public class SimPickingService {
 	// (acelasi order pe care il arata si ecranul)
 	// sursa primeste un TO dupa ce a ramas in ea (routeSource), apoi release
 	// tinta primeste un TO spre OUT si release doar cand orderul e complet
-	public String confirm(int station, String sourceBarcode, String targetBarcode) {
+	public String confirm(int station, String sourceBarcode, String targetBarcode, String user) {
+		stationPoint(Constants.PTTS_POINTS, station);
+		String takenBy = locks.occupyZone(station, user);
+		if (takenBy != null) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Zone " + station + " is used by " + takenBy);
+		}
 		return new WithSessionAndTransaction<String>() {
 			@Override
 			protected void executeBusinessLogic(Session session) {
@@ -137,6 +150,9 @@ public class SimPickingService {
 					return;
 				}
 
+				if (order.getPickedBy() == null) {
+					order.setPickedBy(user);
+				}
 				updateStatus(order, target);
 				routeSource(session, source, ptts);
 				release(ptts);
@@ -151,6 +167,10 @@ public class SimPickingService {
 				setReturnValue("Moved to " + targetBarcode + ", the order " + order.getOrderId() + " needs more totes");
 			}
 		}.run();
+	}
+
+	public void leave(int station, String user) {
+		locks.leaveZone(station, user);
 	}
 
 	private String stationPoint(List<String> points, int station) {

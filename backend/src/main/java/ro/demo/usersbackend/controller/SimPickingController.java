@@ -35,8 +35,14 @@ public class SimPickingController {
 	}
 
 	@GetMapping("/station")
-	public SimStationResponse findStation(@RequestParam(defaultValue = "1") int station) {
-		return simPickingService.findStation(station);
+	public SimStationResponse findStation(@RequestParam(defaultValue = "1") int station, Authentication authentication) {
+		return simPickingService.findStation(station, authentication.getName());
+	}
+
+	@PostMapping("/leave")
+	public void leave(@RequestParam int station, Authentication authentication) {
+		log.info("Sim picking: {} left zone {}", authentication.getName(), station);
+		simPickingService.leave(station, authentication.getName());
 	}
 	
 	@PostMapping("/confirm")
@@ -46,7 +52,7 @@ public class SimPickingController {
 				request.sourceTote(), request.targetTote(), station);
 		try {
 			return ResponseEntity.ok(Map.of("message",
-					simPickingService.confirm(station, request.sourceTote(), request.targetTote())));
+					simPickingService.confirm(station, request.sourceTote(), request.targetTote(), authentication.getName())));
 		} catch (ResponseStatusException e) {
 			log.error("Sim picking: {}", e.getReason());
 			return ResponseEntity.badRequest().body(Map.of("message", e.getReason()));

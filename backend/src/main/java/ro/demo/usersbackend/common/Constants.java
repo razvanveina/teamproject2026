@@ -1,6 +1,7 @@
 package ro.demo.usersbackend.common;
 
 import java.awt.Color;
+import java.time.Duration;
 import java.util.List;
 
 import ro.demo.usersbackend.entity.TransportOrderStatus;
@@ -102,6 +103,7 @@ public final class Constants {
 	public static final long INFO_POINT_DWELL = 1000; // cat sta un tote pe un info point
 	public static final long TPS1_ACK_DELAY = 2000; // TPS1 confirma GET dupa asta
 	public static final long ACK_GET_WAIT = 1000; // cat asteapta sv pentru urmatorul reply
+	public static final Duration SIM_PICKING_LOCK = Duration.ofSeconds(30);
 	public static final long GATE_DWELL = 2000; // cat sta un carton pe gate inainte sa iasa din sim
 	public static final double CONVEYOR_SPEED = 70; // viteza generala a benzilor, pixeli pe secunda
 	public static final Double[] CONVEYOR_SPEED_FACTORS = { 0.25, 0.5, 1.0, 2.0, 3.0, 5.0, 10.0 };
