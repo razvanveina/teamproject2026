@@ -7,9 +7,13 @@ import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -186,13 +190,21 @@ public class Sim {
 		return null;
 	}
 
-	// punctul e ocupat: load unit-ul asteapta pe o banda care intra in punct
-	// (IP-urile au doua)
+	// punctul e ocupat: cautam loc pe benzile dinainte, intai cea mai apropiata,
+	// apoi tot mai in spate
+
 	private boolean queueBeforePoint(Entity point, SimLoadUnit loadUnit) {
-		for (Entity source : point.getSource()) {
-			if (source instanceof Conveyor conveyor && conveyor.queueAtEnd(loadUnit)) {
+		Deque<Entity> toVisit = new ArrayDeque<>(point.getSource());
+		Set<Entity> visited = new HashSet<>();
+		while (!toVisit.isEmpty()) {
+			Entity upstream = toVisit.poll();
+			if (!visited.add(upstream)) {
+				continue;
+			}
+			if (upstream instanceof Conveyor conveyor && conveyor.queueAtEnd(loadUnit)) {
 				return true;
 			}
+			toVisit.addAll(upstream.getSource());
 		}
 		return false;
 	}
@@ -225,6 +237,10 @@ public class Sim {
 				} else if (queueBeforePoint(point, simLoadUnit)) {
 					queued++;
 					log.info("setup: {} is busy, {} waits on the belt before it", setupLoadUnit.point(),
+							setupLoadUnit.loadUnit());
+				} else if (queueBeforePoint(point, simLoadUnit)) {
+					queued++;
+					log.info("setup: {} is busy, {} waits on a belt upstream", setupLoadUnit.point(),
 							setupLoadUnit.loadUnit());
 				} else {
 					log.warn("setup: {} and the belts before it are full, {} skipped", setupLoadUnit.point(),
