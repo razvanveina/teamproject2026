@@ -180,7 +180,7 @@ public abstract class ServerPoint extends Entity {
 		double boxTop = y - SimWindow.POINT / 2.0;
 		double borderWidth = (SimWindow.CONV - (SimWindow.CONV - 5)) / 2.0;
 		Rectangle2D pointBox = new Rectangle2D.Double(boxLeft, boxTop, SimWindow.POINT, SimWindow.POINT);
-		g.setColor(Color.WHITE);
+		g.setColor(isHoldingLoadUnit() ? Constants.HELD_POINT_COLOR : Color.WHITE);
 		g.fill(pointBox);
 		g.setColor(Color.BLACK);
 		g.setStroke(new BasicStroke((float) borderWidth));
@@ -198,5 +198,9 @@ public abstract class ServerPoint extends Entity {
 		tote(g, loadUnit, x, y);
 
 		return pointBox;
+	}
+
+	protected boolean isHoldingLoadUnit() {
+		return false;
 	}
 }

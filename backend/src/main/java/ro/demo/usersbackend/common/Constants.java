@@ -120,6 +120,7 @@ public final class Constants {
 	// sim window
 	public static final Color TOTE_COLOR = new Color(120, 165, 215);
 	public static final Color CARTON_COLOR = new Color(185, 140, 100);
+	public static final Color HELD_POINT_COLOR = new Color(255, 225, 110);
 	public static final String PICKING_ZONE_LABEL = "Picking Zone";
 	public static final String DECANTING_ZONE_LABEL = "Decanting Zone";
 	public static final String ADD_LOAD_UNIT = "Add Load Unit";

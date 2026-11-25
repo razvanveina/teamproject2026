@@ -102,6 +102,11 @@ public class DecisionPoint extends ServerPoint {
 		put(MfsMessages.toJson(new AckGet("DECIDE", null, arrivingLoadUnit.barcode())));
 	}
 
+	@Override
+	protected synchronized boolean isHoldingLoadUnit() {
+		return isHeld && loadUnit != null;
+	}
+
 	private synchronized boolean isEmpty() {
 		return loadUnit == null;
 	}
