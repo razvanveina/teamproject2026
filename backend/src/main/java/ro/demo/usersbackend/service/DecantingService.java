@@ -124,10 +124,17 @@ public class DecantingService {
 		return new LoadUnitRepository(session).save(tote);
 	}
 
+	// sarim peste barcode-urile folosite deja de alt load unit (create din SQL, Sim Management sau dialog)
 	private String generateToteBarcode(Session session) {
-		Long next = session.createNativeQuery("SELECT " + Constants.TOTE_SEQUENCE + ".NEXTVAL FROM DUAL", Long.class)
-				.getSingleResult();
-		return String.format(Constants.TOTE_BARCODE, next);
+		LoadUnitRepository loadUnitRepository = new LoadUnitRepository(session);
+		String barcode;
+		do {
+			Long next = session
+					.createNativeQuery("SELECT " + Constants.TOTE_SEQUENCE + ".NEXTVAL FROM DUAL", Long.class)
+					.getSingleResult();
+			barcode = String.format(Constants.TOTE_BARCODE, next);
+		} while (loadUnitRepository.findByBarcode(barcode).isPresent());
+		return barcode;
 	}
 
 	private LoadUnit findLoadUnit(Session session, String barcode) {
