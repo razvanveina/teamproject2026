@@ -26,6 +26,7 @@ import ro.demo.usersbackend.entity.RetrievalOrder;
 import ro.demo.usersbackend.entity.RetrievalOrderLine;
 import ro.demo.usersbackend.entity.RetrievalOrderStatus;
 import ro.demo.usersbackend.entity.StockItem;
+import ro.demo.usersbackend.entity.StorageLocation;
 import ro.demo.usersbackend.entity.TransportOrder;
 import ro.demo.usersbackend.entity.TransportOrderStatus;
 import ro.demo.usersbackend.messaging.Broker;
@@ -33,7 +34,6 @@ import ro.demo.usersbackend.messaging.MfsMessages;
 import ro.demo.usersbackend.messaging.MfsMessages.AckGet;
 import ro.demo.usersbackend.messaging.MfsMessages.Get;
 import ro.demo.usersbackend.repository.AreaRepository;
-import ro.demo.usersbackend.repository.TransportOrderRepository;
 import ro.demo.usersbackend.server.mfs.LUCHandler;
 import ro.demo.usersbackend.server.mfs.TelegramHandling;
 import ro.demo.usersbackend.server.picking.StationChooser;
@@ -170,11 +170,9 @@ public class AutomaticRetrievalService extends AbstractProcess {
 				orders: for (RetrievalOrder order : orders) {
 					for (RetrievalOrderLine line : order.getLines()) {
 						for (Reservation reservation : line.getReservations()) {
-							if (reservation.getStockItem().getLoadUnit().getLocation().getArea() != pickingArea.get()) {
-								continue orders;
-							}
-							if (new TransportOrderRepository(session)
-									.findActiveByLoadUnit(reservation.getStockItem().getLoadUnit()).size() > 0) {
+							Location location = reservation.getStockItem().getLoadUnit().getLocation();
+							// doar tote-urile de pe raft (PICK...), nu cele deja pe banda sau in statie
+							if (location.getArea() != pickingArea.get() || !(location instanceof StorageLocation)) {
 								continue orders;
 							}
 						}
