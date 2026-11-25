@@ -107,6 +107,7 @@ public final class Constants {
 	public static final int MIN_ANCHOR_COUNT = 2;
 	public static final int TOTE_SPACING = 52; // tote + gap
 	public static final int MIN_CONVEYOR_CAPACITY = 1;
+	public static final int CONVEYOR_LABEL_OFFSET = 36;
 
 	// load unit types din sim
 	public static final String TOTE_TYPE = "TOTE";

@@ -2,6 +2,7 @@ package ro.demo.usersbackend.sim;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -55,6 +56,7 @@ public class Conveyor extends Entity {
 
 	private Point labelPositon;
 	private int[] pathCoordonates;
+	private boolean isEdited;
 	private Shape shape;
 	private Shape anchor;
 
@@ -256,7 +258,8 @@ public class Conveyor extends Entity {
 
 		g.setColor(Color.BLACK);
 		g.setFont(SimWindow.CONV_LABEL);
-		g.drawString(name, labelPositon.x, labelPositon.y);
+		Point labelPosition = currentLabelPosition(g);
+		g.drawString(name, labelPosition.x, labelPosition.y);
 
 //		Conveyor conveyor = (Conveyor) byName.get(name);
 		double margin = slotMargin();
@@ -294,6 +297,7 @@ public class Conveyor extends Entity {
 	public void moveAnchor(int anchorIndex, Point newPosition) {
 		pathCoordonates[anchorIndex * 2] = newPosition.x;
 		pathCoordonates[anchorIndex * 2 + 1] = newPosition.y;
+		isEdited = true;
 	}
 
 	public boolean isFirstAnchor(int anchorIndex) {
@@ -314,6 +318,7 @@ public class Conveyor extends Entity {
 		pathCoordonates = Arrays.copyOf(pathCoordonates, pathCoordonates.length + 2);
 		pathCoordonates[pathCoordonates.length - 2] = lastAnchorX;
 		pathCoordonates[pathCoordonates.length - 1] = lastAnchorY;
+		isEdited = true;
 		return pathCoordonates.length / 2 - 1;
 	}
 
@@ -323,6 +328,7 @@ public class Conveyor extends Entity {
 
 	public void removeLastAnchor() {
 		pathCoordonates = Arrays.copyOf(pathCoordonates, pathCoordonates.length - 2);
+		isEdited = true;
 	}
 
 	public synchronized void recalculateCapacity() {
@@ -344,6 +350,61 @@ public class Conveyor extends Entity {
 			tote.moveDuration = 0;
 			toteIndex++;
 		}
+	}
+
+	public synchronized ConveyorLayout layout() {
+		return new ConveyorLayout(name, pathCoordonates.clone(), capacity);
+	}
+
+	public synchronized void applyLayout(ConveyorLayout layout) {
+		pathCoordonates = layout.path().clone();
+		capacity = layout.capacity();
+		computeTravelTimes();
+		isEdited = true;
+	}
+
+	public boolean isEdited() {
+		return isEdited;
+	}
+
+	private Point currentLabelPosition(Graphics2D g) {
+		if (isEdited) {
+			return labelPositionNextToLongestSegment(g);
+		}
+		return labelPositon;
+	}
+
+	private Point labelPositionNextToLongestSegment(Graphics2D g) {
+		int segmentStart = longestSegmentStart();
+		int startX = pathCoordonates[segmentStart];
+		int startY = pathCoordonates[segmentStart + 1];
+		int endX = pathCoordonates[segmentStart + 2];
+		int endY = pathCoordonates[segmentStart + 3];
+		int middleX = (startX + endX) / 2;
+		int middleY = (startY + endY) / 2;
+
+		FontMetrics fontMetrics = g.getFontMetrics();
+		boolean isHorizontalSegment = Math.abs(endX - startX) >= Math.abs(endY - startY);
+		if (isHorizontalSegment) {
+			int labelWidth = fontMetrics.stringWidth(name);
+			return new Point(middleX - labelWidth / 2, middleY - Constants.CONVEYOR_LABEL_OFFSET);
+		}
+		return new Point(middleX + Constants.CONVEYOR_LABEL_OFFSET, middleY + fontMetrics.getAscent() / 2);
+	}
+
+	private int longestSegmentStart() {
+		int longestStart = 0;
+		double longestLength = 0;
+		for (int segmentStart = 0; segmentStart + 3 < pathCoordonates.length; segmentStart += 2) {
+			int deltaX = pathCoordonates[segmentStart + 2] - pathCoordonates[segmentStart];
+			int deltaY = pathCoordonates[segmentStart + 3] - pathCoordonates[segmentStart + 1];
+			double segmentLength = Math.hypot(deltaX, deltaY);
+			if (segmentLength > longestLength) {
+				longestLength = segmentLength;
+				longestStart = segmentStart;
+			}
+		}
+		return longestStart;
 	}
 
 	private double slotMargin() {

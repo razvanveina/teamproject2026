@@ -33,6 +33,7 @@ public abstract class ServerPoint extends Entity {
 
 	private boolean labelBelow;
 	private int x, y;
+	private boolean isEdited;
 
 	public ServerPoint(String name, int x, int y) {
 		super(name);
@@ -55,6 +56,21 @@ public abstract class ServerPoint extends Entity {
 	public void moveTo(Point position) {
 		x = position.x;
 		y = position.y;
+		isEdited = true;
+	}
+
+	public PointLayout layout() {
+		return new PointLayout(name, x, y);
+	}
+
+	public void applyLayout(PointLayout layout) {
+		x = layout.x();
+		y = layout.y();
+		isEdited = true;
+	}
+
+	public boolean isEdited() {
+		return isEdited;
 	}
 
 	public void put(String message) {
