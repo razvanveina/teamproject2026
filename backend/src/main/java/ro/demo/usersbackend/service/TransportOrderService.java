@@ -1,5 +1,6 @@
 package ro.demo.usersbackend.service;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -37,8 +38,7 @@ public class TransportOrderService {
 	}
 
 	private boolean isTote(TransportOrder order) {
-		String source = order.getSource().getName();
-		return Constants.DECANTING.equals(source) || Constants.TPT1.equals(source);
+		return order.getLoadUnit().getType() == LoadUnitType.TOTE;
 	}
 
 	// TO-urile spre un punct de pe banda, tote-urile de la decanting si cele care
@@ -102,8 +102,7 @@ public class TransportOrderService {
 		return new WithSessionAndTransaction<List<TransportOrderResponse>>() {
 			@Override
 			protected void executeBusinessLogic(Session session) {
-				List<TransportOrder> openOrders = new TransportOrderRepository(session)
-						.findByStatusAndNotSourceOrderByIdAsc(TransportOrderStatus.NEW, decanting(session));
+				List<TransportOrder> openOrders = findNewOrders(session).stream().filter(o -> !isTote(o)).toList();
 				setReturnValue(visibleTo(user, openOrders));
 			}
 		}.run();
@@ -113,11 +112,20 @@ public class TransportOrderService {
 		return new WithSessionAndTransaction<List<TransportOrderResponse>>() {
 			@Override
 			protected void executeBusinessLogic(Session session) {
-				List<TransportOrder> openToteOrders = new TransportOrderRepository(session)
-						.findByStatusAndSourceOrderedByIdAsc(TransportOrderStatus.NEW, decanting(session));
+				List<TransportOrder> openToteOrders = findNewOrders(session).stream().filter(o -> isTote(o)).toList();
 				setReturnValue(visibleTo(user, openToteOrders));
 			}
 		}.run();
+	}
+
+	// toate transporturile NEW, in ordinea id-ului
+	private List<TransportOrder> findNewOrders(Session session) {
+		TransportOrderRepository repository = new TransportOrderRepository(session);
+		List<TransportOrder> orders = new ArrayList<>(
+				repository.findByStatusAndNotSourceOrderByIdAsc(TransportOrderStatus.NEW, decanting(session)));
+		orders.addAll(repository.findByStatusAndSourceOrderedByIdAsc(TransportOrderStatus.NEW, decanting(session)));
+		orders.sort(Comparator.comparing(TransportOrder::getId));
+		return orders;
 	}
 
 	private List<TransportOrderResponse> visibleTo(String user, List<TransportOrder> orders) {
