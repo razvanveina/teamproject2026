@@ -68,7 +68,7 @@
     <div class="bottom">
         <button (click)="onCancel()" class="cancel">Cancel</button>
         <button (click)="onConfirm()" class="confirm"
-            [disabled]="source() === null || target() === null">Confirm</button>
+            [disabled]="takenBy() !== null || source() === null || target() === null">Confirm</button>
         <select class="zone" (change)="selectStation(+$any($event.target).value)">
             @for (n of stations(); track n) {
             <option [value]="n" [selected]="n === station()">Zone {{ n }}</option>

@@ -15,6 +15,10 @@ export class SimPickingApi {
         return this.http.get<any>(API_BASE_URL + '/sim-picking/station', { params: { station: station } });
     }
 
+    leave(station: number): Observable<any> {
+        return this.http.post<any>(API_BASE_URL + '/sim-picking/leave', {}, { params: { station: station } });
+    }
+
     confirm(station: number, sourceTote: string, targetTote: string): Observable<any> {
         return this.http.post<any>(API_BASE_URL + '/sim-picking/confirm', { station: station, sourceTote: sourceTote, targetTote: targetTote });
     }

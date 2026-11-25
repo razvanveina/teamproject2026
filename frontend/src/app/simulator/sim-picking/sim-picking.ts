@@ -22,6 +22,7 @@ export class SimPicking implements OnInit, OnDestroy {
   source = signal<any>(null);
   target = signal<any>(null);
   orderId = signal<string | null>(null);
+  takenBy = signal<string | null>(null);
   message = signal('');
 
   ngOnInit(): void {
@@ -38,6 +39,7 @@ export class SimPicking implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     clearInterval(this.checker);
+    this.api.leave(this.station()).subscribe();
   }
 
   selectStation(station: number): void {
@@ -48,6 +50,7 @@ export class SimPicking implements OnInit, OnDestroy {
     this.source.set(null);
     this.target.set(null);
     this.orderId.set(null);
+    this.takenBy.set(null);
     this.refresh();
   }
 
@@ -56,6 +59,13 @@ export class SimPicking implements OnInit, OnDestroy {
     this.api.getStation(zone).subscribe({
       next: (station: any) => {
         if (zone !== this.station()) {
+          return;
+        }
+        this.takenBy.set(station.takenBy ?? null);
+        if (station.takenBy) {
+          this.source.set(null);
+          this.target.set(null);
+          this.orderId.set(null);
           return;
         }
         let source = station.source;
@@ -95,6 +105,9 @@ export class SimPicking implements OnInit, OnDestroy {
   }
 
   instruction(): string {
+    if (this.takenBy() !== null) {
+      return 'Zone ' + this.station() + ' is used by ' + this.takenBy() + '. Choose another zone or wait until it is free';
+    }
     if (this.target() === null) {
       return 'Waiting for an empty target tote at PTTT' + this.station();
     }
