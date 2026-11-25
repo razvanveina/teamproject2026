@@ -46,6 +46,7 @@
 }
 
 .user-badge {
+    position: relative;
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -62,6 +63,52 @@
     box-sizing: border-box;
     cursor: default;
 }
+
+.user-badge:focus-visible {
+    outline: 3px solid #72dfd1;
+    outline-offset: 2px;
+}
+
+.user-tooltip {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 9px 13px;
+    color: #172b4d;
+    font-size: 0.86rem;
+    font-weight: 400;
+    line-height: 1.45;
+    white-space: nowrap;
+    background: #fff;
+    border: 1px solid #e1e8ef;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgb(23 43 77 / 16%);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-4px);
+    transition: opacity 140ms ease, transform 140ms ease, visibility 140ms;
+    pointer-events: none;
+}
+
+.user-tooltip strong {
+    font-weight: 700;
+}
+
+.user-tooltip-host {
+    color: #56697f;
+}
+
+.user-badge:hover .user-tooltip,
+.user-badge:focus-visible .user-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
 .logout-button {
     min-height: 42px;
     padding: 0 17px;

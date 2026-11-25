@@ -22,6 +22,14 @@ export class AuthService {
     const token = this.tokenSignal();
     return token ? (this.readPayload(token).sub ?? '') : '';
   });
+  readonly ip = computed(() => {
+    const token = this.tokenSignal();
+    return token ? (this.readPayload(token).ip ?? '') : '';
+  });
+  readonly host = computed(() => {
+    const token = this.tokenSignal();
+    return token ? (this.readPayload(token).host ?? '') : '';
+  });
   readonly expired = signal(false);
 
   constructor() {

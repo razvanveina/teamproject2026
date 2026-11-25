@@ -19,10 +19,14 @@ public class JwtService {
 		this.encoder = encoder;
 	}
 
-	public String createToken(String username) {
+	public String createToken(String username, String ip, String host) {
 		Instant now = Instant.now();
-		JwtClaimsSet claims = JwtClaimsSet.builder().subject(username).issuedAt(now)
-				.expiresAt(now.plus(8, ChronoUnit.HOURS)).build();
+		JwtClaimsSet.Builder builder = JwtClaimsSet.builder().subject(username).issuedAt(now)
+				.expiresAt(now.plus(8, ChronoUnit.HOURS)).claim("ip", ip);
+		if (host != null) {
+			builder.claim("host", host);
+		}
+		JwtClaimsSet claims = builder.build();
 		return encoder.encode(JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(), claims))
 				.getTokenValue();
 	}

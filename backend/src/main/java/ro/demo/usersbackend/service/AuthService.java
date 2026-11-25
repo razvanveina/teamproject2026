@@ -1,5 +1,7 @@
 package ro.demo.usersbackend.service;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.time.Instant;
 
 import org.hibernate.Session;
@@ -42,7 +44,18 @@ public class AuthService {
 		if (account == null) {
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "invalid credentials");
 		}
-		return new AuthResponse(jwtService.createToken(account.getUsername()), account.getUsername(),
+		return new AuthResponse(
+				jwtService.createToken(account.getUsername(), remoteAddress, hostOf(remoteAddress)),
+				account.getUsername(),
 				workplaceService.findNameFor(remoteAddress));
+	}
+
+	private String hostOf(String remoteAddress) {
+		try {
+			String host = InetAddress.getByName(remoteAddress).getCanonicalHostName();
+			return host.equals(remoteAddress) ? null : host;
+		} catch (UnknownHostException e) {
+			return null;
+		}
 	}
 }
