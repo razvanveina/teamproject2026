@@ -34,6 +34,7 @@ import ro.demo.usersbackend.messaging.MfsMessages;
 import ro.demo.usersbackend.messaging.MfsMessages.AckGet;
 import ro.demo.usersbackend.messaging.MfsMessages.Get;
 import ro.demo.usersbackend.repository.AreaRepository;
+import ro.demo.usersbackend.repository.TransportOrderRepository;
 import ro.demo.usersbackend.server.mfs.LUCHandler;
 import ro.demo.usersbackend.server.mfs.TelegramHandling;
 import ro.demo.usersbackend.server.picking.StationChooser;
@@ -170,9 +171,13 @@ public class AutomaticRetrievalService extends AbstractProcess {
 				orders: for (RetrievalOrder order : orders) {
 					for (RetrievalOrderLine line : order.getLines()) {
 						for (Reservation reservation : line.getReservations()) {
-							Location location = reservation.getStockItem().getLoadUnit().getLocation();
+							LoadUnit loadUnit = reservation.getStockItem().getLoadUnit();
+							Location location = loadUnit.getLocation();
 							// doar tote-urile de pe raft (PICK...), nu cele deja pe banda sau in statie
 							if (location.getArea() != pickingArea.get() || !(location instanceof StorageLocation)) {
+								continue orders;
+							}
+							if (new TransportOrderRepository(session).findActiveByLoadUnit(loadUnit).size() > 0) {
 								continue orders;
 							}
 						}
