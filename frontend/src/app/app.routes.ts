@@ -49,8 +49,8 @@ export const routes: Routes = [
             { path: 'inventory', component: InventoryApp, title: 'Inventory' },
             { path: 'toteTransport', component: ToteTransport, title: 'Tote Transport' },
             { path: 'sim/management', component: SimManagement, title: 'SIM-Management'},
-            { path: 'sim/picking', component: SimPicking, title: 'SIM-Picking'},
-            { path: 'sim/visualization', component: SimVisualization, title: 'SIM-Visialization'},
+            { path: 'sim/picking', component: SimPicking, title: 'Automatic Picking'},
+            { path: 'sim/visualization', component: SimVisualization, title: 'SIM-Visualization'},
             { path: 'accounts', component: Accounts, title: 'Accounts' },
             { path: 'accounts/add', component: AccountForm, title: 'Accounts - Add' }
         ]

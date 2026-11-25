@@ -21,7 +21,8 @@ export class WorkerDialogList {
     {id: 4, routerLink:"/shipping", title:"Shipping"},
     {id: 5, routerLink:"/toteTransport", title:"Tote Transport"},
     {id: 6, routerLink:"/inventory", title:"Inventory"},
-    {id: 7, routerLink:"/picking", title:"Picking"},
+    {id: 7, routerLink:"/picking", title:"Manual Picking"},
+    {id: 8, routerLink:"/sim/picking", title:"Automatic Picking"},
   ]);
   open = signal(false);
 
