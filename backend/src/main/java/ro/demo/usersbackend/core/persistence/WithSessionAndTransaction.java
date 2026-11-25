@@ -9,6 +9,7 @@ package ro.demo.usersbackend.core.persistence;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * @author <a href="mailto:rveina@ssi-schaefer-noell.com">rveina</a>
@@ -33,6 +34,9 @@ public abstract class WithSessionAndTransaction<T> {
 		} catch (Exception e) {
 			if (tx != null) {
 				tx.rollback();
+			}
+			if (e instanceof ResponseStatusException) {
+				throw (ResponseStatusException) e;
 			}
 			e.printStackTrace();
 			throw new RuntimeException("Error executing business logic", e);

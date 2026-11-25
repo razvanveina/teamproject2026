@@ -340,6 +340,7 @@ public class PickingService {
 		InventoryOrder inventoryOrder = new InventoryOrder();
 		inventoryOrder.setCreatedAt(now);
 		inventoryOrder.setReasonMessage(reason);
+		inventoryOrder.setCode("PICKING-" + item.getId() + "-" + System.currentTimeMillis());
 		inventoryOrder.setStatus(InventoryOrderStatus.FINISHED);
 		inventoryOrder.setFinishedAt(now);
 		inventoryOrder = new InventoryOrderRepository(session).save(inventoryOrder);
