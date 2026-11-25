@@ -186,6 +186,17 @@ public class Sim {
 		return null;
 	}
 
+	// punctul e ocupat: load unit-ul asteapta pe o banda care intra in punct
+	// (IP-urile au doua)
+	private boolean queueBeforePoint(Entity point, SimLoadUnit loadUnit) {
+		for (Entity source : point.getSource()) {
+			if (source instanceof Conveyor conveyor && conveyor.queueAtEnd(loadUnit)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	// butonul Setup: golim simulatorul si punem pe puncte load unit-urile pe care
 	// DB-ul le are acolo
 	void setupFromServer() {
@@ -196,23 +207,35 @@ public class Sim {
 		clearLoadUnits();
 
 		int placed = 0;
-		for (SetupLoadUnit setupLoadUnit : loadUnits) {
-			Entity point = entityNamed(setupLoadUnit.point());
-			if (point == null) {
-				log.warn("setup: point {} is not in the simulator, {} skipped", setupLoadUnit.point(),
-						setupLoadUnit.loadUnit());
-				continue;
+		int queued = 0;
+		// sub write lock, ca nimic sa nu se miste pe benzi cat le umplem
+		Lock lock = Entity.LOCK.writeLock();
+		lock.lock();
+		try {
+			for (SetupLoadUnit setupLoadUnit : loadUnits) {
+				Entity point = entityNamed(setupLoadUnit.point());
+				if (point == null) {
+					log.warn("setup: point {} is not in the simulator, {} skipped", setupLoadUnit.point(),
+							setupLoadUnit.loadUnit());
+					continue;
+				}
+				SimLoadUnit simLoadUnit = new SimLoadUnit(setupLoadUnit.loadUnit(), setupLoadUnit.loadUnitType());
+				if (point.addLoadUnit(simLoadUnit)) {
+					placed++;
+				} else if (queueBeforePoint(point, simLoadUnit)) {
+					queued++;
+					log.info("setup: {} is busy, {} waits on the belt before it", setupLoadUnit.point(),
+							setupLoadUnit.loadUnit());
+				} else {
+					log.warn("setup: {} and the belts before it are full, {} skipped", setupLoadUnit.point(),
+							setupLoadUnit.loadUnit());
+				}
 			}
-			// addLoadUnit = ca la Create LU: punctul anunta CREATED si ARRIVED, serverul
-			// decide din TO-ul activ
-			if (point.addLoadUnit(new SimLoadUnit(setupLoadUnit.loadUnit(), setupLoadUnit.loadUnitType()))) {
-				placed++;
-			} else {
-				log.warn("setup: {} already has a load unit, {} skipped", setupLoadUnit.point(),
-						setupLoadUnit.loadUnit());
-			}
+		} finally {
+			lock.unlock();
 		}
-		log.info("setup: {} of {} load units placed", placed, loadUnits.size());
+		log.info("setup: {} placed on points, {} waiting on belts, {} load units from the server", placed, queued,
+				loadUnits.size());
 	}
 
 	private List<SetupLoadUnit> requestSetup() {

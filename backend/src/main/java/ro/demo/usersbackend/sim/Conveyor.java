@@ -62,12 +62,15 @@ public class Conveyor extends Entity {
 
 	public Conveyor(String name, int capacity, Point labelPositon, int... xy) {
 		super(name);
-		this.capacity = capacity;
 		this.totes = new ArrayDeque<>();
 		ready = true;
 
 		this.labelPositon = labelPositon;
 		pathCoordonates = Arrays.stream(xy).toArray();
+		this.capacity = capacityFromLength();
+		if (this.capacity != capacity) {
+			log.info("{}: capacity {} from its length, not {}", name, this.capacity, capacity);
+		}
 		computeTravelTimes();
 	}
 
@@ -94,6 +97,16 @@ public class Conveyor extends Entity {
 			return false;
 		}
 		enterFirstSlot(createdLoadUnit);
+		return true;
+	}
+
+	public synchronized boolean queueAtEnd(SimLoadUnit queuedLoadUnit) {
+		if (totes.size() >= capacity) {
+			return false;
+		}
+		int slotIndex = capacity - 1 - totes.size();
+		totes.addLast(
+				new Tote(queuedLoadUnit, slotIndex, slotPosition(slotIndex), timeKeeper.currentSimulationTime(), 0));
 		return true;
 	}
 
@@ -332,12 +345,16 @@ public class Conveyor extends Entity {
 	}
 
 	public synchronized void recalculateCapacity() {
-		double usableLength = length(pathCoordonates) - 2 * slotMargin();
-		int slotGapCount = (int) (usableLength / Constants.TOTE_SPACING);
-		int capacityFromLength = Math.max(Constants.MIN_CONVEYOR_CAPACITY, slotGapCount + 1);
-		capacity = Math.max(capacityFromLength, totes.size());
+		capacity = Math.max(capacityFromLength(), totes.size());
 		computeTravelTimes();
 		putTotesInSlotsFromEnd();
+	}
+
+	// cate cutii incap pe banda: lungimea fara capete, impartita la cutie + spatiu
+	private int capacityFromLength() {
+		double usableLength = length(pathCoordonates) - 2 * slotMargin();
+		int slotGapCount = (int) (usableLength / (SimWindow.TOTE + Constants.TOTE_GAP));
+		return Math.max(Constants.MIN_CONVEYOR_CAPACITY, slotGapCount + 1);
 	}
 
 	private void putTotesInSlotsFromEnd() {

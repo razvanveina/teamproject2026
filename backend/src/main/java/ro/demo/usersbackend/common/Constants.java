@@ -111,6 +111,7 @@ public final class Constants {
 	public static final int TOTE_SPACING = 52; // tote + gap
 	public static final int MIN_CONVEYOR_CAPACITY = 1;
 	public static final int CONVEYOR_LABEL_OFFSET = 36;
+	public static final int TOTE_GAP = 7; // spatiu intre doua cutii pe banda
 
 	// load unit types din sim
 	public static final String TOTE_TYPE = "TOTE";
