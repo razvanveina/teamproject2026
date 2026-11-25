@@ -36,6 +36,20 @@
     	]]>
 	</query>
 
+	<query name="RetrievalOrder.findPickingTotesForAutomaticOrders">
+    	<![CDATA[
+        	select distinct o
+        	from RetrievalOrder o
+        	join o.lines l
+        	join l.reservations r
+        	where o.status = :status
+        	and o.automatic = true
+        	and r.stockItem.loadUnit.location.area = :area
+			and not exists (select t from TransportOrder t
+                 			where t.loadUnit = r.stockItem.loadUnit and t.status in :open)
+    	]]>
+	</query>
+
 	<query name="TransportOrder.findActiveByLoadUnit">
 	    <![CDATA[
 	        from TransportOrder t

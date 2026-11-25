@@ -1,6 +1,7 @@
 package ro.demo.usersbackend.server.automatic;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.logging.log4j.LogManager;
@@ -16,10 +17,14 @@ import jakarta.jms.Message;
 import jakarta.jms.TextMessage;
 import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
+import ro.demo.usersbackend.entity.Area;
 import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.LoadUnitType;
 import ro.demo.usersbackend.entity.Location;
+import ro.demo.usersbackend.entity.Reservation;
 import ro.demo.usersbackend.entity.RetrievalOrder;
+import ro.demo.usersbackend.entity.RetrievalOrderLine;
+import ro.demo.usersbackend.entity.RetrievalOrderStatus;
 import ro.demo.usersbackend.entity.StockItem;
 import ro.demo.usersbackend.entity.TransportOrder;
 import ro.demo.usersbackend.entity.TransportOrderStatus;
@@ -27,6 +32,8 @@ import ro.demo.usersbackend.messaging.Broker;
 import ro.demo.usersbackend.messaging.MfsMessages;
 import ro.demo.usersbackend.messaging.MfsMessages.AckGet;
 import ro.demo.usersbackend.messaging.MfsMessages.Get;
+import ro.demo.usersbackend.repository.AreaRepository;
+import ro.demo.usersbackend.repository.TransportOrderRepository;
 import ro.demo.usersbackend.server.mfs.LUCHandler;
 import ro.demo.usersbackend.server.mfs.TelegramHandling;
 import ro.demo.usersbackend.server.picking.StationChooser;
@@ -145,32 +152,51 @@ public class AutomaticRetrievalService extends AbstractProcess {
 
 	// totes din PICKING cu stoc rezervat pentru ro automat, fara to deschis
 	private void createTransportOrders() {
-		List<Long> loadUnitIds = new WithSessionAndTransaction<List<Long>>() {
+		new WithSessionAndTransaction<List<RetrievalOrder>>() {
 			@Override
 			protected void executeBusinessLogic(Session session) {
-				setReturnValue(session.createNamedQuery("LoadUnit.findPickingTotesForAutomaticOrders", Long.class)
-						.setParameter("tote", LoadUnitType.TOTE).setParameter("pick", Constants.PICK_PREFIX + "%")
-						.setParameterList("open", Constants.OPEN_TRANSPORT_STATUSES).getResultList());
+				Optional<Area> pickingArea = new AreaRepository(session).findByName(Constants.PICKING_AREA);
+
+				if (pickingArea.isEmpty()) {
+					log.error("Could not find " + Constants.PICKING_AREA);
+					return;
+				}
+
+				List<RetrievalOrder> orders = session
+						.createNamedQuery("RetrievalOrder.findPickingTotesForAutomaticOrders", RetrievalOrder.class)
+						.setParameter("status", RetrievalOrderStatus.ACTIVE).setParameter("area", pickingArea.get())
+						.setParameterList("open", Constants.OPEN_TRANSPORT_STATUSES).getResultList();
+
+				orders: for (RetrievalOrder order : orders) {
+					for (RetrievalOrderLine line : order.getLines()) {
+						for (Reservation reservation : line.getReservations()) {
+							if (reservation.getStockItem().getLoadUnit().getLocation().getArea() != pickingArea.get()) {
+								continue orders;
+							}
+							if (new TransportOrderRepository(session)
+									.findActiveByLoadUnit(reservation.getStockItem().getLoadUnit()).size() > 0) {
+								continue orders;
+							}
+						}
+					}
+
+					for (RetrievalOrderLine line : order.getLines()) {
+						for (Reservation reservation : line.getReservations()) {
+							try {
+								createTransportOrder(session, reservation.getStockItem().getLoadUnit());
+							} catch (RuntimeException e) {
+								log.error("Automatic retrieval: load unit {} not processed {}",
+										reservation.getStockItem().getLoadUnit().getId(), e.toString());
+							}
+						}
+					}
+				}
 			}
 		}.run();
-
-		for (Long loadUnitId : loadUnitIds) {
-			try {
-				new WithSessionAndTransaction<>() {
-					@Override
-					protected void executeBusinessLogic(Session session) {
-						createTransportOrder(session, loadUnitId);
-					}
-				}.run();
-			} catch (RuntimeException e) {
-				log.error("Automatic retrieval: load unit {} not processed {}", loadUnitId, e.toString());
-			}
-		}
 	}
 
 	// tote-ul pleaca din locatia de picking direct spre statia PTTS1
-	private void createTransportOrder(Session session, Long loadUnitId) {
-		LoadUnit loadUnit = session.find(LoadUnit.class, loadUnitId);
+	private void createTransportOrder(Session session, LoadUnit loadUnit) {
 		String stationName = StationChooser.sourceStationFor(session, automaticOrderId(loadUnit),
 				loadUnit.getBarcode());
 		Location station = session.createNamedQuery("Location.findByName", Location.class)

@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.hibernate.Session;
 
+import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.Location;
 import ro.demo.usersbackend.entity.TransportOrder;
 import ro.demo.usersbackend.entity.TransportOrderStatus;
@@ -34,5 +35,10 @@ public class TransportOrderRepository extends BaseRepository<TransportOrder, Lon
 	public List<TransportOrder> findByStatusAndAssignedToIsNullOrderByIdAsc(Collection<TransportOrderStatus> statuses) {
 		return session.createNamedQuery(TransportOrder.FIND_BY_STATUS_AND_ASSIGNED_TO_IS_NULL_ODERED_BY_ID,
 				TransportOrder.class).setParameterList("statuses", statuses).getResultList();
+	}
+
+	public List<TransportOrder> findActiveByLoadUnit(LoadUnit loadUnit) {
+		return session.createNamedQuery(TransportOrder.FIND_ACTIVE_BY_LOAD_UNIT, TransportOrder.class)
+				.setParameter("status", TransportOrderStatus.ACTIVE).setParameter("loadUnit", loadUnit).getResultList();
 	}
 }

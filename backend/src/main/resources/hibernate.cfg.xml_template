@@ -56,6 +56,7 @@
 		<mapping class="ro.demo.usersbackend.entity.PrintJob"/>
 		<mapping class="ro.demo.usersbackend.entity.Workplace"/>
 		<mapping class="ro.demo.usersbackend.entity.StockAdjustment"/>
+		<mapping class="ro.demo.usersbackend.entity.Area"/>
 		
 		<mapping resource="queries.hbm.xml"/>
 		<mapping resource="sequences.hbm.xml"/>

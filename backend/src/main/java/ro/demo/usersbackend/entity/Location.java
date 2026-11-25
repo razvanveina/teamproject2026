@@ -12,6 +12,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 
 @Entity
@@ -32,6 +34,10 @@ public abstract class Location {
 	@JsonIgnore
 	@OneToMany(mappedBy = "location")
 	protected List<LoadUnit> loadUnits;
+
+	@ManyToOne
+	@JoinColumn(name = "area_id")
+	protected Area area;
 
 	public Location() {
 		super();
@@ -72,4 +78,12 @@ public abstract class Location {
 //		loadUnits = new ArrayList<LoadUnit>();
 //		loadUnits.add(loadUnit);
 //	}
+
+	public Area getArea() {
+		return area;
+	}
+
+	public void setArea(Area area) {
+		this.area = area;
+	}
 }

@@ -18,35 +18,39 @@ public final class Constants {
 	public static final String CONVEYOR = "CONVEYOR";
 	public static final String PICKING = "PICKING";
 	public static final String EMPTY_TOTES = "EMPTY_TOTES";
+	public static final String PICKING_AREA = "PICKING_AREA";
 
 	// punctele de pe conveyor
-	public static final String TPS1 = "TPS1";
-	public static final String TPT1 = "TPT1";
 	public static final String IP1 = "IP1";
 	public static final String IP2 = "IP2";
-	public static final String DP1 = "DP1";
-	public static final String DP2 = "DP2";
-	public static final String DP3 = "DP3";
-	public static final String EMPTY = "EMPTY";
-	public static final String PTTS1 = "PTTS1";
-	public static final String PTTT1 = "PTTT1";
-	public static final String TPS2 = "TPS2"; // intrarea pe banda de la decanting
 	public static final String IP3 = "IP3"; // pe C03, anunta ca tote-ul de la decanting a ajuns pe banda
-
 	public static final String IP4 = "IP4";
 	public static final String IP5 = "IP5";
 	public static final String IP6 = "IP6";
 	public static final String IP7 = "IP7";
 	public static final String IP8 = "IP8";
+
+	public static final String DP1 = "DP1";
+	public static final String DP2 = "DP2";
+	public static final String DP3 = "DP3";
 	public static final String DP4 = "DP4";
 	public static final String DP5 = "DP5";
 	public static final String DP6 = "DP6";
 	public static final String DP7 = "DP7";
 	public static final String DP8 = "DP8";
+
+	public static final String TPS1 = "TPS1";
+	public static final String TPS2 = "TPS2"; // intrarea pe banda de la decanting
+	public static final String TPT1 = "TPT1";
+
+	public static final String EMPTY = "EMPTY";
+	public static final String PTTS1 = "PTTS1";
 	public static final String PTTS2 = "PTTS2";
 	public static final String PTTS3 = "PTTS3";
+	public static final String PTTT1 = "PTTT1";
 	public static final String PTTT2 = "PTTT2";
 	public static final String PTTT3 = "PTTT3";
+
 	public static final String GP1 = "GP1";
 	public static final String GP2 = "GP2";
 	public static final String GP3 = "GP3";
@@ -59,7 +63,9 @@ public final class Constants {
 
 	public static final List<String> CONVEYOR_POINTS = List.of(TPS1, TPS2, TPT1, IP1, IP2, IP3, IP4, IP5, IP6, IP7, IP8,
 			DP1, DP2, DP3, DP4, DP5, DP6, DP7, DP8, EMPTY, PTTS1, PTTS2, PTTS3, PTTT1, PTTT2, PTTT3, GP1, GP2, GP3,
-			GP4);
+			GP4);;
+	public static final List<String> PICKING_AREA_LOCATIONS = List.of(TPS1, TPS2, TPT1, IP3, DP2, IP1, DP3, DP1, PTTS1,
+			PTTS2, PTTS3, IP2, DP5, IP5, DP7, IP7);
 
 	public static final int PTTT_LANE_SLOTS = 3;
 

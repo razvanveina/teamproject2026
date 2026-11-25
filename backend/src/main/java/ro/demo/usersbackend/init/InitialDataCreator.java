@@ -1,11 +1,14 @@
 package ro.demo.usersbackend.init;
 
+import java.util.Optional;
+
 import org.hibernate.Session;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
+import ro.demo.usersbackend.entity.Area;
 import ro.demo.usersbackend.entity.Article;
 import ro.demo.usersbackend.entity.ArticlePackagingUnitType;
 import ro.demo.usersbackend.entity.Destination;
@@ -16,6 +19,7 @@ import ro.demo.usersbackend.entity.Printer;
 import ro.demo.usersbackend.entity.PrinterType;
 import ro.demo.usersbackend.entity.StorageLocation;
 import ro.demo.usersbackend.entity.TransitLocation;
+import ro.demo.usersbackend.repository.AreaRepository;
 import ro.demo.usersbackend.repository.ArticlePackagingUnitTypeRepository;
 import ro.demo.usersbackend.repository.ArticleRepository;
 import ro.demo.usersbackend.repository.DestinationToGateRepository;
@@ -39,7 +43,7 @@ public class InitialDataCreator implements CommandLineRunner {
 					createPrinters(session);
 				}
 				createSimulatorData(session);
-				createTransitLocationIfMissing(session, Constants.EMPTY_TOTES);
+				createTransitLocationIfMissing(session, Constants.EMPTY_TOTES, null);
 				createDestinations(session);
 				createDestinationGates(session);
 				createArticles(session);
@@ -108,10 +112,8 @@ public class InitialDataCreator implements CommandLineRunner {
 		}
 	}
 
-	private void createArticlePackaging(Session session, String articleBarcode, String barcode,
-			String packagingName) {
-		ArticlePackagingUnitTypeRepository articlePackagingRepository = new ArticlePackagingUnitTypeRepository(
-				session);
+	private void createArticlePackaging(Session session, String articleBarcode, String barcode, String packagingName) {
+		ArticlePackagingUnitTypeRepository articlePackagingRepository = new ArticlePackagingUnitTypeRepository(session);
 		if (articlePackagingRepository.findByBarcode(barcode).isEmpty()) {
 			Article article = new ArticleRepository(session).findByBarcode(articleBarcode).get();
 			PackagingUnitType packaging = new PackagingUnitTypeRepository(session).findByName(packagingName).get();
@@ -119,9 +121,9 @@ public class InitialDataCreator implements CommandLineRunner {
 		}
 	}
 
-	private void createTransitLocationIfMissing(Session session, String name) {
+	private void createTransitLocationIfMissing(Session session, String name, Area area) {
 		if (new LocationRepository(session).findByName(name).isEmpty()) {
-			createTransitLocation(session, name);
+			createTransitLocation(session, name, area);
 		}
 	}
 
@@ -139,35 +141,57 @@ public class InitialDataCreator implements CommandLineRunner {
 	}
 
 	private void createTransitLocations(Session session) {
-		createTransitLocation(session, Constants.IN);
-		createTransitLocation(session, Constants.OUT);
-		createTransitLocation(session, Constants.DECANTING);
-		createTransitLocation(session, Constants.PICKING);
-		createTransitLocation(session, Constants.CONVEYOR);
+		createTransitLocation(session, Constants.IN, null);
+		createTransitLocation(session, Constants.OUT, null);
+		createTransitLocation(session, Constants.DECANTING, null);
+		createTransitLocation(session, Constants.PICKING, null);
+		createTransitLocation(session, Constants.CONVEYOR, null);
 
 		for (int gate = 1; gate <= 10; gate++) {
-			createTransitLocation(session, String.format(Constants.GATE_NAME, gate));
+			createTransitLocation(session, String.format(Constants.GATE_NAME, gate), null);
 		}
 	}
 
-	private void createTransitLocation(Session session, String name) {
-		TransitLocation location = new TransitLocation(name);
+	private void createTransitLocation(Session session, String name, Area area) {
+		TransitLocation location = new TransitLocation(name, area);
 		session.persist(location);
 	}
 
 	private void createPickingLocations(Session session) {
+		Area pickingArea = getOrCreateArea(session, Constants.PICKING_AREA);
+
 		for (int x = 1; x <= 200; x++) {
 			for (int y = 1; y <= 5; y++) {
-				StorageLocation location = new StorageLocation(x, y);
+				StorageLocation location = new StorageLocation(x, y, pickingArea);
 				session.persist(location);
 			}
 		}
 	}
 
 	private void createSimulatorData(Session session) {
+		Area pickingArea = getOrCreateArea(session, Constants.PICKING_AREA);
+
 		for (String name : Constants.CONVEYOR_POINTS) {
-			createTransitLocationIfMissing(session, name);
+			if (Constants.PICKING_AREA_LOCATIONS.contains(name)) {
+				createTransitLocationIfMissing(session, name, pickingArea);
+			} else {
+				createTransitLocationIfMissing(session, name, null);
+			}
 		}
+	}
+
+	private Area getOrCreateArea(Session session, String name) {
+		Area area;
+		AreaRepository repo = new AreaRepository(session);
+		Optional<Area> areaOpt = repo.findByName(name);
+
+		if (areaOpt.isEmpty()) {
+			area = new Area(name);
+			session.persist(area);
+		} else {
+			area = areaOpt.get();
+		}
+		return area;
 	}
 
 //	private void createArticles() {

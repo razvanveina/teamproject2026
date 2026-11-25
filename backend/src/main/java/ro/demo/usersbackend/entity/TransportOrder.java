@@ -22,12 +22,15 @@ import jakarta.persistence.ManyToOne;
 		@NamedQuery(name = "TransportOrder.findByStatusAndAssignedToOrderByIdAsc", //
 				query = "from TransportOrder o where o.assignedTo = :assignedTo and o.status in :statuses order by o.id asc"),
 		@NamedQuery(name = "TransportOrder.findByStatusAndAssignedToIsNullOrderByIdAsc", //
-				query = "from TransportOrder o where o.assignedTo is null and o.status in :statuses order by o.id asc") })
+				query = "from TransportOrder o where o.assignedTo is null and o.status in :statuses order by o.id asc"),
+		@NamedQuery(name = "TransportOder.findActiveByLoadUnit", //
+				query = "from TransportOrder o where o.status = :status and o.loadUnit = :loadUnit") })
 public class TransportOrder {
 	public static final String FIND_BY_STATUS_AND_NOT_SOURCE_ODERED_BY_ID = "TransportOrder.findByStatusAndNotSourceOrderByIdAsc";
 	public static final String FIND_BY_STATUS_AND_SOURCE_ODERED_BY_ID = "TransportOrder.findByStatusAndSourceOrderByIdAsc";
 	public static final String FIND_BY_STATUS_AND_ASSIGNED_TO_ODERED_BY_ID = "TransportOrder.findByStatusAndAssignedToOrderByIdAsc";
 	public static final String FIND_BY_STATUS_AND_ASSIGNED_TO_IS_NULL_ODERED_BY_ID = "TransportOrder.findByStatusAndAssignedToIsNullOrderByIdAsc";
+	public static final String FIND_ACTIVE_BY_LOAD_UNIT = "TransportOder.findActiveByLoadUnit";
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

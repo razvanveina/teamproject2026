@@ -13,4 +13,9 @@ public class TransitLocation extends Location {
 	public TransitLocation(String name) {
 		setName(name);
 	}
+
+	public TransitLocation(String name, Area area) {
+		setName(name);
+		this.area = area;
+	}
 }

@@ -34,12 +34,30 @@ public class StorageLocation extends Location {
 		super();
 	}
 
+	public StorageLocation(int x, int y, int z, int aisle, Area area) {
+		this.x = x;
+		this.y = y;
+		this.z = z;
+		this.aisle = aisle;
+		this.area = area;
+		setName(String.format(Constants.HBW_NAME, aisle, x, y, z));
+	}
+
 	public StorageLocation(int x, int y, int z, int aisle) {
 		this.x = x;
 		this.y = y;
 		this.z = z;
 		this.aisle = aisle;
 		setName(String.format(Constants.HBW_NAME, aisle, x, y, z));
+	}
+
+	public StorageLocation(int x, int y, Area area) {
+		this.x = x;
+		this.y = y;
+		this.z = 0;
+		this.aisle = 0;
+		this.area = area;
+		setName(String.format(Constants.PICK_NAME, x, y));
 	}
 
 	public StorageLocation(int x, int y) {
