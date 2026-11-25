@@ -91,6 +91,7 @@ public class HostReceivingProcess extends AbstractProcess {
 							.setParameter("id", orderId).getSingleResult();
 					if (existing > 0) {
 						setReturnValue(false);
+						return;
 					}
 
 					ReceivingOrder order = new ReceivingOrder();
