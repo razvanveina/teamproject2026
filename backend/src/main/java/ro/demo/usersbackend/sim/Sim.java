@@ -1,7 +1,6 @@
 package ro.demo.usersbackend.sim;
 
 import java.awt.Point;
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -73,7 +72,7 @@ public class Sim {
 
 	public void initComms() {
 		try {
-			context = new ActiveMQConnectionFactory(Broker.URL).createContext();
+			context = new ActiveMQConnectionFactory(Broker.CLIENT_URL).createContext();
 			consumer = context.createConsumer(context.createQueue(MfsMessages.FRONTEND_REQUEST_QUEUE));
 			outQueue = context.createQueue(MfsMessages.FRONTEND_RESPONSE_QUEUE);
 
@@ -122,16 +121,13 @@ public class Sim {
 				return;
 			}
 			List<EntityState> states;
-			SimLayout layout;
 			try {
 				states = entities.stream().map(Entity::snapshot).filter(s -> !s.loadUnits().isEmpty()).toList();
-				layout = collectLayout();
 			} finally {
 				lock.unlock();
 			}
 			try (ObjectOutputStream out = new ObjectOutputStream(Files.newOutputStream(SNAPSHOT_TMP))) {
 				out.writeObject(states);
-				out.writeObject(layout);
 			}
 			Files.move(SNAPSHOT_TMP, SNAPSHOT, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
 		} catch (Exception e) {
@@ -164,10 +160,6 @@ public class Sim {
 		}
 		try (ObjectInputStream in = new ObjectInputStream(Files.newInputStream(SNAPSHOT))) {
 			List<EntityState> states = (List<EntityState>) in.readObject();
-			SimLayout layout = readLayout(in);
-			if (layout != null) {
-				applyLayout(layout);
-			}
 			for (EntityState state : states) {
 				entities.stream().filter(e -> e.getName().equals(state.name())).forEach(e -> e.restore(state));
 			}
@@ -175,50 +167,6 @@ public class Sim {
 		} catch (Exception e) {
 			log.error("snapshot not restored", e);
 		}
-	}
-
-	private SimLayout collectLayout() {
-		List<ConveyorLayout> conveyorLayouts = new ArrayList<>();
-		List<PointLayout> pointLayouts = new ArrayList<>();
-		for (Entity entity : entities) {
-			if (entity instanceof Conveyor conveyor && conveyor.isEdited()) {
-				conveyorLayouts.add(conveyor.layout());
-			} else if (entity instanceof ServerPoint serverPoint && serverPoint.isEdited()) {
-				pointLayouts.add(serverPoint.layout());
-			}
-		}
-		return new SimLayout(conveyorLayouts, pointLayouts);
-	}
-
-	private SimLayout readLayout(ObjectInputStream in) throws IOException, ClassNotFoundException {
-		try {
-			return (SimLayout) in.readObject();
-		} catch (EOFException e) {
-			log.info("snapshot has no layout, keeping the original layout");
-			return null;
-		}
-	}
-
-	private void applyLayout(SimLayout layout) {
-		for (ConveyorLayout conveyorLayout : layout.conveyorLayouts()) {
-			if (entityNamed(conveyorLayout.name()) instanceof Conveyor conveyor) {
-				conveyor.applyLayout(conveyorLayout);
-			}
-		}
-		for (PointLayout pointLayout : layout.pointLayouts()) {
-			if (entityNamed(pointLayout.name()) instanceof ServerPoint serverPoint) {
-				serverPoint.applyLayout(pointLayout);
-			}
-		}
-	}
-
-	private Entity entityNamed(String name) {
-		for (Entity entity : entities) {
-			if (entity.getName().equals(name)) {
-				return entity;
-			}
-		}
-		return null;
 	}
 
 	private <T extends Entity> T add(T entity) {

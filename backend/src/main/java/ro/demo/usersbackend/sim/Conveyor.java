@@ -109,7 +109,7 @@ public class Conveyor extends Entity {
 	private void announceCreated(SimLoadUnit createdLoadUnit) {
 		String message = MfsMessages
 				.toJson(new Created(Constants.CREATED, name, createdLoadUnit.barcode(), createdLoadUnit.type()));
-		try (JMSContext context = new ActiveMQConnectionFactory(Broker.URL).createContext()) {
+		try (JMSContext context = new ActiveMQConnectionFactory(Broker.CLIENT_URL).createContext()) {
 			context.createProducer().send(context.createQueue(MfsMessages.RESPONSE_QUEUE), message);
 		}
 		log.info(message);

@@ -7,7 +7,7 @@ import org.apache.logging.log4j.Logger;
 // broker-ul ActiveMQ pornit odata cu serveru
 public class Broker {
 	public static final String URL = "tcp://localhost:61616";
-
+	public static final String CLIENT_URL = "failover:(" + URL + ")";
 	public static final Logger log = LogManager.getLogger("application");
 	private static BrokerService broker;
 

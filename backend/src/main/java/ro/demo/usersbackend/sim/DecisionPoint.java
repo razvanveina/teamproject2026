@@ -51,16 +51,17 @@ public class DecisionPoint extends ServerPoint {
 				}
 				isHeld = false;
 				decision = getTarget().get(toIndex(reply));
-				log.info(
-						name + ": " + loadUnit.barcode() + " reply " + reply + ", goes to " + decision.getName());
+				log.info(name + ": " + loadUnit.barcode() + " reply " + reply + ", goes to " + decision.getName());
 			} else if (isHeld) {
 				if (timeKeeper.currentSimulationTime() - askedAt >= Constants.HOLD_RETRY_INTERVAL) {
 					askedAt = timeKeeper.currentSimulationTime();
 					announceLU(loadUnit);
 				}
 			} else if (timeKeeper.currentSimulationTime() - askedAt >= Constants.DECISION_TIMEOUT) {
-				decision = getTarget().get(0);
-				log.info(name + ": " + loadUnit.barcode() + " no reply, goes to " + decision.getName());
+				// fara raspuns (ex. backend repornit): intrebam din nou, nu alegem noi drumul
+				askedAt = timeKeeper.currentSimulationTime();
+				announceLU(loadUnit);
+				log.info(name + ": " + loadUnit.barcode() + " no reply, asking again");
 			}
 		}
 	}

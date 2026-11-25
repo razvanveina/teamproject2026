@@ -85,7 +85,7 @@ public abstract class ServerPoint extends Entity {
 
 	@Override
 	public void run() {
-		try (JMSContext context = new ActiveMQConnectionFactory(Broker.URL).createContext()) {
+		try (JMSContext context = new ActiveMQConnectionFactory(Broker.CLIENT_URL).createContext()) {
 			this.context = context;
 			outQueue = context.createQueue(MfsMessages.RESPONSE_QUEUE);
 			connected(context);
