@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 //import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import ro.demo.usersbackend.dto.AuthResponse;
 import ro.demo.usersbackend.dto.LoginRequest;
@@ -33,11 +34,13 @@ public class AuthController {
 	// }
 
 	@PostMapping("/login")
-	public AuthResponse login(@Valid @RequestBody LoginRequest request) {
-		log.info("Login attempt for user {}", request.username());
+	public AuthResponse login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
+		String remoteAddress = httpRequest.getRemoteAddr();
+		log.info("Login attempt for user {} from {}", request.username(), remoteAddress);
 		try {
-			AuthResponse response = authService.login(request);
-			log.info("User {} successfully logged in", request.username());
+			AuthResponse response = authService.login(request, remoteAddress);
+			log.info("User {} successfully logged in from {}, workplace {}", request.username(), remoteAddress,
+					response.workplace() == null ? "none" : response.workplace());
 			return response;
 		} catch (RuntimeException e) {
 			log.warn("Login failed for user {}: {}", request.username(), e.getMessage());

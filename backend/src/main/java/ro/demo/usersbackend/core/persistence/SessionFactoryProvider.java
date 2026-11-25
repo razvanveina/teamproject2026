@@ -18,7 +18,7 @@ import org.hibernate.cfg.Configuration;
 public class SessionFactoryProvider {
 	private static SessionFactory factory;
 
-	public static SessionFactory getSessionFactory() {
+	public static synchronized SessionFactory getSessionFactory() {
 		if (factory == null) {
 			try {
 //        Configuration configuration = new Configuration().configure();

@@ -1,0 +1,12 @@
+{
+  "id": "wp001",
+  "title": "Workplaces",
+  "entity": "Workplace",
+  "actions": ["add", "edit", "delete"],
+  "columns": [
+    { "field": "ID", "label": "ID" },
+    { "field": "NAME", "label": "Name", "addable": true, "editable": true, "filterable": true,
+      "options": ["transport", "receiving", "decanting", "shipping", "toteTransport", "inventory", "picking_1", "picking_2", "picking_3"] },
+    { "field": "IP", "label": "IP / Host", "addable": true, "editable": true, "filterable": true }
+  ]
+}

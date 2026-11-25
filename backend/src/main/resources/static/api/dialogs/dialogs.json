@@ -16,7 +16,8 @@
 	{ "file": "StockAdjustment.json" },
 	{ "file": "RetrievalOrderLine.json"},
 	{ "file": "InventoryOrder.json" },
-	{ "file": "InventoryOrderLine.json" }
+	{ "file": "InventoryOrderLine.json" },
+	{ "file": "Workplace.json" }
   ],
   "entitySpec": [
     { "name": "Article", "show": [ { "field": "BARCODE", "label": "Barcode" }, { "field": "DESCRIPTION", "label": "Description" } ] },

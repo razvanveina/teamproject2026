@@ -19,13 +19,15 @@ import ro.demo.usersbackend.security.JwtService;
 public class AuthService {
 	private final PasswordEncoder encoder;
 	private final JwtService jwtService;
+	private final WorkplaceService workplaceService;
 
-	public AuthService(PasswordEncoder encoder, JwtService jwtService) {
+	public AuthService(PasswordEncoder encoder, JwtService jwtService, WorkplaceService workplaceService) {
 		this.encoder = encoder;
 		this.jwtService = jwtService;
+		this.workplaceService = workplaceService;
 	}
 
-	public AuthResponse login(LoginRequest request) {
+	public AuthResponse login(LoginRequest request, String remoteAddress) {
 		Account account = new WithSessionAndTransaction<Account>() {
 			@Override
 			protected void executeBusinessLogic(Session session) {
@@ -40,6 +42,7 @@ public class AuthService {
 		if (account == null) {
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "invalid credentials");
 		}
-		return new AuthResponse(jwtService.createToken(account.getUsername()), account.getUsername());
+		return new AuthResponse(jwtService.createToken(account.getUsername()), account.getUsername(),
+				workplaceService.findNameFor(remoteAddress));
 	}
 }
