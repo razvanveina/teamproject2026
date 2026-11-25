@@ -96,11 +96,11 @@ public abstract class DecisionPointHandler extends PointHandler {
 
 	// pentru DP-urile din fata unui PTTT (DP4, DP6, DP8): 0 = in zona, 1 = mai
 	// departe
-	// cu TO: intra doar daca TO-ul e spre PTTT-ul lui, altfel trece (spre OUT sau
-	// alt PTTT)
-	// fara TO (tote gol): intra daca zona lui e goala; daca are deja un tote, intra
-	// doar cand toate zonele de dupa el au cel putin unul si mai e loc, altfel
-	// merge mai departe sa umple intai zonele goale
+	// 1. zona lui asteapta target (sursa in PTTS, PTTT gol) -> intra
+	// 2. zona lui e goala dar nu asteapta, iar o zona de dupa asteapta -> trece
+	// 3. altfel: intra daca zona lui e goala; daca are deja un tote, intra doar
+	// cand
+	// toate zonele de dupa au cel putin unul si mai e loc
 	// cand intra primeste un TO spre PTTT, ca sa fie numarat in zona
 	protected int decideForZone(String loadUnit, String target, String pttt) {
 		if (target != null) {
@@ -114,8 +114,12 @@ public abstract class DecisionPointHandler extends PointHandler {
 				List<String> zonesAfter = Constants.PTTT_POINTS.subList(Constants.PTTT_POINTS.indexOf(pttt) + 1,
 						Constants.PTTT_POINTS.size());
 				boolean zonesAfterHaveOne = zonesAfter.stream().allMatch(next -> countInZone(session, next) > 0);
+				boolean zoneAfterWaits = zonesAfter.stream().anyMatch(next -> waitsForTarget(session, next));
 
-				if (inZone >= Constants.PTTT_LANE_SLOTS + 1 || (inZone > 0 && !zonesAfterHaveOne)) {
+				boolean full = inZone >= Constants.PTTT_LANE_SLOTS + 1;
+				boolean fillEmptyZonesFirst = inZone > 0 && !zonesAfterHaveOne;
+				boolean leaveForWaitingZone = inZone == 0 && !waitsForTarget(session, pttt) && zoneAfterWaits;
+				if (full || fillEmptyZonesFirst || leaveForWaitingZone) {
 					setReturnValue(1);
 					return;
 				}
@@ -130,11 +134,19 @@ public abstract class DecisionPointHandler extends PointHandler {
 		}.run();
 	}
 
-	private long countInZone(Session session, String pttt) {
-		return session.createNamedQuery("LoadUnit.countByLocationName", Long.class).setParameter("name", pttt)
+	// zona asteapta target: are sursa in PTTS (sau pe drum spre el) si PTTT-ul e
+	// gol
+	private boolean waitsForTarget(Session session, String pttt) {
+		String ptts = Constants.PTTS_POINTS.get(Constants.PTTT_POINTS.indexOf(pttt));
+		return countInZone(session, pttt) == 0 && countInZone(session, ptts) > 0;
+	}
+
+	// cate tote-uri are punctul: in el + pe drum spre el (cu TO deschis)
+	private long countInZone(Session session, String point) {
+		return session.createNamedQuery("LoadUnit.countByLocationName", Long.class).setParameter("name", point)
 				.getSingleResult()
 				+ session.createNamedQuery("TransportOrder.countOpenByTargetName", Long.class)
-						.setParameter("target", pttt).setParameterList("open", Constants.OPEN_TRANSPORT_STATUSES)
+						.setParameter("target", point).setParameterList("open", Constants.OPEN_TRANSPORT_STATUSES)
 						.getSingleResult();
 	}
 }
