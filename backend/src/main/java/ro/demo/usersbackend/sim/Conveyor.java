@@ -569,7 +569,7 @@ public class Conveyor extends Entity {
 	}
 
 	@Override
-	public boolean hasLoadUnit(String barcode) {
+	public synchronized boolean hasLoadUnit(String barcode) {
 		for (Tote tote : totes) {
 			if (tote.loadUnit.barcode().equals(barcode)) {
 				return true;
