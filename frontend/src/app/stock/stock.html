@@ -98,6 +98,10 @@
                         <th>Status</th>
                         <th>Assigned to</th>
                         <th>Error reason</th>
+                        <th>Created By</th>
+                        <th>Created At</th>
+                        <th>Modified By</th>
+                        <th>Modified At</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -109,6 +113,10 @@
                         <td><span class="status status-{{ order.status.toLowerCase() }}">{{ order.status }}</span></td>
                         <td class="muted">{{ order.assignedTo || '—' }}</td>
                         <td class="muted">{{ order.errorReason || '—' }}</td>
+                        <td> {{ order.createdBy }} </td>
+                        <td> {{ formatDateTime(order.createdAt) }} </td>
+                        <td> {{ order.modifiedBy }} </td>
+                        <td> {{ formatDateTime(order.modifiedAt) }} </td>
                     </tr>
                     } @empty {
                     <tr>

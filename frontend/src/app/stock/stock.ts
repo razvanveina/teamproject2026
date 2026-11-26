@@ -17,6 +17,10 @@ interface TransportLine {
     status: string;
     assignedTo: string;
     errorReason: string;
+    createdBy: string;
+    createdAt: string;
+    modifiedBy: string;
+    modifiedAt: string;
 }
 
 interface LoadUnitRow {
@@ -114,7 +118,11 @@ export class Stock implements OnInit {
                             target: locationName(order['target_id']),
                             status: String(order['status'] ?? ''),
                             assignedTo: String(order['assigned_to'] ?? ''),
-                            errorReason: String(order['error_reason'] ?? '')
+                            errorReason: String(order['error_reason'] ?? ''),
+                            createdAt: order['created_at'],
+                            createdBy: order['created_by'],
+                            modifiedAt: order['modified_at'] ?? '',
+                            modifiedBy: order['modified_by'] ?? ''
                         }
                     ]);
                 }
@@ -154,5 +162,24 @@ export class Stock implements OnInit {
 
     setLocationFilter(event: Event): void {
         this.locationFilter.set((event.target as HTMLInputElement).value);
+    }
+
+    formatDateTime(value: unknown): string {
+        if (value == null || value === '') {
+            return '—';
+        }
+
+        const date = value instanceof Date ? value : new Date(String(value).replace(' ', 'T'));
+        if (Number.isNaN(date.getTime())) {
+            return String(value);
+        }
+
+        return new Intl.DateTimeFormat('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        }).format(date);
     }
 }
