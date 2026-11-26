@@ -109,6 +109,7 @@ public final class Constants {
 	public static final long PROCESS_INTERVAL = 2000;
 	public static final long DECISION_TIMEOUT = 10000;
 	public static final long SETUP_TIMEOUT = 5000; // cat asteapta simulatorul raspunsul serverului la Setup
+	public static final long LOAD_UNIT_INFO_TIMEOUT = 5000;
 	public static final long HOLD_RETRY_INTERVAL = 3000; // cat de des intreaba un DP pentru un tote oprit
 	public static final long INFO_POINT_DWELL = 1000; // cat sta un tote pe un info point
 	public static final long TPS1_ACK_DELAY = 2000; // TPS1 confirma GET dupa asta
@@ -116,7 +117,7 @@ public final class Constants {
 	public static final Duration SIM_PICKING_LOCK = Duration.ofSeconds(30);
 	public static final long GATE_DWELL = 2000; // cat sta un carton pe gate inainte sa iasa din sim
 	public static final double CONVEYOR_SPEED = 70; // viteza generala a benzilor, pixeli pe secunda
-	public static final Double[] CONVEYOR_SPEED_FACTORS = { 0.25, 0.5, 1.0, 2.0, 3.0, 5.0, 10.0 };
+	public static final Double[] CONVEYOR_SPEED_FACTORS = { 0.01, 0.25, 0.5, 1.0, 2.0, 3.0, 5.0, 10.0 };
 	public static final int ANCHOR_SIZE = 10;
 	public static final int NO_ANCHOR = -1;
 	public static final int MIN_ANCHOR_COUNT = 2;

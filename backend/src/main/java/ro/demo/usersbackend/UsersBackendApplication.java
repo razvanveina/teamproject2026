@@ -10,6 +10,7 @@ import ro.demo.usersbackend.init.DemoTestDataCreator;
 import ro.demo.usersbackend.init.InitialDataCreator;
 import ro.demo.usersbackend.init.InitialDataCreatorApplication;
 import ro.demo.usersbackend.messaging.Broker;
+import ro.demo.usersbackend.server.mfs.SimLoadUnitInfoListener;
 import ro.demo.usersbackend.server.mfs.SimSetupListener;
 import ro.demo.usersbackend.server.process.ProcessManager;
 
@@ -21,6 +22,7 @@ public class UsersBackendApplication {
 		Broker.start();
 		SpringApplication.run(UsersBackendApplication.class, args);
 		new SimSetupListener().start();
+		new SimLoadUnitInfoListener().start();
 		ProcessManager.getInstance().startAll();
 	}
 }

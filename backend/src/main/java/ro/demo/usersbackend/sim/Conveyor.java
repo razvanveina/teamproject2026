@@ -337,6 +337,7 @@ public class Conveyor extends Entity {
 //		Conveyor conveyor = (Conveyor) byName.get(name);
 		double margin = slotMargin();
 		double usable = length(pathCoordonates) - 2 * margin;
+		clearDrawnTotes();
 		for (Conveyor.ToteOnBelt toteOnBelt : getTotesOnBelt()) {
 			double[] totePosition = pointAt(pathCoordonates, margin + toteOnBelt.progress() * usable);
 			tote(g, toteOnBelt.loadUnit(), totePosition[0], totePosition[1]);
@@ -576,5 +577,10 @@ public class Conveyor extends Entity {
 			}
 		}
 		return false;
+	}
+
+	@Override
+	public synchronized boolean removeLoadUnit(String barcode) {
+		return totes.removeIf(tote -> tote.loadUnit.barcode().equals(barcode));
 	}
 }

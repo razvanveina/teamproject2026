@@ -1,6 +1,7 @@
 package ro.demo.usersbackend.sim;
 
 import java.awt.BasicStroke;
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -27,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -34,6 +36,7 @@ import java.util.stream.Stream;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -43,9 +46,15 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 import javax.swing.Timer;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import ro.demo.usersbackend.common.Constants;
+import ro.demo.usersbackend.messaging.MfsMessages.LoadUnitInfo;
+import ro.demo.usersbackend.messaging.MfsMessages.LoadUnitInfoItem;
 
 public class SimWindow extends JPanel {
 
@@ -63,6 +72,7 @@ public class SimWindow extends JPanel {
 	private static final double MIN_ZOOM = 0.25;
 	private static final double MAX_ZOOM = 8;
 
+	private final transient Logger log = LogManager.getLogger("application");
 	private Sim sim;
 	private TimeKeeper timeKeeper = TimeKeeper.getInstance();
 	private double zoom = 1;
@@ -220,6 +230,9 @@ public class SimWindow extends JPanel {
 				if (SwingUtilities.isLeftMouseButton(e) && e.getClickCount() == 2) {
 					reset();
 				}
+				if (SwingUtilities.isLeftMouseButton(e) && e.getClickCount() == 1) {
+					toteBarcodeAt(e.getPoint()).ifPresent(barcode -> showLoadUnitInfo(barcode));
+				}
 			}
 		};
 		addMouseListener(mouse);
@@ -267,6 +280,8 @@ public class SimWindow extends JPanel {
 						collectAnchorsAttachedTo(draggedPoint);
 					} else if (conveyor.isFirstAnchor(anchorIndex)) {
 						draggedPoint = pointFeeding(conveyor, anchorStart);
+					} else if (conveyor.isLastAnchor(anchorIndex)) {
+						draggedPoint = endPointOf(conveyor, anchorStart);
 					}
 					return;
 				}
@@ -323,6 +338,20 @@ public class SimWindow extends JPanel {
 		return null;
 	}
 
+	private ServerPoint endPointOf(Conveyor conveyor, Point position) {
+		ServerPoint serverPoint = serverPointAt(position);
+		boolean isFedByConveyor = serverPoint != null && serverPoint.getSource().contains(conveyor);
+		if (isFedByConveyor && !isFeedingAnyConveyor(serverPoint)) {
+			return serverPoint;
+		}
+		return null;
+	}
+
+	private boolean isFeedingAnyConveyor(ServerPoint serverPoint) {
+		return sim.getEntities().stream()
+				.anyMatch(entity -> entity instanceof Conveyor conveyor && conveyor.getSource().contains(serverPoint));
+	}
+
 	private ServerPoint serverPointAt(Point position) {
 		for (Entity entity : sim.getEntities()) {
 			if (entity instanceof ServerPoint serverPoint && serverPoint.isAt(position)) {
@@ -367,7 +396,11 @@ public class SimWindow extends JPanel {
 				boolean isAnchorHit = anchorIndex != Constants.NO_ANCHOR;
 				boolean isLastAnchorHit = isAnchorHit && conveyor.isLastAnchor(anchorIndex);
 				if (isLastAnchorHit && conveyor.canRemoveAnchor()) {
+					ServerPoint endPoint = endPointOf(conveyor, conveyor.getAnchorPosition(anchorIndex));
 					conveyor.removeLastAnchor();
+					if (endPoint != null) {
+						endPoint.moveTo(conveyor.getAnchorPosition(conveyor.getLastAnchorIndex()));
+					}
 					conveyor.recalculateCapacity();
 					repaint();
 					return;
@@ -428,6 +461,112 @@ public class SimWindow extends JPanel {
 					occupiedPlace + " is occupied or the tote already exists, check logs and try again later",
 					Constants.ADD_LOAD_UNIT, JOptionPane.WARNING_MESSAGE);
 		}
+	}
+
+	private Optional<String> toteBarcodeAt(Point screenPoint) {
+		Point drawingPoint = toDrawingPoint(screenPoint);
+		if (drawingPoint == null) {
+			return Optional.empty();
+		}
+		return sim.getEntities().stream().map(entity -> entity.toteBarcodeAt(drawingPoint))
+				.flatMap(Optional::stream).findFirst();
+	}
+
+	private void showLoadUnitInfo(String barcode) {
+		new SwingWorker<LoadUnitInfo, Void>() {
+			@Override
+			protected LoadUnitInfo doInBackground() {
+				return sim.requestLoadUnitInfo(barcode);
+			}
+
+			@Override
+			protected void done() {
+				LoadUnitInfo loadUnitInfo = null;
+				try {
+					loadUnitInfo = get();
+				} catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+				} catch (ExecutionException e) {
+					log.error("load unit info: request for {} failed", barcode, e);
+				}
+				openLoadUnitInfoDialog(barcode, loadUnitInfo);
+			}
+		}.execute();
+	}
+
+	private void openLoadUnitInfoDialog(String barcode, LoadUnitInfo loadUnitInfo) {
+		JButton deleteButton = new JButton("Delete");
+		deleteButton.setFocusPainted(false);
+		JPanel buttonRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+		buttonRow.add(deleteButton);
+
+		JPanel dialogContent = new JPanel(new BorderLayout(0, 12));
+		dialogContent.add(loadUnitInfoContent(loadUnitInfo), BorderLayout.CENTER);
+		dialogContent.add(buttonRow, BorderLayout.SOUTH);
+
+		JOptionPane infoPane = new JOptionPane(dialogContent, JOptionPane.PLAIN_MESSAGE, JOptionPane.DEFAULT_OPTION,
+				null, new Object[] {});
+		JDialog dialog = infoPane.createDialog(this, loadUnitTitle(barcode, loadUnitInfo));
+		deleteButton.addActionListener(e -> deleteLoadUnit(barcode, dialog));
+		dialog.setModal(false);
+		dialog.setVisible(true);
+	}
+
+	private void deleteLoadUnit(String barcode, JDialog dialog) {
+		dialog.dispose();
+		new Thread(() -> sim.removeLoadUnit(barcode), "simRemoveLoadUnit").start();
+	}
+
+	private String loadUnitTitle(String barcode, LoadUnitInfo loadUnitInfo) {
+		if (loadUnitInfo == null || loadUnitInfo.loadUnitType() == null) {
+			return "Load unit " + barcode;
+		}
+		if (Constants.CARTON_TYPE.equals(loadUnitInfo.loadUnitType())) {
+			return "Carton " + barcode;
+		}
+		return "Tote " + barcode;
+	}
+
+	private Component loadUnitInfoContent(LoadUnitInfo loadUnitInfo) {
+		if (loadUnitInfo == null) {
+			return new JLabel("No answer from the server");
+		}
+		if (loadUnitInfo.loadUnitType() == null) {
+			return new JLabel("The server does not know this load unit");
+		}
+		if (Constants.CARTON_TYPE.equals(loadUnitInfo.loadUnitType())) {
+			String orderId = loadUnitInfo.orderId() == null ? "none" : loadUnitInfo.orderId();
+			JPanel cartonContent = new JPanel(new BorderLayout(0, 10));
+			cartonContent.add(new JLabel("Order: " + orderId), BorderLayout.NORTH);
+			if (loadUnitInfo.items().isEmpty()) {
+				cartonContent.add(new JLabel("Empty carton"), BorderLayout.CENTER);
+				return cartonContent;
+			}
+			JPanel cartonItemRows = new JPanel(new GridLayout(0, 2, 16, 6));
+			for (LoadUnitInfoItem item : loadUnitInfo.items()) {
+				cartonItemRows.add(new JLabel(item.article()));
+				cartonItemRows.add(new JLabel(amountText(item)));
+			}
+			cartonContent.add(cartonItemRows, BorderLayout.CENTER);
+			return cartonContent;
+		}
+		if (loadUnitInfo.items().isEmpty()) {
+			return new JLabel("Empty tote");
+		}
+		JPanel itemRows = new JPanel(new GridLayout(0, 3, 16, 6));
+		for (LoadUnitInfoItem item : loadUnitInfo.items()) {
+			itemRows.add(new JLabel(item.article()));
+			itemRows.add(new JLabel(amountText(item)));
+			itemRows.add(new JLabel(item.orderId() == null ? "" : item.orderId()));
+		}
+		return itemRows;
+	}
+
+	private String amountText(LoadUnitInfoItem item) {
+		if (item.piecesPerBox() == 1) {
+			return item.quantity() + " pieces";
+		}
+		return item.quantity() + " box(es) of " + item.piecesPerBox();
 	}
 
 	private void reset() {

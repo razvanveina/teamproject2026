@@ -3,8 +3,13 @@ package ro.demo.usersbackend.sim;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -18,6 +23,7 @@ public abstract class Entity implements Runnable {
 	protected String name;
 	private List<Entity> source = new ArrayList<>();
 	private List<Entity> target = new ArrayList<>();
+	private final Map<String, Rectangle> drawnToteShapes = new HashMap<>();
 
 	public Entity(String name) {
 		this.setName(name);
@@ -86,6 +92,8 @@ public abstract class Entity implements Runnable {
 
 	public abstract boolean hasLoadUnit(String barcode);
 
+	public abstract boolean removeLoadUnit(String barcode);
+
 	@Override
 	public void run() {
 		while (true) {
@@ -106,6 +114,15 @@ public abstract class Entity implements Runnable {
 		return Constants.CARTON_TYPE.equals(loadUnit.type());
 	}
 
+	protected void clearDrawnTotes() {
+		drawnToteShapes.clear();
+	}
+
+	public Optional<String> toteBarcodeAt(Point drawingPoint) {
+		return drawnToteShapes.entrySet().stream().filter(entry -> entry.getValue().contains(drawingPoint))
+				.map(Map.Entry::getKey).findFirst();
+	}
+
 	protected void tote(Graphics2D g, SimLoadUnit loadUnit, double x, double y) {
 		if (loadUnit == null) {
 			return;
@@ -113,6 +130,7 @@ public abstract class Entity implements Runnable {
 		String barcode = loadUnit.barcode();
 		int tx = (int) (x - SimWindow.TOTE / 2.0);
 		int ty = (int) (y - SimWindow.TOTE / 2.0);
+		drawnToteShapes.put(barcode, new Rectangle(tx, ty, SimWindow.TOTE, SimWindow.TOTE));
 		g.setColor(isCarton(loadUnit) ? Constants.CARTON_COLOR : Constants.TOTE_COLOR);
 		g.fillRect(tx, ty, SimWindow.TOTE, SimWindow.TOTE);
 		g.setColor(Color.BLACK);

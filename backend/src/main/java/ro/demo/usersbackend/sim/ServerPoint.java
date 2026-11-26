@@ -199,6 +199,7 @@ public abstract class ServerPoint extends Entity {
 		} else {
 			g.drawString(name, x - nameWidth / 2, y - h - 4);
 		}
+		clearDrawnTotes();
 		tote(g, loadUnit, x, y);
 
 		return pointBox;
@@ -218,5 +219,14 @@ public abstract class ServerPoint extends Entity {
 			return true;
 		}
 		return false;
+	}
+
+	@Override
+	public synchronized boolean removeLoadUnit(String barcode) {
+		if (!hasLoadUnit(barcode)) {
+			return false;
+		}
+		restore(new EntityState(name, List.of(), null, false));
+		return true;
 	}
 }

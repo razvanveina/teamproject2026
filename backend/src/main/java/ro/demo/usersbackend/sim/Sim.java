@@ -1,6 +1,7 @@
 package ro.demo.usersbackend.sim;
 
 import java.awt.Point;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -33,6 +34,7 @@ import jakarta.jms.TextMessage;
 import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.messaging.Broker;
 import ro.demo.usersbackend.messaging.MfsMessages;
+import ro.demo.usersbackend.messaging.MfsMessages.LoadUnitInfo;
 import ro.demo.usersbackend.messaging.MfsMessages.SetupLoadUnit;
 
 public class Sim {
@@ -130,13 +132,16 @@ public class Sim {
 				return;
 			}
 			List<EntityState> states;
+			SimLayout layout;
 			try {
 				states = entities.stream().map(Entity::snapshot).filter(s -> !s.loadUnits().isEmpty()).toList();
+				layout = collectLayout();
 			} finally {
 				lock.unlock();
 			}
 			try (ObjectOutputStream out = new ObjectOutputStream(Files.newOutputStream(SNAPSHOT_TMP))) {
 				out.writeObject(states);
+				out.writeObject(layout);
 			}
 			Files.move(SNAPSHOT_TMP, SNAPSHOT, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
 		} catch (Exception e) {
@@ -162,6 +167,33 @@ public class Sim {
 		}
 	}
 
+	void removeLoadUnit(String barcode) {
+		Lock lock = Entity.LOCK.writeLock();
+		try {
+			if (!lock.tryLock(2, TimeUnit.SECONDS)) {
+				log.warn("load unit {} not removed, entities busy", barcode);
+				return;
+			}
+			boolean isRemoved = false;
+			try {
+				for (Entity entity : entities) {
+					if (entity.removeLoadUnit(barcode)) {
+						isRemoved = true;
+					}
+				}
+			} finally {
+				lock.unlock();
+			}
+			if (isRemoved) {
+				log.info("load unit {} removed from the simulator", barcode);
+			} else {
+				log.warn("load unit {} not found in the simulator", barcode);
+			}
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
+	}
+
 	@SuppressWarnings("unchecked")
 	private void restore() {
 		if (!Files.exists(SNAPSHOT)) {
@@ -169,12 +201,51 @@ public class Sim {
 		}
 		try (ObjectInputStream in = new ObjectInputStream(Files.newInputStream(SNAPSHOT))) {
 			List<EntityState> states = (List<EntityState>) in.readObject();
+			SimLayout layout = readLayout(in);
+			if (layout != null) {
+				applyLayout(layout);
+			}
 			for (EntityState state : states) {
 				entities.stream().filter(e -> e.getName().equals(state.name())).forEach(e -> e.restore(state));
 			}
 			log.info("snapshot restored from " + SNAPSHOT.toAbsolutePath() + ", " + states.size() + " entities");
 		} catch (Exception e) {
 			log.error("snapshot not restored", e);
+		}
+	}
+
+	private SimLayout collectLayout() {
+		List<ConveyorLayout> conveyorLayouts = new ArrayList<>();
+		List<PointLayout> pointLayouts = new ArrayList<>();
+		for (Entity entity : entities) {
+			if (entity instanceof Conveyor conveyor && conveyor.isEdited()) {
+				conveyorLayouts.add(conveyor.layout());
+			} else if (entity instanceof ServerPoint serverPoint && serverPoint.isEdited()) {
+				pointLayouts.add(serverPoint.layout());
+			}
+		}
+		return new SimLayout(conveyorLayouts, pointLayouts);
+	}
+
+	private SimLayout readLayout(ObjectInputStream in) throws IOException, ClassNotFoundException {
+		try {
+			return (SimLayout) in.readObject();
+		} catch (EOFException e) {
+			log.info("snapshot has no layout, keeping the original layout");
+			return null;
+		}
+	}
+
+	private void applyLayout(SimLayout layout) {
+		for (ConveyorLayout conveyorLayout : layout.conveyorLayouts()) {
+			if (entityNamed(conveyorLayout.name()) instanceof Conveyor conveyor) {
+				conveyor.applyLayout(conveyorLayout);
+			}
+		}
+		for (PointLayout pointLayout : layout.pointLayouts()) {
+			if (entityNamed(pointLayout.name()) instanceof ServerPoint serverPoint) {
+				serverPoint.applyLayout(pointLayout);
+			}
 		}
 	}
 
@@ -274,6 +345,29 @@ public class Sim {
 			}
 		} catch (JMSException e) {
 			log.error("setup: request failed", e);
+			return null;
+		}
+	}
+
+	public LoadUnitInfo requestLoadUnitInfo(String barcode) {
+		try (JMSContext infoContext = new ActiveMQConnectionFactory(Broker.URL).createContext()) {
+			TemporaryQueue replyQueue = infoContext.createTemporaryQueue();
+			TextMessage request = infoContext.createTextMessage(barcode);
+			request.setJMSReplyTo(replyQueue);
+
+			try (JMSConsumer replies = infoContext.createConsumer(replyQueue)) {
+				infoContext.createProducer().send(infoContext.createQueue(MfsMessages.LOAD_UNIT_INFO_REQUEST_QUEUE),
+						request);
+				Message reply = replies.receive(Constants.LOAD_UNIT_INFO_TIMEOUT);
+				if (!(reply instanceof TextMessage text)) {
+					log.warn("load unit info: no reply from the server for {} in {} ms", barcode,
+							Constants.LOAD_UNIT_INFO_TIMEOUT);
+					return null;
+				}
+				return MfsMessages.fromJson(text.getText(), LoadUnitInfo.class);
+			}
+		} catch (JMSException e) {
+			log.error("load unit info: request for {} failed", barcode, e);
 			return null;
 		}
 	}

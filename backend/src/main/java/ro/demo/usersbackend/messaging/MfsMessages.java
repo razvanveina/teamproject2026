@@ -1,5 +1,7 @@
 package ro.demo.usersbackend.messaging;
 
+import java.util.List;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -18,6 +20,7 @@ public final class MfsMessages {
 	// simulator -> server, butonul Setup; raspunsul vine pe coada temporara din
 	// JMSReplyTo
 	public static final String SETUP_REQUEST_QUEUE = "MFS_SETUP_REQUEST";
+	public static final String LOAD_UNIT_INFO_REQUEST_QUEUE = "MFS_LOAD_UNIT_INFO_REQUEST";
 
 	private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -44,6 +47,12 @@ public final class MfsMessages {
 
 	// de ex {"point":"DP4","loadUnit":"000002","loadUnitType":"TOTE"}
 	public record SetupLoadUnit(String point, String loadUnit, String loadUnitType) {
+	}
+
+	public record LoadUnitInfo(String loadUnit, String loadUnitType, String orderId, List<LoadUnitInfoItem> items) {
+	}
+
+	public record LoadUnitInfoItem(String article, String packaging, int quantity, int piecesPerBox, String orderId) {
 	}
 
 	public static String toJson(Object message) {
