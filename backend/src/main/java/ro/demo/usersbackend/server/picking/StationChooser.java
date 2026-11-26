@@ -23,7 +23,7 @@ public final class StationChooser {
 		String best = Constants.PTTS_POINTS.get(0);
 		long bestCount = Long.MAX_VALUE;
 		for (String ptts : Constants.PTTS_POINTS) {
-			long count = openOrdersTo(session, ptts);
+			long count = openOrdersTo(session, ptts) + totesOn(session, ptts);
 			if (count < bestCount) {
 				best = ptts;
 				bestCount = count;
@@ -42,14 +42,18 @@ public final class StationChooser {
 	}
 
 	public static boolean isTargetFree(Session session, String pttt) {
-		long onIt = session.createNamedQuery("LoadUnit.countByLocationName", Long.class).setParameter("name", pttt)
-				.getSingleResult();
+		long onIt = totesOn(session, pttt);
 		return onIt == 0 && openOrdersTo(session, pttt) == 0;
 	}
 
 	private static long openOrdersTo(Session session, String target) {
 		return session.createNamedQuery("TransportOrder.countOpenByTargetName", Long.class)
 				.setParameter("target", target).setParameterList("open", Constants.OPEN_TRANSPORT_STATUSES)
+				.getSingleResult();
+	}
+
+	private static long totesOn(Session session, String location) {
+		return session.createNamedQuery("LoadUnit.countByLocationName", Long.class).setParameter("name", location)
 				.getSingleResult();
 	}
 
