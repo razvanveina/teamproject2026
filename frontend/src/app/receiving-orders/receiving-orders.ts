@@ -1,10 +1,7 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { forkJoin } from 'rxjs';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { ReceivingOrder } from '../models/receiving-order.model';
 import { DialogConfigService } from '../services/dialog-config.service';
 import { ReceivingOrderService } from '../services/receiving-order-service';
-
-const PAGE_SIZE = 20;
 
 @Component({
   selector: 'app-receiving-orders',
@@ -16,30 +13,16 @@ export class ReceivingOrders implements OnInit {
   private service = inject(DialogConfigService);
   private receivingService = inject(ReceivingOrderService);
 
-  orders = signal<any[]>([]);
+  rows = signal<any[]>([]);
   orderIdFilter = signal('');
   statusFilter = signal('');
   page = signal(0);
+  pages = signal(1);
   error = signal('');
 
   selectedRow = signal<any | null>(null);
   details = signal<ReceivingOrder | null>(null);
   detailsError = signal('');
-
-  filteredOrders = computed(() => {
-    const orderId = this.orderIdFilter().toUpperCase();
-    const status = this.statusFilter().toUpperCase();
-    return this.orders().filter(
-      (order) => order['ORDER_ID'].toUpperCase().includes(orderId) && order['STATUS'].includes(status),
-    );
-  });
-
-  pages = computed(() => Math.max(1, Math.ceil(this.filteredOrders().length / PAGE_SIZE)));
-
-  rows = computed(() => {
-    const start = this.page() * PAGE_SIZE;
-    return this.filteredOrders().slice(start, start + PAGE_SIZE);
-  });
 
   ngOnInit(): void {
     this.loadOrders();
@@ -47,14 +30,15 @@ export class ReceivingOrders implements OnInit {
 
   loadOrders(): void {
     this.error.set('');
-    forkJoin({
-      newOrders: this.service.getRows('ReceivingOrder', { STATUS: 'NEW' }),
-      activeOrders: this.service.getRows('ReceivingOrder', { STATUS: 'ACTIVE' }),
-      finishedOrders: this.service.getRows('ReceivingOrder', { STATUS: 'FINISHED' }),
-    }).subscribe({
-      next: ({ newOrders, activeOrders, finishedOrders }) => {
-        this.orders.set([...newOrders, ...activeOrders, ...finishedOrders].sort((a, b) => a['ID'] - b['ID']));
-        this.page.set(Math.min(this.page(), this.pages() - 1));
+    const params = { ORDER_ID: this.orderIdFilter(), STATUS: this.statusFilter(), page: this.page() };
+    this.service.getRows('ReceivingOrder', params).subscribe({
+      next: (rows: any[]) => {
+        this.rows.set(rows);
+        if (rows.length > 0) {
+          this.pages.set(Math.ceil(rows[0]['TOTAL_ROWS'] / 20));
+        } else {
+          this.pages.set(1);
+        }
       },
       error: (err) => {
         console.error('Error loading receiving orders', err);
@@ -99,22 +83,26 @@ export class ReceivingOrders implements OnInit {
   setOrderIdFilter(event: any): void {
     this.orderIdFilter.set(event.target.value);
     this.page.set(0);
+    this.loadOrders();
   }
 
   setStatusFilter(event: any): void {
     this.statusFilter.set(event.target.value);
     this.page.set(0);
+    this.loadOrders();
   }
 
   previousPage(): void {
     if (this.page() > 0) {
       this.page.set(this.page() - 1);
+      this.loadOrders();
     }
   }
 
   nextPage(): void {
     if (this.page() < this.pages() - 1) {
       this.page.set(this.page() + 1);
+      this.loadOrders();
     }
   }
 

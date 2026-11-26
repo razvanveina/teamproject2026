@@ -26,6 +26,20 @@ describe('RetrievalOrders', () => {
       { barcode: 'A-2', description: 'Bread', quantity: 5, status: 'FINISHED', location: 'PICK-2' },
     ],
   });
+  const pageOfRows = (allRows: any[], filters: any) => {
+    const matchingRows = allRows
+      .filter((row) =>
+        Object.keys(filters)
+          .filter((field) => field !== 'page')
+          .every((field) => String(row[field]).toUpperCase().includes(filters[field].toUpperCase())),
+      )
+      .sort((a, b) => a['ID'] - b['ID']);
+    if (filters.page === undefined) {
+      return matchingRows;
+    }
+    const start = filters.page * 20;
+    return matchingRows.slice(start, start + 20).map((row) => ({ ...row, TOTAL_ROWS: matchingRows.length }));
+  };
   const destinations = [
     { ID: 1, NAME: 'Cluj' },
     { ID: 2, NAME: 'Brașov' },
@@ -38,8 +52,8 @@ describe('RetrievalOrders', () => {
   beforeEach(async () => {
     savedOrders = [...orders];
     addedLines = [];
-    getRows = (entity: string) => of(
-      entity === 'RetrievalOrder' ? savedOrders : entity === 'Destination' ? destinations : articles,
+    getRows = (entity: string, filters: any = {}) => of(
+      entity === 'RetrievalOrder' ? pageOfRows(savedOrders, filters) : entity === 'Destination' ? destinations : articles,
     );
     getOrder = (orderId: string) => of({
       ...orderWithLines(orderId),
@@ -73,7 +87,7 @@ describe('RetrievalOrders', () => {
     await TestBed.configureTestingModule({
       imports: [RetrievalOrders],
       providers: [
-        { provide: DialogConfigService, useValue: { getRows: (e: string) => getRows(e), addRow: (e: string, d: any) => addRow(e, d) } },
+        { provide: DialogConfigService, useValue: { getRows: (e: string, f: any) => getRows(e, f), addRow: (e: string, d: any) => addRow(e, d) } },
         { provide: PickingApi, useValue: { getOrder: (id: string) => getOrder(id) } },
       ],
     }).compileComponents();
@@ -105,6 +119,25 @@ describe('RetrievalOrders', () => {
     component.setStatusFilter({ target: { value: '' } });
     component.setDestinationFilter({ target: { value: 'sib' } });
     expect(component.rows().map((row) => row['ID'])).toEqual([2]);
+  });
+
+  it('splits the orders into pages of 20', async () => {
+    savedOrders = Array.from({ length: 25 }, (_, i) => ({
+      ID: i + 1,
+      ORDER_ID: 'RT-' + (i + 1),
+      STATUS: 'NEW',
+      DESTINATION_ID__NAME: 'Cluj',
+    }));
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(component.pages()).toBe(2);
+    expect(component.rows().length).toBe(20);
+    expect(fixture.nativeElement.querySelector('.pager span').textContent).toContain('Page 1 of 2');
+
+    component.nextPage();
+    expect(component.rows().length).toBe(5);
+    expect(component.rows()[0]['ID']).toBe(21);
   });
 
   it('shows a hint until an order is selected', async () => {

@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { DialogConfigService } from '../services/dialog-config.service';
 import { PickingApi } from '../services/picking';
 
@@ -12,12 +12,14 @@ export class RetrievalOrders implements OnInit {
   private service = inject(DialogConfigService);
   private pickingApi = inject(PickingApi);
 
-  orders = signal<any[]>([]);
+  rows = signal<any[]>([]);
   destinations = signal<any[]>([]);
   articles = signal<any[]>([]);
   orderIdFilter = signal('');
   statusFilter = signal('');
   destinationFilter = signal('');
+  page = signal(0);
+  pages = signal(1);
   error = signal('');
   choicesError = signal('');
 
@@ -29,18 +31,6 @@ export class RetrievalOrders implements OnInit {
   orderDraft = signal({ ORDER_ID: '', DESTINATION_ID: '' as number | '' });
   lineDraft = signal({ ARTICLE_ID: '' as number | '', quantity: 1 });
 
-  rows = computed(() => {
-    const orderId = this.orderIdFilter().toUpperCase();
-    const status = this.statusFilter().toUpperCase();
-    const destination = this.destinationFilter().toUpperCase();
-    return this.orders().filter(
-      (order) =>
-        order['ORDER_ID'].toUpperCase().includes(orderId) &&
-        order['STATUS'].includes(status) &&
-        order['DESTINATION_ID__NAME'].toUpperCase().includes(destination),
-    );
-  });
-
   ngOnInit(): void {
     this.loadOrders();
     this.loadChoices();
@@ -48,15 +38,22 @@ export class RetrievalOrders implements OnInit {
 
   loadOrders(selectOrderId?: string): void {
     this.error.set('');
-    this.service.getRows('RetrievalOrder').subscribe({
-      next: (orders: any[]) => {
-        const sortedOrders = [...orders].sort((a, b) => a['ID'] - b['ID']);
-        this.orders.set(sortedOrders);
+    const params = {
+      ORDER_ID: this.orderIdFilter(),
+      STATUS: this.statusFilter(),
+      DESTINATION_ID__NAME: this.destinationFilter(),
+      page: this.page(),
+    };
+    this.service.getRows('RetrievalOrder', params).subscribe({
+      next: (rows: any[]) => {
+        this.rows.set(rows);
+        if (rows.length > 0) {
+          this.pages.set(Math.ceil(rows[0]['TOTAL_ROWS'] / 20));
+        } else {
+          this.pages.set(1);
+        }
         if (selectOrderId) {
-          const createdOrder = sortedOrders.find((row) => row['ORDER_ID'] === selectOrderId);
-          if (createdOrder) {
-            this.select(createdOrder);
-          }
+          this.selectByOrderId(selectOrderId);
         }
       },
       error: (err) => {
@@ -96,6 +93,15 @@ export class RetrievalOrders implements OnInit {
     this.loadDetails();
   }
 
+  selectByOrderId(orderId: string): void {
+    this.service.getRows('RetrievalOrder', { ORDER_ID: orderId }).subscribe((rows: any[]) => {
+      const matchingOrder = rows.find((row) => row['ORDER_ID'] === orderId);
+      if (matchingOrder) {
+        this.select(matchingOrder);
+      }
+    });
+  }
+
   loadDetails(): void {
     const row = this.selectedRow();
     if (row === null) {
@@ -120,14 +126,34 @@ export class RetrievalOrders implements OnInit {
 
   setOrderIdFilter(event: any): void {
     this.orderIdFilter.set(event.target.value);
+    this.page.set(0);
+    this.loadOrders();
   }
 
   setStatusFilter(event: any): void {
     this.statusFilter.set(event.target.value);
+    this.page.set(0);
+    this.loadOrders();
   }
 
   setDestinationFilter(event: any): void {
     this.destinationFilter.set(event.target.value);
+    this.page.set(0);
+    this.loadOrders();
+  }
+
+  previousPage(): void {
+    if (this.page() > 0) {
+      this.page.set(this.page() - 1);
+      this.loadOrders();
+    }
+  }
+
+  nextPage(): void {
+    if (this.page() < this.pages() - 1) {
+      this.page.set(this.page() + 1);
+      this.loadOrders();
+    }
   }
 
   updateOrderDraft(field: 'ORDER_ID' | 'DESTINATION_ID', value: string): void {

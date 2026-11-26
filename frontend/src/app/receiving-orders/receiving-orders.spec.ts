@@ -11,13 +11,23 @@ describe('ReceivingOrders', () => {
   let getRows: any;
   let getReceivingOrder: any;
 
-  const newOrders = [
+  const orders = [
     { ID: 3, ORDER_ID: 'RO-3', STATUS: 'NEW' },
     { ID: 1, ORDER_ID: 'RO-1', STATUS: 'NEW' },
+    { ID: 2, ORDER_ID: 'RO-2', STATUS: 'ACTIVE' },
+    { ID: 4, ORDER_ID: 'RO-4', STATUS: 'FINISHED' },
   ];
-  const activeOrders = [{ ID: 2, ORDER_ID: 'RO-2', STATUS: 'ACTIVE' }];
-  const finishedOrders = [{ ID: 4, ORDER_ID: 'RO-4', STATUS: 'FINISHED' }];
-  const ordersByStatus: any = { NEW: newOrders, ACTIVE: activeOrders, FINISHED: finishedOrders };
+  const pageOfRows = (allRows: any[], filters: any) => {
+    const matchingRows = allRows
+      .filter((row) =>
+        Object.keys(filters)
+          .filter((field) => field !== 'page')
+          .every((field) => String(row[field]).toUpperCase().includes(filters[field].toUpperCase())),
+      )
+      .sort((a, b) => a['ID'] - b['ID']);
+    const start = filters.page * 20;
+    return matchingRows.slice(start, start + 20).map((row) => ({ ...row, TOTAL_ROWS: matchingRows.length }));
+  };
   const orderWithLines = (orderId: string): ReceivingOrder => ({
     orderId,
     status: 'ACTIVE',
@@ -28,7 +38,7 @@ describe('ReceivingOrders', () => {
   });
 
   beforeEach(async () => {
-    getRows = (_entity: string, filters: any) => of(ordersByStatus[filters.STATUS]);
+    getRows = (_entity: string, filters: any) => of(pageOfRows(orders, filters));
     getReceivingOrder = (orderId: string) => of(orderWithLines(orderId));
 
     await TestBed.configureTestingModule({
@@ -43,7 +53,7 @@ describe('ReceivingOrders', () => {
     component = fixture.componentInstance;
   });
 
-  it('shows new, active and finished orders together sorted by id', async () => {
+  it('shows the orders sorted by id', async () => {
     await fixture.whenStable();
 
     expect(component.rows().map((row) => row['ID'])).toEqual([1, 2, 3, 4]);
@@ -64,14 +74,17 @@ describe('ReceivingOrders', () => {
 
   it('splits the orders into pages of 20', async () => {
     const many = Array.from({ length: 25 }, (_, i) => ({ ID: i + 1, ORDER_ID: 'RO-' + i, STATUS: 'NEW' }));
-    getRows = (_entity: string, filters: any) => of(filters.STATUS === 'NEW' ? many : []);
+    getRows = (_entity: string, filters: any) => of(pageOfRows(many, filters));
     await fixture.whenStable();
+    fixture.detectChanges();
 
     expect(component.pages()).toBe(2);
     expect(component.rows().length).toBe(20);
+    expect(fixture.nativeElement.querySelector('.pager span').textContent).toContain('Page 1 of 2');
 
     component.nextPage();
     expect(component.rows().length).toBe(5);
+    expect(component.rows()[0]['ID']).toBe(21);
   });
 
   it('shows a hint until an order is selected', async () => {
