@@ -117,16 +117,18 @@ public abstract class ServerPoint extends Entity {
 	}
 
 	@Override
-	public synchronized boolean addLoadUnit(SimLoadUnit addedLoadUnit, Sim sim) {
+	public boolean addLoadUnit(SimLoadUnit addedLoadUnit, Sim sim) {
 		if (!super.addLoadUnit(addedLoadUnit, sim)) { // if false return false
 			return false;
 		}
 
-		if (loadUnit != null || pendingLoadUnit != null) {
-			return false;
+		synchronized (this) {
+			if (loadUnit != null || pendingLoadUnit != null) {
+				return false;
+			}
+			pendingLoadUnit = addedLoadUnit;
+			return true;
 		}
-		pendingLoadUnit = addedLoadUnit;
-		return true;
 	}
 
 	protected SimLoadUnit nextArrivingLoadUnit() {
@@ -210,20 +212,21 @@ public abstract class ServerPoint extends Entity {
 	}
 
 	@Override
-	public boolean hasLoadUnit(String barcode) {
-		if (loadUnit == null) {
-			return false;
-		}
+	public synchronized boolean hasLoadUnit(String barcode) {
+		return isBarcode(loadUnit, barcode) || isBarcode(pendingLoadUnit, barcode);
+	}
 
-		if (loadUnit.barcode().equals(barcode)) {
-			return true;
-		}
-		return false;
+	private boolean isBarcode(SimLoadUnit simLoadUnit, String barcode) {
+		return simLoadUnit != null && simLoadUnit.barcode().equals(barcode);
 	}
 
 	@Override
 	public synchronized boolean removeLoadUnit(String barcode) {
-		if (!hasLoadUnit(barcode)) {
+		if (isBarcode(pendingLoadUnit, barcode)) {
+			pendingLoadUnit = null;
+			return true;
+		}
+		if (!isBarcode(loadUnit, barcode)) {
 			return false;
 		}
 		restore(new EntityState(name, List.of(), null, false));
