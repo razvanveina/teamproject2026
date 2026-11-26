@@ -15,7 +15,7 @@ public class Workplace {
 	@Column(nullable = false, unique = true)
 	private String name;
 
-	@Column(nullable = false)
+	@Column(nullable = false, unique = true)
 	private String ip;
 
 	public Workplace() {

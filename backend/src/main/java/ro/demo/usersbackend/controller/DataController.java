@@ -136,6 +136,13 @@ public class DataController {
 	public ResponseEntity<Map<String, String>> add(@PathVariable String entity,
 			@RequestBody Map<String, Object> values) {
 		log.info("Data: added a row to {} with columns {}", entity, values.keySet());
+		if (entity.equals("Workplace")) {
+			String taken = workplaceUsingIp(values.get("IP"), null);
+			if (taken != null) {
+				return ResponseEntity.badRequest().body(
+						Map.of("message", "IP " + values.get("IP") + " is already assigned to workplace " + taken));
+			}
+		}
 		List<String> names = new ArrayList<>();
 		List<String> marks = new ArrayList<>();
 		List<Object> params = new ArrayList<>();
@@ -177,6 +184,13 @@ public class DataController {
 	public ResponseEntity<Map<String, String>> update(@PathVariable String entity, @PathVariable Long id,
 			@RequestBody Map<String, Object> values) {
 		log.info("Data: update {} {} with columns {}", entity, id, values.keySet());
+		if (entity.equals("Workplace")) {
+			String taken = workplaceUsingIp(values.get("IP"), id);
+			if (taken != null) {
+				return ResponseEntity.badRequest().body(
+						Map.of("message", "IP " + values.get("IP") + " is already assigned to workplace " + taken));
+			}
+		}
 		List<String> sets = new ArrayList<>();
 		List<Object> params = new ArrayList<>();
 
@@ -243,11 +257,26 @@ public class DataController {
 						.executeUpdate();
 				session.createNamedMutationQuery("StockItem.deleteByLoadUnitId").setParameter("loadUnitId", id)
 						.executeUpdate();
-				session.createNamedMutationQuery("InvetoryOrderLine.deleteByLoadUnitId")
-						.setParameter("loadUnitId", id).executeUpdate();
+				session.createNamedMutationQuery("InvetoryOrderLine.deleteByLoadUnitId").setParameter("loadUnitId", id)
+						.executeUpdate();
 				session.createNamedMutationQuery("LoadUnit.deleteById").setParameter("id", id).executeUpdate();
 			}
 		}.run();
+	}
+
+	private String workplaceUsingIp(Object ip, Long id) {
+		if (ip == null) {
+			return null;
+		}
+		List<Object> params = new ArrayList<>();
+		params.add(ip.toString().trim());
+		String sql = "SELECT NAME FROM " + tableNameOf("Workplace") + " WHERE UPPER(TRIM(IP)) = UPPER(?)";
+		if (id != null) {
+			sql = sql + " AND ID <> ?";
+			params.add(id);
+		}
+		List<Map<String, Object>> rows = select(sql, params);
+		return rows.isEmpty() ? null : (String) rows.get(0).get("NAME");
 	}
 
 	// Runs a SELECT and gives every row as column name -> value (column names upper
