@@ -82,8 +82,7 @@ public class TransportOrder {
 		this.loadUnit = loadUnit;
 
 		createdAt = LocalDateTime.now();
-		createdBy = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).walk(frames -> frames.skip(1)
-				.findFirst().map(frame -> frame.getDeclaringClass().getSimpleName()).orElse("Unknown"));
+		createdBy = getCallerName();
 	}
 
 	public Location getSource() {
@@ -150,7 +149,29 @@ public class TransportOrder {
 
 	private void setModifiedBy() {
 		modifiedAt = LocalDateTime.now();
-		modifiedBy = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).walk(frames -> frames.skip(1)
-				.findFirst().map(frame -> frame.getDeclaringClass().getSimpleName()).orElse("Unknown"));
+		modifiedBy = getCallerName();
+	}
+
+	private String getCallerName() {
+		return StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE)
+				.walk(frames -> frames.skip(1).findFirst().map(frame -> {
+					String name = frame.getDeclaringClass().getName();
+					int dot = name.lastIndexOf('.');
+					int dollar = name.indexOf('$');
+
+					if (dot < 0) {
+						if (dollar < 0) {
+							return name; // if . and $ do not exist
+						} else {
+							return name.substring(0, dollar); // if $ exists
+						}
+					} else {
+						if (dollar < 0) {
+							return name.substring(dot + 1); // if . exists
+						} else {
+							return name.substring(dot + 1, dollar); // if both exit
+						}
+					}
+				}).orElse("Unknown"));
 	}
 }

@@ -118,7 +118,7 @@ public abstract class ServerPoint extends Entity {
 
 	@Override
 	public synchronized boolean addLoadUnit(SimLoadUnit addedLoadUnit, Sim sim) {
-		if (!super.addLoadUnit(addedLoadUnit, sim)) {
+		if (!super.addLoadUnit(addedLoadUnit, sim)) { // if false return false
 			return false;
 		}
 

@@ -186,7 +186,10 @@ public class AutomaticRetrievalService extends AbstractProcess {
 					for (RetrievalOrderLine line : order.getLines()) {
 						for (Reservation reservation : line.getReservations()) {
 							try {
-								createTransportOrder(session, reservation.getStockItem().getLoadUnit());
+								LoadUnit loadUnit = reservation.getStockItem().getLoadUnit();
+								if (new TransportOrderRepository(session).findActiveByLoadUnit(loadUnit).size() <= 0) {
+									createTransportOrder(session, loadUnit);
+								}
 							} catch (RuntimeException e) {
 								log.error("Automatic retrieval: load unit {} not processed {}",
 										reservation.getStockItem().getLoadUnit().getId(), e.toString());

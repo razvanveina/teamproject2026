@@ -81,7 +81,7 @@ public abstract class Entity implements Runnable {
 				return false;
 			}
 		}
-		return false;
+		return true;
 	}
 
 	public abstract boolean hasLoadUnit(String barcode);
