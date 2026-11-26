@@ -68,6 +68,7 @@ public final class Constants {
 			PTTS2, PTTS3, IP2, DP5, IP5, DP7, IP7);
 
 	public static final int PTTT_LANE_SLOTS = 3;
+	public static final int PTTS_LANE_SLOTS = 3;
 
 	// location names
 	public static final String PICK_PREFIX = "PICK";
@@ -102,6 +103,7 @@ public final class Constants {
 
 	// timings
 
+	public static final long PTTS_WAIT = 10000;
 	public static final long PROCESS_INTERVAL = 2000;
 	public static final long DECISION_TIMEOUT = 10000;
 	public static final long SETUP_TIMEOUT = 5000; // cat asteapta simulatorul raspunsul serverului la Setup

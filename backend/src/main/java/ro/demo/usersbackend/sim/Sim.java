@@ -283,7 +283,8 @@ public class Sim {
 		Conveyor c4 = add(new Conveyor("C04", 3, new Point(654, 345), 768, 300, 560, 300));
 		Conveyor c5 = add(new Conveyor("C05", 2, new Point(804, 220), 768, 300, 768, 130));
 		Conveyor c6 = add(new Conveyor("C06", 2, new Point(498, 220), 560, 130, 560, 300));
-		Conveyor c7 = add(new Conveyor("C07", 3, new Point(498, 630), 560, 560, 560, 690, 664, 690));
+		Conveyor c7 = add(
+				new Conveyor("C07", Constants.PTTS_LANE_SLOTS, new Point(498, 630), 560, 560, 560, 690, 664, 690));
 		Conveyor c8 = add(new Conveyor("C08", 3, new Point(804, 630), 664, 690, 768, 690, 768, 560));
 		Conveyor c9 = add(new Conveyor("C09", 2, new Point(1450, 945), 1408, 900, 1540, 900));
 		Conveyor c10 = add(new Conveyor("C10", 7, new Point(325, 605), 120, 560, 560, 560));
@@ -298,11 +299,13 @@ public class Sim {
 		Conveyor c17 = add(new Conveyor("C17", 3, new Point(804, 805), 664, 770, 768, 770, 768, 900));
 		Conveyor c18 = add(new Conveyor("C18", 3, new Point(650, 945), 560, 900, 768, 900));
 		Conveyor c19 = add(new Conveyor("C19", 2, new Point(808, 524), 768, 560, 880, 560));
-		Conveyor c20 = add(new Conveyor("C20", 3, new Point(828, 705), 880, 560, 880, 690, 984, 690));
+		Conveyor c20 = add(
+				new Conveyor("C20", Constants.PTTS_LANE_SLOTS, new Point(828, 705), 880, 560, 880, 690, 984, 690));
 		Conveyor c21 = add(new Conveyor("C21", 3, new Point(1124, 630), 984, 690, 1088, 690, 1088, 560));
 		Conveyor c22 = add(new Conveyor("C22", 3, new Point(970, 524), 880, 560, 1088, 560));
 		Conveyor c23 = add(new Conveyor("C23", 2, new Point(1128, 524), 1088, 560, 1200, 560));
-		Conveyor c24 = add(new Conveyor("C24", 3, new Point(1148, 705), 1200, 560, 1200, 690, 1304, 690));
+		Conveyor c24 = add(
+				new Conveyor("C24", Constants.PTTS_LANE_SLOTS, new Point(1148, 705), 1200, 560, 1200, 690, 1304, 690));
 		Conveyor c25 = add(new Conveyor("C25", 3, new Point(1444, 630), 1304, 690, 1408, 690, 1408, 560));
 		Conveyor c26 = add(new Conveyor("C26", 3, new Point(1290, 524), 1200, 560, 1408, 560));
 		Conveyor c27 = add(new Conveyor("C27", 2, new Point(808, 945), 768, 900, 880, 900));

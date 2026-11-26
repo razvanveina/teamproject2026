@@ -50,6 +50,14 @@
     	]]>
 	</query>
 
+	<query name="TransportOrder.countInLaneToTarget">
+	    <![CDATA[
+	        select count(t) from TransportOrder t
+	        where t.status = :active and t.target.name = :target
+	          and t.loadUnit.location.name = :point and t.loadUnit.barcode <> :barcode
+	    ]]>
+	</query>
+
 	<query name="TransportOrder.findActiveByLoadUnit">
 	    <![CDATA[
 	        from TransportOrder t
@@ -315,7 +323,7 @@
 	        select count(u) from LoadUnit u where u.location.name = :name and u.barcode <> :barcode
 	    ]]>
 	</query>
-	
+
 	<query name="TransportOrder.findIdsToSendToConveyor">
     <![CDATA[
         select t.id from TransportOrder t
@@ -324,6 +332,6 @@
              or (t.source.name = :decanting and t.loadUnit.type = :tote))
         order by t.id
     ]]>
-</query>
+	</query>
 
 </hibernate-mapping>

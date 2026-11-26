@@ -1,6 +1,8 @@
 package ro.demo.usersbackend.server.mfs;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.logging.log4j.LogManager;
@@ -22,13 +24,15 @@ public abstract class DecisionPointHandler extends PointHandler {
 	private static final Logger mfsLog = LogManager.getLogger("mfsMessages");
 
 	private final String point;
+	protected static final int WAIT = -1;
+	private final Map<String, Long> waitingSince = new HashMap<>();
 
 	protected DecisionPointHandler(String point) {
 		super(point);
 		this.point = point;
 	}
 
-	// 0 = drumu default, 1 = alternativa
+	// 0 = drumu default, 1 = alternativa, WAIT = asteapta la DP
 	protected abstract int decide(String loadUnit, String target) throws Exception;
 
 	@Override
@@ -50,7 +54,8 @@ public abstract class DecisionPointHandler extends PointHandler {
 			return;
 		}
 
-		String reply = String.valueOf(decide(arrived.loadUnit(), target));
+		int decision = decide(arrived.loadUnit(), target);
+		String reply = decision == WAIT ? Constants.HOLD : String.valueOf(decision);
 
 		sendReply(reply);
 		log.info("{}: load unit {} going to {}, reply {}", point, arrived.loadUnit(), target, reply);
@@ -132,6 +137,38 @@ public abstract class DecisionPointHandler extends PointHandler {
 				setReturnValue(0);
 			}
 		}.run();
+	}
+
+	// pentru DP-urile din fata unui PTTS (DP1, DP5, DP7): 0 = in statie, 1 = mai
+	// departe, WAIT = asteapta la DP, intra tote-ul cu TO spre PTTS-ul lui, si daca
+	// zona e full, asteapta PTTS_WAIT si mai da o tura si incearca din nou atunci
+	protected int decideForStation(String loadUnit, String target, String ptts) {
+		if (!ptts.equals(target)) {
+			return 1;
+		}
+
+		boolean room = new WithSessionAndTransaction<Boolean>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				long inStation = session.createNamedQuery("LoadUnit.countByLocationName", Long.class)
+						.setParameter("name", ptts).getSingleResult();
+				long inLane = session.createNamedQuery("TransportOrder.countInLaneToTarget", Long.class)
+						.setParameter("active", TransportOrderStatus.ACTIVE).setParameter("target", ptts)
+						.setParameter("point", point).setParameter("barcode", loadUnit).getSingleResult();
+				setReturnValue(inStation + inLane < Constants.PTTS_LANE_SLOTS + 1);
+			}
+		}.run();
+
+		if (room) {
+			waitingSince.remove(loadUnit);
+			return 0;
+		}
+		long since = waitingSince.computeIfAbsent(loadUnit, barcode -> System.currentTimeMillis());
+		if (System.currentTimeMillis() - since < Constants.PTTS_WAIT) {
+			return WAIT;
+		}
+		waitingSince.remove(loadUnit);
+		return 1;
 	}
 
 	// zona asteapta target: are sursa in PTTS (sau pe drum spre el) si PTTT-ul e

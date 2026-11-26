@@ -9,6 +9,6 @@ public class DP7Handler extends DecisionPointHandler {
 
 	@Override
 	protected int decide(String loadUnit, String target) {
-		return Constants.PTTS3.equals(target) ? 0 : 1;
+		return decideForStation(loadUnit, target, Constants.PTTS3);
 	}
 }

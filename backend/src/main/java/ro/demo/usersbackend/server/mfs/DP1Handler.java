@@ -11,6 +11,6 @@ public class DP1Handler extends DecisionPointHandler {
 	// in statie intra doar tote-ul care are TO spre PTTS1
 	@Override
 	protected int decide(String loadUnit, String target) {
-		return Constants.PTTS1.equals(target) ? 0 : 1;
+		return decideForStation(loadUnit, target, Constants.PTTS1);
 	}
 }
