@@ -346,8 +346,9 @@ public class LoadUnitService {
 				}
 
 				order.setShippingUser(user);
-				setReturnValue(new LoadUnitResponse(loadUnit.getBarcode(), loadUnit.getType().toString(),
-						loadUnit.getLocation().getName(), toStockItemResponses(loadUnit.getStockItems())));
+				setReturnValue(new LoadUnitResponse(order.getOrderId(), loadUnit.getBarcode(),
+						loadUnit.getType().toString(), loadUnit.getLocation().getName(),
+						toStockItemResponses(loadUnit.getStockItems())));
 			}
 		}.run();
 	}
@@ -365,8 +366,9 @@ public class LoadUnitService {
 				checkShippedByUser(order, user, toteBarcode);
 
 				LoadUnit carton = findOrCreateGeneratedCarton(session);
-				setReturnValue(new LoadUnitResponse(carton.getBarcode(), carton.getType().toString(),
-						carton.getLocation().getName(), toStockItemResponses(carton.getStockItems())));
+				setReturnValue(new LoadUnitResponse(order.getOrderId(), carton.getBarcode(),
+						carton.getType().toString(), carton.getLocation().getName(),
+						toStockItemResponses(carton.getStockItems())));
 			}
 		}.run();
 	}
