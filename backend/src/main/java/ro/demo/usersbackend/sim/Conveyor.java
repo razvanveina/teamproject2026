@@ -8,9 +8,8 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.Path2D;
-import java.util.ArrayDeque;
 import java.util.Arrays;
-import java.util.Deque;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
@@ -50,7 +49,7 @@ public class Conveyor extends Entity {
 	private int capacity;
 	private long slotTravelTime;
 	private double speedFactor = 1.0;
-	private Deque<Tote> totes;
+	private LinkedList<Tote> totes;
 	private volatile boolean ready;
 	private TimeKeeper timeKeeper = TimeKeeper.getInstance();
 
@@ -58,11 +57,14 @@ public class Conveyor extends Entity {
 	private int[] pathCoordonates;
 	private boolean isEdited;
 	private Shape shape;
-	private Shape anchor;
+	// private Shape anchor;
+	private Entity sideSource;
+	private Point sideJoin;
+	private boolean endsOnBelt;
 
 	public Conveyor(String name, int capacity, Point labelPositon, int... xy) {
 		super(name);
-		this.totes = new ArrayDeque<>();
+		this.totes = new LinkedList<>();
 		ready = true;
 
 		this.labelPositon = labelPositon;
@@ -144,6 +146,7 @@ public class Conveyor extends Entity {
 				try {
 					advanceTotes();
 					pull();
+					pullFromSide();
 				} finally {
 					LOCK.readLock().unlock();
 				}
@@ -188,6 +191,58 @@ public class Conveyor extends Entity {
 	private void enterFirstSlot(SimLoadUnit enteringLoadUnit) {
 		long entryDuration = capacity > 1 ? 0 : travelTime;
 		totes.addLast(new Tote(enteringLoadUnit, 0, 0.0, timeKeeper.currentSimulationTime(), entryDuration));
+	}
+
+	public void joinFromSide(Conveyor source, int x, int y) {
+		sideSource = source;
+		sideJoin = new Point(x, y);
+		source.endsOnBelt = true;
+	}
+
+	// tote-ul de la capatul benzii laterale intra in slotul cel mai apropiat de
+	// punctul
+	// de intalnire, cand slotul e liber
+	private void pullFromSide() {
+		if (sideSource == null) {
+			return;
+		}
+		int slot;
+		synchronized (this) {
+			slot = slotNearest(sideJoin);
+			if (!isSlotFree(slot, timeKeeper.currentSimulationTime())) {
+				return;
+			}
+		}
+		SimLoadUnit joiningLoadUnit = sideSource.getAvailableLU(this);
+		if (joiningLoadUnit == null) {
+			return;
+		}
+		synchronized (this) {
+			// totes e in ordine de la capatul benzii spre inceput, il punem la locul lui
+			int index = 0;
+			while (index < totes.size() && totes.get(index).slotIndex > slot) {
+				index++;
+			}
+			totes.add(index,
+					new Tote(joiningLoadUnit, slot, slotPosition(slot), timeKeeper.currentSimulationTime(), 0));
+		}
+	}
+
+	// slotul benzii cel mai apropiat de un punct de pe desen
+	private int slotNearest(Point point) {
+		double margin = slotMargin();
+		double usable = length(pathCoordonates) - 2 * margin;
+		int nearest = 0;
+		double nearestDistance = Double.MAX_VALUE;
+		for (int slot = 0; slot < capacity; slot++) {
+			double[] position = pointAt(pathCoordonates, margin + slotPosition(slot) * usable);
+			double distance = Math.hypot(position[0] - point.x, position[1] - point.y);
+			if (distance < nearestDistance) {
+				nearestDistance = distance;
+				nearest = slot;
+			}
+		}
+		return nearest;
 	}
 
 	private boolean isSlotFree(int slotIndex, long currentTime) {
@@ -449,7 +504,10 @@ public class Conveyor extends Entity {
 	private int[] trimEndsToPointEdges(int[] centerLine) {
 		int[] trimmedCoordinates = centerLine.clone();
 		moveTowardsNextPoint(trimmedCoordinates, 0, 2, SimWindow.POINT / 2.0);
-		moveTowardsNextPoint(trimmedCoordinates, centerLine.length - 2, centerLine.length - 4, SimWindow.POINT / 2.0);
+		if (!endsOnBelt) {
+			moveTowardsNextPoint(trimmedCoordinates, centerLine.length - 2, centerLine.length - 4,
+					SimWindow.POINT / 2.0);
+		}
 		return trimmedCoordinates;
 	}
 

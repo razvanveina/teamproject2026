@@ -291,7 +291,6 @@ public class Sim {
 		Conveyor c10 = add(new Conveyor("C10", 7, new Point(325, 605), 120, 560, 560, 560));
 		Conveyor c11 = add(new Conveyor("C11", 5, new Point(58, 730), 120, 560, 120, 900));
 		Conveyor c12 = add(new Conveyor("C12", 7, new Point(325, 945), 120, 900, 560, 900));
-		Conveyor c13 = add(new Conveyor("C13", 27, new Point(790, 1045), 1540, 900, 1540, 1000, 120, 1000, 120, 900));
 		Conveyor c14 = add(new Conveyor("C14", 2, new Point(1580, 392), 1660, 430, 1500, 430));
 		Conveyor c15 = add(new Conveyor("C15", 10, new Point(1130, 345), 1500, 430, 1500, 300, 768, 300));
 
@@ -327,6 +326,8 @@ public class Sim {
 		Conveyor c40 = add(new Conveyor("C40", 5, new Point(1322, 1280), 1380, 1120, 1380, 1440));
 		Conveyor c41 = add(new Conveyor("C41", 5, new Point(1102, 1280), 1160, 1120, 1160, 1440));
 		Conveyor c42 = add(new Conveyor("C42", 5, new Point(882, 1280), 940, 1120, 940, 1440));
+		Conveyor c13 = add(new Conveyor("C13", 27, new Point(790, 1045), 1408, 900, 1408, 1000, 120, 1000, 120, 900));
+		Conveyor c43 = add(new Conveyor("C43", 3, new Point(1575, 960), 1540, 900, 1540, 1000, 1430, 1000));
 
 		InfoPoint ip1 = add(new InfoPoint(Constants.IP1, 560, 300, true));
 		InfoPoint ip2 = add(new InfoPoint(Constants.IP2, 768, 560));
@@ -335,7 +336,6 @@ public class Sim {
 		InfoPoint ip5 = add(new InfoPoint(Constants.IP5, 1088, 560));
 		InfoPoint ip6 = add(new InfoPoint(Constants.IP6, 1088, 900, true));
 		InfoPoint ip7 = add(new InfoPoint(Constants.IP7, 1408, 560));
-		InfoPoint ip8 = add(new InfoPoint(Constants.IP8, 1408, 900, true));
 		InfoPoint e = add(new InfoPoint(Constants.EMPTY, 120, 900));
 
 		DecisionPoint dp1 = add(new DecisionPoint(Constants.DP1, 560, 560));
@@ -350,6 +350,7 @@ public class Sim {
 		DecisionPoint gp2 = add(new DecisionPoint(Constants.GP2, 1380, 1120));
 		DecisionPoint gp3 = add(new DecisionPoint(Constants.GP3, 1160, 1120));
 		DecisionPoint gp4 = add(new DecisionPoint(Constants.GP4, 940, 1120));
+		DecisionPoint ip8 = add(new DecisionPoint(Constants.IP8, 1408, 900, true));
 
 		SourceTransportPoint tps1 = add(new SourceTransportPoint(Constants.TPS1, MfsMessages.REQUEST_QUEUE, 560, 130));
 		SourceTransportPoint tps2 = add(
@@ -410,7 +411,7 @@ public class Sim {
 		tpt1.getSource().add(c5);
 
 		out.getSource().add(c9);
-		c13.getSource().add(out);
+		c43.getSource().add(out);
 
 		c11.getSource().add(dp3);
 		e.getSource().add(c11);
@@ -425,7 +426,13 @@ public class Sim {
 		c31.getSource().add(ip6);
 		dp8.getSource().add(c31);
 		zone(dp8, c32, pttt3, c33, c34, ip8);
+		// IP8: 0 = C09 spre OUT (default), 1 = C13 spre EMPTY (tote-uri goale)
+		ip8.getTarget().add(c9);
+		ip8.getTarget().add(c13);
 		c9.getSource().add(ip8);
+		c13.getSource().add(ip8);
+		// C43 (de la OUT) intra din lateral in C13, in coltul de sub IP8
+		c13.joinFromSide(c43, 1408, 1000);
 
 		gp1.getSource().add(c35);
 		c36.getSource().add(gp1);
@@ -470,7 +477,7 @@ public class Sim {
 	}
 
 	private void zone(DecisionPoint dp, Conveyor in, StationPoint station, Conveyor out, Conveyor bypass,
-			InfoPoint ip) {
+			ServerPoint ip) {
 		dp.getTarget().add(in);
 		dp.getTarget().add(bypass);
 		in.getSource().add(dp);

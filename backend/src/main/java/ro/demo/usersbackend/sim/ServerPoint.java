@@ -188,7 +188,7 @@ public abstract class ServerPoint extends Entity {
 				SimWindow.POINT - borderWidth, SimWindow.POINT - borderWidth));
 		g.setFont(SimWindow.NAME);
 		int nameWidth = g.getFontMetrics().stringWidth(name);
-		if (name.equals("EMPTY") || name.equals("DP3") || name.equals(Constants.IP3)) {
+		if (name.equals("EMPTY") || name.equals("DP3") || name.equals(Constants.IP3) || name.equals(Constants.IP8)) {
 			g.drawString(name, x - h - 4 - nameWidth, y + 4);
 		} else if (labelBelow) {
 			g.drawString(name, x - nameWidth / 2, y + h + 13);
