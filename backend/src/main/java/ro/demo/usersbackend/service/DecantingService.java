@@ -51,6 +51,7 @@ public class DecantingService {
 				if (loadUnit.getType() == LoadUnitType.TOTE) {
 					throw badRequest("Load unit " + loadUnitBarcode + " is a tote. Scan a pallet or a carton.");
 				}
+				checkAtDecanting(loadUnit);
 
 				List<StockItem> items = availableItems(session, loadUnit);
 				if (items.isEmpty()) {
@@ -67,6 +68,7 @@ public class DecantingService {
 			@Override
 			protected void executeBusinessLogic(Session session) {
 				LoadUnit loadUnit = findLoadUnit(session, request.loadUnitBarcode());
+				checkAtDecanting(loadUnit);
 				List<StockItem> matching = availableItems(session, loadUnit).stream()
 						.filter(s -> s.getArticlePackagingUnitType().getBarcode().equals(request.packagingBarcode()))
 						.sorted(Comparator.comparing((StockItem s) -> s.getReservation() == null)).toList();
@@ -148,6 +150,13 @@ public class DecantingService {
 	private LoadUnit findLoadUnit(Session session, String barcode) {
 		return new LoadUnitRepository(session).findByBarcode(barcode)
 				.orElseThrow(() -> badRequest("Load unit " + barcode + " not found."));
+	}
+
+	private void checkAtDecanting(LoadUnit loadUnit) {
+		if (loadUnit.getLocation() == null || !Constants.DECANTING.equals(loadUnit.getLocation().getName())) {
+			throw badRequest("Load unit " + loadUnit.getBarcode() + " is not at " + Constants.DECANTING
+					+ ". Finish its transport first.");
+		}
 	}
 
 //	private DecantingResponse response(LoadUnit loadUnit, LoadUnit tote, List<StockItem> items, boolean finished) {

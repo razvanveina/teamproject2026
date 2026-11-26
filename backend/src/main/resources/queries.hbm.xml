@@ -170,10 +170,11 @@
 	    ]]>
 	</query>
 
-	<query name="LoadUnit.findFreePalletIdsInDecanting">
+		<query name="LoadUnit.findFreePalletIdsInDecanting">
 	    <![CDATA[
 	        select u.id from LoadUnit u
 	        where u.type = :pallet and u.location.name = :decanting
+	        and exists (select s.id from StockItem s where s.loadUnit = u)
 	        and not exists (select s.id from StockItem s where s.loadUnit = u and s.reservation is not null)
 	        and not exists (select t.id from TransportOrder t where t.loadUnit = u and t.status in :open)
 	    ]]>
