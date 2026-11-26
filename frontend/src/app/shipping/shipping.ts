@@ -24,6 +24,7 @@ export class Shipping implements OnDestroy {
   shippingStep = signal<'items' | 'printing' | 'label'>('items')
   labelCartonBarcode = signal('')
   scannedLabel = signal('')
+  expectedLabel = signal('')
   loadUnit = signal<LoadUnit>({
     barcode: '',
     loadUnitType: '',
@@ -43,6 +44,13 @@ export class Shipping implements OnDestroy {
       return
     }
     if (this.shippingStep() === 'label') {
+      if (barcode.trim() !== this.expectedLabel()) {
+        this.scannedLabel.set('')
+        this.error.set(true)
+        this.confirmDisabled.set(true)
+        this.instructions.set(`Barcode ${barcode.trim()} is not the label of carton ${this.labelCartonBarcode()}. Scan the printed label: ${this.expectedLabel()}`)
+        return
+      }
       this.scannedLabel.set(barcode.trim())
       this.error.set(false)
       this.confirmDisabled.set(false)
@@ -167,6 +175,7 @@ export class Shipping implements OnDestroy {
           this.stopLabelStatusPolling()
           this.shippingStep.set('label')
           this.error.set(false)
+          this.expectedLabel.set(labelStatusResponse.label)
           this.instructions.set(`Label printed. Please scan the barcode from the printed PDF: ${labelStatusResponse.label}`)
         } else if (labelStatusResponse.status === 'ERROR') {
           this.showPrintingFailure('Printing the label failed. Press Confirm to print it again')
