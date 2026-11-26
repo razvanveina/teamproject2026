@@ -34,13 +34,12 @@ public class StorageLocation extends Location {
 		super();
 	}
 
-	public StorageLocation(int x, int y, int z, int aisle, Area area) {
+	public StorageLocation(int x, int y) {
 		this.x = x;
 		this.y = y;
-		this.z = z;
-		this.aisle = aisle;
-		this.area = area;
-		setName(String.format(Constants.HBW_NAME, aisle, x, y, z));
+		this.z = 0;
+		this.aisle = 0;
+		setName(String.format(Constants.PICK_NAME, x, y));
 	}
 
 	public StorageLocation(int x, int y, int z, int aisle) {
@@ -52,20 +51,15 @@ public class StorageLocation extends Location {
 	}
 
 	public StorageLocation(int x, int y, Area area) {
-		this.x = x;
-		this.y = y;
-		this.z = 0;
-		this.aisle = 0;
+		this(x, y);
 		this.area = area;
 		setName(String.format(Constants.PICK_NAME, x, y));
 	}
 
-	public StorageLocation(int x, int y) {
-		this.x = x;
-		this.y = y;
-		this.z = 0;
-		this.aisle = 0;
-		setName(String.format(Constants.PICK_NAME, x, y));
+	public StorageLocation(int x, int y, int z, int aisle, Area area) {
+		this(x, y, z, aisle);
+		this.area = area;
+		setName(String.format(Constants.HBW_NAME, aisle, x, y, z));
 	}
 
 	public int getX() {

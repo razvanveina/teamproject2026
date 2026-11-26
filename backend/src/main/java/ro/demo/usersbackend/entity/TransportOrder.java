@@ -60,12 +60,10 @@ public class TransportOrder {
 	@JoinColumn(name = "loadUnit_id", nullable = false)
 	private LoadUnit loadUnit;
 
-	@Column(nullable = false)
 	private LocalDateTime createdAt;
 
 	private LocalDateTime modifiedAt;
 
-	@Column(nullable = false)
 	private String createdBy;
 
 	private String modifiedBy;
