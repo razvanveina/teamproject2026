@@ -9,7 +9,7 @@
         <create><![CDATA[
 DECLARE
     TYPE t_names IS TABLE OF VARCHAR2(30);
-    v_names t_names := t_names('LOADUNIT_SEQUENCE', 'TOTE_SEQUENCE');
+    v_names t_names := t_names('LOADUNIT_SEQUENCE', 'TOTE_SEQUENCE', 'CARTON_SEQUENCE');
     v_rows NUMBER;
     v_exists NUMBER;
 BEGIN

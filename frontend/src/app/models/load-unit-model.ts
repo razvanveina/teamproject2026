@@ -1,4 +1,5 @@
 export interface LoadUnit {
+    orderId?: string; // doar la shipping: orderul load unit-ului
     barcode: string;
     loadUnitType: string;
     location: string;

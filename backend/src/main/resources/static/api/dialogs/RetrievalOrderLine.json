@@ -2,7 +2,7 @@
   "id": "rol004",
   "title": "Retrieval Order Lines",
   "entity": "RetrievalOrderLine",
-  "actions": ["add", "edit"],
+  "actions": ["add", "edit", "delete"],
   "columns": [
     { "field": "ID", "label": "ID" },
     {

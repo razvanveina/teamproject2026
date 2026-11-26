@@ -113,10 +113,15 @@ public class Conveyor extends Entity {
 	}
 
 	@Override
-	public boolean addLoadUnit(SimLoadUnit addedLoadUnit) {
+	public boolean addLoadUnit(SimLoadUnit addedLoadUnit, Sim sim) {
+		if (!super.addLoadUnit(addedLoadUnit, sim)) {
+			return false;
+		}
+
 		if (!createLU(addedLoadUnit)) {
 			return false;
 		}
+
 		announceCreated(addedLoadUnit);
 		return true;
 	}
@@ -561,5 +566,15 @@ public class Conveyor extends Entity {
 	@Override
 	public synchronized void clear() {
 		totes.clear();
+	}
+
+	@Override
+	public boolean hasLoadUnit(String barcode) {
+		for (Tote tote : totes) {
+			if (tote.loadUnit.barcode().equals(barcode)) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

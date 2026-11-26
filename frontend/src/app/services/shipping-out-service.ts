@@ -38,4 +38,8 @@ export class ShippingService {
     chooseCarton(toteBarcode: string, cartonBarcode: string) {
         return this.httpClient.post<LoadUnit>(`${this.url}/${toteBarcode}/carton/${encodeURIComponent(cartonBarcode)}`, {})
     }
+
+    assignCarton(toteBarcode: string) {
+        return this.httpClient.post<LoadUnit>(`${this.url}/${toteBarcode}/carton`, {})
+    }
 }

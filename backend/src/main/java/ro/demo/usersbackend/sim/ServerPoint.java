@@ -117,7 +117,11 @@ public abstract class ServerPoint extends Entity {
 	}
 
 	@Override
-	public synchronized boolean addLoadUnit(SimLoadUnit addedLoadUnit) {
+	public synchronized boolean addLoadUnit(SimLoadUnit addedLoadUnit, Sim sim) {
+		if (!super.addLoadUnit(addedLoadUnit, sim)) {
+			return false;
+		}
+
 		if (loadUnit != null || pendingLoadUnit != null) {
 			return false;
 		}
@@ -201,6 +205,18 @@ public abstract class ServerPoint extends Entity {
 	}
 
 	protected boolean isHoldingLoadUnit() {
+		return false;
+	}
+
+	@Override
+	public boolean hasLoadUnit(String barcode) {
+		if (loadUnit == null) {
+			return false;
+		}
+
+		if (loadUnit.barcode().equals(barcode)) {
+			return true;
+		}
 		return false;
 	}
 }

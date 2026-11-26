@@ -1,10 +1,107 @@
 <div class="testing">
-    <div class="buttons">
-        <button type="button" (click)="createReceivingOrder()">Create test receiving order</button>
-        <button type="button" (click)="createRetrievalOrder()">Create test retrieval order</button>
+    <div class="card">
+        <h2>Host files</h2>
+        <div class="buttons">
+            <button type="button" (click)="createReceivingOrder()">Create test receiving order</button>
+            <button type="button" (click)="createRetrievalOrder()">Create test retrieval order</button>
+        </div>
+
+        @if (statusMessage()) {
+        <p class="status" [class.error]="isError()">{{ statusMessage() }}</p>
+        }
     </div>
 
-    @if (statusMessage()) {
-    <p class="status" [class.error]="isError()">{{ statusMessage() }}</p>
-    }
+    <div class="card">
+        <h2>Retrieval orders</h2>
+
+        <div class="summary">
+            <div class="tile reserved">
+                <span class="count">{{ countByResult('RESERVED') }}</span>
+                <span>Reserved</span>
+            </div>
+            <div class="tile cannot">
+                <span class="count">{{ countByResult('CANNOT_BE_FULFILLED') }}</span>
+                <span>Cannot be fulfilled</span>
+            </div>
+        </div>
+
+        @if (ordersError()) {
+        <p class="status error">Retrieval orders cannot be loaded. Is the backend running?</p>
+        }
+
+        @if (orders().length === 0) {
+        <p class="empty">No open retrieval orders</p>
+        } @else {
+        <table>
+            <thead>
+                <tr>
+                    <th>Order</th>
+                    <th>Status</th>
+                    <th>Result</th>
+                    <th>Missing articles</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (order of orders(); track order.orderId) {
+                <tr class="selectable" [class.selected]="order.orderId === selectedOrderId()" tabindex="0"
+                    (click)="select(order)" (keydown.enter)="select(order)">
+                    <td>{{ order.orderId }}</td>
+                    <td>{{ order.status }}</td>
+                    <td>
+                        @if (order.result === 'RESERVED') {
+                        <span class="badge reserved">Reserved</span>
+                        } @else if (order.result === 'RESERVING') {
+                        <span class="badge reserving">Reserving...</span>
+                        } @else {
+                        <span class="badge cannot">Cannot be fulfilled</span>
+                        }
+                    </td>
+                    <td>{{ missingArticles(order) }}</td>
+                </tr>
+                }
+            </tbody>
+        </table>
+        }
+    </div>
+
+    <div class="card">
+        @if (selectedOrder(); as order) {
+        <h2>Order {{ order.orderId }}</h2>
+        @if (order.lines.length === 0) {
+        <p class="empty">All lines of this order are already reserved.</p>
+        } @else {
+        <table>
+            <thead>
+                <tr>
+                    <th>Article barcode</th>
+                    <th>Article name</th>
+                    <th>Needed</th>
+                    <th>Free</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (line of order.lines; track line.article) {
+                <tr [class.short-row]="line.missing > 0">
+                    <td>{{ line.article }}</td>
+                    <td>{{ line.description }}</td>
+                    <td>{{ line.needed }}</td>
+                    <td>{{ line.free }}</td>
+                    <td>
+                        @if (line.missing > 0) {
+                        <span class="badge cannot">Missing {{ line.missing }}</span>
+                        } @else {
+                        <span class="badge reserved">In stock</span>
+                        }
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+        }
+        } @else {
+        <h2>Order lines</h2>
+        <p class="empty">Click an order to see its lines.</p>
+        }
+    </div>
 </div>
