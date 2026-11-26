@@ -1,21 +1,39 @@
-<div>
-    <input type="text" placeholder="Input barcode" #barcode>
+<div class="card">
+    <h2>Create load unit</h2>
 
-    <select [(ngModel)]="selectedEntity">
-        @for (entity of entities(); track entity) {
-        <option [value]="entity">
-            {{ entity }}
-        </option>
-        }
-    </select>
+    <div class="fields">
+        <label>
+            Location
+            <select [(ngModel)]="selectedEntity">
+                <option value="">Select location</option>
+                @for (entity of entities(); track entity) {
+                <option [value]="entity">
+                    {{ entity }}
+                </option>
+                }
+            </select>
+        </label>
 
-    <select [(ngModel)]="selectedType">
-        @for (type of loadUnitTypes; track type) {
-        <option [value]="type">
-            {{ type }}
-        </option>
-        }
-    </select>
+        <label>
+            Type
+            <select [(ngModel)]="selectedType">
+                @for (type of loadUnitTypes; track type) {
+                <option [value]="type">
+                    {{ type }}
+                </option>
+                }
+            </select>
+        </label>
 
-    <button (click)=createLU(barcode.value)>Create LU</button>
+        <label class="barcode">
+            Barcode
+            <input type="text" placeholder="Input barcode" #barcode (keyup.enter)="createLU(barcode.value)">
+        </label>
+
+        <button (click)=createLU(barcode.value)>Create LU</button>
+    </div>
+
+    @if (message()) {
+    <p class="message" [class.error]="isError()">{{ message() }}</p>
+    }
 </div>

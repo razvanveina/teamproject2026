@@ -15,10 +15,12 @@ export class SimManagement {
   private log = inject(LogService);
   private service = inject(SimulatorService);
   private eventSource!: EventSource;
-  private selectedEntity = '';
+  selectedEntity = '';
   readonly loadUnitTypes = ['TOTE', 'CARTON'];
   selectedType = 'TOTE';
   entities = signal<string[]>([]);
+  message = signal('');
+  isError = signal(false);
 
   @ViewChild('barcode')
   barcodeInput!: ElementRef<HTMLInputElement>;
@@ -43,12 +45,12 @@ export class SimManagement {
 
   createLU(barcode: string) {
     if (this.selectedEntity === '') {
-      alert("Please select an entitty");
+      this.showMessage('Please select a location', true);
       return;
     }
 
     if (barcode === '') {
-      alert("Please input a barcode");
+      this.showMessage('Please input a barcode', true);
       return;
     }
 
@@ -56,10 +58,16 @@ export class SimManagement {
     this.service.createLU(barcode, this.selectedEntity, this.selectedType).subscribe({
       next: () => {
         this.barcodeInput.nativeElement.value = '';
+        this.showMessage(`${this.selectedType} ${barcode} created on ${this.selectedEntity}`, false);
       },
       error: (err: HttpErrorResponse) => {
-        alert(err.error.detail)
+        this.showMessage(err.error?.detail ?? err.error?.message ?? 'The load unit cannot be created', true);
       }
     });
+  }
+
+  private showMessage(text: string, isError: boolean) {
+    this.message.set(text);
+    this.isError.set(isError);
   }
 }
