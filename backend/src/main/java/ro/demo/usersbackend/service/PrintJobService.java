@@ -32,7 +32,7 @@ public class PrintJobService {
 	private static final Logger log = LogManager.getLogger("application");
 	private final ObjectMapper jsonMapper = new ObjectMapper();
 
-	public void createShippingLabel(RetrievalOrder order) {
+	public void createShippingLabel(RetrievalOrder order, String cartonBarcode) {
 		new WithSessionAndTransaction<Void>() {
 			@Override
 			protected void executeBusinessLogic(Session session) {
@@ -56,6 +56,7 @@ public class PrintJobService {
 				Map<String, Object> labelData = new LinkedHashMap<>();
 				labelData.put(Constants.ORDER_ID, order.getOrderId());
 				labelData.put(Constants.DESTINATION, order.getDestination().getName());
+				labelData.put(Constants.CARTON, cartonBarcode);
 				labelData.put(Constants.LINES, labelLines);
 
 				try {

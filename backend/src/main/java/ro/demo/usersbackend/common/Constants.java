@@ -159,4 +159,9 @@ public final class Constants {
 	public static final String HOST_CONFIG_FILE = "/config.ini";
 	public static final String HOST_RECEIVING_FOLDER = "host_receiving_folder";
 	public static final String HOST_RETRIEVAL_FOLDER = "host_retrieval_folder";
+
+	public static final String CARTON_SEQUENCE = "CARTON_SEQUENCE";
+	public static final String CARTON_BARCODE = "5%05d"; // 500001, 500002, ...
+	public static final String CARTON = "carton"; // cheia din datele etichetei
+	public static final String CARTON_TITLE = "Carton: ";
 }

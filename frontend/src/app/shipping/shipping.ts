@@ -58,12 +58,6 @@ export class Shipping implements OnDestroy {
       return
     }
 
-    const current = this.loadUnit()
-    if (current.loadUnitType === 'TOTE' && !this.carton()) {
-      this.scanCarton(current.barcode, barcode)
-      return
-    }
-
     this.shippingService.getLoadUnit(barcode).subscribe({
       next: (loadUnit: any) => {
         this.error.set(false)
@@ -71,7 +65,8 @@ export class Shipping implements OnDestroy {
         this.carton.set('')
         if (loadUnit.loadUnitType === 'TOTE') {
           this.confirmDisabled.set(true)
-          this.instructions.set("Scan an empty carton or a new carton barcode")
+          this.instructions.set(`Getting a carton for tote ${loadUnit.barcode}...`)
+          this.assignCarton(loadUnit.barcode)
         } else {
           this.confirmDisabled.set(false)
           this.instructions.set("Confirm the status of the package and press confirm")
@@ -131,8 +126,8 @@ export class Shipping implements OnDestroy {
     }
   }
 
-  scanCarton(toteBarcode: string, cartonBarcode: string) {
-    this.shippingService.chooseCarton(toteBarcode, cartonBarcode).subscribe({
+  assignCarton(toteBarcode: string) {
+    this.shippingService.assignCarton(toteBarcode).subscribe({
       next: (carton: LoadUnit) => {
         this.error.set(false)
         this.carton.set(carton.barcode)
@@ -141,7 +136,8 @@ export class Shipping implements OnDestroy {
       },
       error: (err: HttpErrorResponse) => {
         this.error.set(true)
-        this.instructions.set(err.error?.detail ?? err.error?.message ?? 'This carton cannot be used. Scan another one.')
+        this.confirmDisabled.set(true)
+        this.instructions.set(err.error?.detail ?? err.error?.message ?? `No carton could be assigned to tote ${toteBarcode}. Scan the tote again.`)
       }
     })
   }

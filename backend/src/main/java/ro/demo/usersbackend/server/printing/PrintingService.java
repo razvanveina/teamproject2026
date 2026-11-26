@@ -103,6 +103,10 @@ public class PrintingService extends AbstractProcess {
 			document.add(new Paragraph(Constants.SHIPPING_DOCUMENT_TITLE, new Font(Font.HELVETICA, 18, Font.BOLD)));
 			document.add(new Paragraph(Constants.ORDER_ID_TITLE + orderId));
 			document.add(new Paragraph(Constants.DESTINATION_TITLE + labelData.get(Constants.DESTINATION).asText()));
+			JsonNode carton = labelData.get(Constants.CARTON);
+			if (carton != null && !carton.isNull()) {
+				document.add(new Paragraph(Constants.CARTON_TITLE + carton.asText()));
+			}
 
 			PdfPTable articleTable = new PdfPTable(2);
 			articleTable.setSpacingBefore(10);

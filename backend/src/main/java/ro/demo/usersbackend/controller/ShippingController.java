@@ -128,16 +128,16 @@ public class ShippingController {
 		}
 	}
 
-	@PostMapping("/{tote}/carton/{carton}")
-	public LoadUnitResponse chooseCarton(@PathVariable String tote, @PathVariable String carton,
-			Authentication authentication) {
-		log.info("Shipping: {} chose carton {} for tote {}", authentication.getName(), carton, tote);
+	@PostMapping("/{tote}/carton")
+	public LoadUnitResponse assignGeneratedCarton(@PathVariable String tote, Authentication authentication) {
 		try {
 			synchronized (SHIPPING_LOCK) {
-				return loadUnitService.chooseCarton(tote, carton, authentication.getName());
+				LoadUnitResponse carton = loadUnitService.chooseCarton(tote, authentication.getName());
+				log.info("Shipping: {} got carton {} for tote {}", authentication.getName(), carton.barcode(), tote);
+				return carton;
 			}
 		} catch (ResponseStatusException e) {
-			log.warn("Shipping: carton rejected {}", e.getReason());
+			log.warn("Shipping: carton not assigned {}", e.getReason());
 			throw e;
 		}
 	}

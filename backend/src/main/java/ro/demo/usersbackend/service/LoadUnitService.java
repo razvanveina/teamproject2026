@@ -111,7 +111,8 @@ public class LoadUnitService {
 		return destinationToGate.getGate();
 	}
 
-	// sarim peste barcode-urile folosite deja de alt load unit (create din SQL sau din dialog)
+	// sarim peste barcode-urile folosite deja de alt load unit (create din SQL sau
+	// din dialog)
 	private String generateLoadUnitBarcode(Session session) {
 		LoadUnitRepository loadUnitRepository = new LoadUnitRepository(session);
 		String barcode;
@@ -122,6 +123,27 @@ public class LoadUnitService {
 			barcode = String.format(Constants.LOAD_UNIT_BARCODE, next);
 		} while (loadUnitRepository.findByBarcode(barcode).isPresent());
 		return barcode;
+	}
+
+	private String generateCartonBarcode(Session session) {
+		LoadUnitRepository loadUnitRepository = new LoadUnitRepository(session);
+		String barcode;
+		do {
+			Long next = session
+					.createNativeQuery("SELECT " + Constants.CARTON_SEQUENCE + ".NEXTVAL FROM DUAL", Long.class)
+					.getSingleResult();
+			barcode = String.format(Constants.CARTON_BARCODE, next);
+		} while (loadUnitRepository.findByBarcode(barcode).isPresent());
+		return barcode;
+	}
+
+	private LoadUnit findOrCreateGeneratedCarton(Session session) {
+		for (LoadUnit loadUnit : new LoadUnitRepository(session).findByLocationName(Constants.OUT)) {
+			if (loadUnit.getType() == LoadUnitType.CARTON && loadUnit.getStockItems().isEmpty()) {
+				return loadUnit;
+			}
+		}
+		return findOrCreateEmptyCarton(session, generateCartonBarcode(session));
 	}
 
 	private List<StockItemResponse> toStockItemResponses(List<StockItem> items) {
@@ -330,7 +352,7 @@ public class LoadUnitService {
 		}.run();
 	}
 
-	public LoadUnitResponse chooseCarton(String toteBarcode, String cartonBarcode, String user) {
+	public LoadUnitResponse chooseCarton(String toteBarcode, String user) {
 		return new WithSessionAndTransaction<LoadUnitResponse>() {
 			@Override
 			protected void executeBusinessLogic(Session session) {
@@ -342,7 +364,7 @@ public class LoadUnitService {
 				RetrievalOrder order = findOrderOfLoadUnit(tote);
 				checkShippedByUser(order, user, toteBarcode);
 
-				LoadUnit carton = findOrCreateEmptyCarton(session, cartonBarcode);
+				LoadUnit carton = findOrCreateGeneratedCarton(session);
 				setReturnValue(new LoadUnitResponse(carton.getBarcode(), carton.getType().toString(),
 						carton.getLocation().getName(), toStockItemResponses(carton.getStockItems())));
 			}
@@ -371,21 +393,24 @@ public class LoadUnitService {
 				if (areAllOrderLinesFinished(order)) {
 					PrintJob latestPrintJob = printJobService.findLatestPrintJobForOrder(order.getOrderId());
 					if (latestPrintJob == null || latestPrintJob.getStatus() == PrintJobStatus.ERROR) {
-						printJobService.createShippingLabel(order);
+						printJobService.createShippingLabel(order,
+								loadUnit.getType() == LoadUnitType.CARTON ? loadUnit.getBarcode() : null);
 					}
 					setReturnValue(false);
 					return;
 				}
 
+				String labelCarton = loadUnit.getBarcode(); // un carton scanat direct e chiar cutia etichetei
 				if (loadUnit.getType() == LoadUnitType.TOTE) {
 					if (cartonBarcode == null || cartonBarcode.isBlank()) {
 						throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-								"Scan a carton for the items of tote " + barcode + " first");
+								"No carton was assigned to tote " + barcode + ". Scan the tote again");
 					}
 					LoadUnit carton = findOrCreateEmptyCarton(session, cartonBarcode);
 					for (StockItem item : new ArrayList<>(loadUnit.getStockItems())) {
 						item.setLoadUnit(carton);
 					}
+					labelCarton = carton.getBarcode();
 				}
 
 				int lineCount = 0;
@@ -403,7 +428,7 @@ public class LoadUnitService {
 									+ " lines with a different status");
 				}
 
-				printJobService.createShippingLabel(order);
+				printJobService.createShippingLabel(order, labelCarton);
 				if (loadUnit.getType() == LoadUnitType.TOTE) {
 					if (order.isAutomatic()) {
 						setReturnValue(true); // tote de pe banda, deci controllerul il elibereaza din OUT dupa commit
