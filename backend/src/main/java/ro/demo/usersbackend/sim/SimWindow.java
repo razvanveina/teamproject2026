@@ -421,10 +421,11 @@ public class SimWindow extends JPanel {
 		}
 
 		Entity entity = byName.get(entityName);
-		boolean isCreated = entity.addLoadUnit(new SimLoadUnit(barcode, (String) typeBox.getSelectedItem()));
+		boolean isCreated = entity.addLoadUnit(new SimLoadUnit(barcode, (String) typeBox.getSelectedItem()), sim);
 		if (!isCreated) {
 			String occupiedPlace = entity instanceof Conveyor ? "First slot of " + entityName : entityName;
-			JOptionPane.showMessageDialog(this, occupiedPlace + " is occupied, try again later",
+			JOptionPane.showMessageDialog(this,
+					occupiedPlace + " is occupied or the tote already exists, check logs and try again later",
 					Constants.ADD_LOAD_UNIT, JOptionPane.WARNING_MESSAGE);
 		}
 	}

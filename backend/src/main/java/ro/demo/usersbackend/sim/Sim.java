@@ -43,6 +43,7 @@ public class Sim {
 	private final Logger log = LogManager.getLogger("application");
 	private final List<Entity> entities = new ArrayList<>();
 
+//	private Sim sim;
 	private Queue outQueue;
 	private JMSConsumer consumer;
 	private JMSContext context;
@@ -102,7 +103,7 @@ public class Sim {
 						String[] s = request.split(" ");
 						entities.forEach(e -> {
 							if (e.getName().equals(s[2])) {
-								e.addLoadUnit(new SimLoadUnit(s[1], s.length > 3 ? s[3] : Constants.TOTE_TYPE));
+								e.addLoadUnit(new SimLoadUnit(s[1], s.length > 3 ? s[3] : Constants.TOTE_TYPE), this);
 							}
 						});
 					}
@@ -233,7 +234,7 @@ public class Sim {
 					continue;
 				}
 				SimLoadUnit simLoadUnit = new SimLoadUnit(setupLoadUnit.loadUnit(), setupLoadUnit.loadUnitType());
-				if (point.addLoadUnit(simLoadUnit)) {
+				if (point.addLoadUnit(simLoadUnit, this)) {
 					placed++;
 				} else if (queueBeforePoint(point, simLoadUnit)) {
 					queued++;

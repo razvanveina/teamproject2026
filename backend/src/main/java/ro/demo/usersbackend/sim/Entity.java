@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.apache.logging.log4j.LogManager;
+
 import ro.demo.usersbackend.common.Constants;
 
 public abstract class Entity implements Runnable {
@@ -71,9 +73,18 @@ public abstract class Entity implements Runnable {
 		return getAvailableLU();
 	}
 
-	public boolean addLoadUnit(SimLoadUnit addedLoadUnit) {
+	public boolean addLoadUnit(SimLoadUnit addedLoadUnit, Sim sim) {
+		for (Entity entity : sim.getEntities()) {
+			if (entity.hasLoadUnit(addedLoadUnit.barcode())) {
+				LogManager.getLogger("application").error("Cannot make load unit with barcode "
+						+ addedLoadUnit.barcode() + " as it is already in the simulator.");
+				return false;
+			}
+		}
 		return false;
 	}
+
+	public abstract boolean hasLoadUnit(String barcode);
 
 	@Override
 	public void run() {
