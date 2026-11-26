@@ -30,6 +30,8 @@ export class ReceivingApp {
 
   displayTable = signal(false)
   error = signal(false);
+  showingMessage = signal(false)
+  messageTimer: any
   order = signal<ReceivingOrder>({
     orderId: '',
     status: "",
@@ -38,6 +40,8 @@ export class ReceivingApp {
 
   onScan(input: any) {
     this.barcodeInput.nativeElement.value = '';
+    clearTimeout(this.messageTimer)
+    this.showingMessage.set(false)
 
     if (this.state == ScanState.ORDER) {
       this.scanOrder(input)
@@ -55,7 +59,7 @@ export class ReceivingApp {
   }
 
   isScanningPackage(): boolean {
-    return this.state == ScanState.ARTICLE
+    return this.state == ScanState.ARTICLE && !this.showingMessage()
   }
 
   scanOrder(barcode: string) {
@@ -93,8 +97,7 @@ export class ReceivingApp {
         let line = this.order().lines.find(l => l.barcode == pack.articleBarcode)
 
         if (!line) {
-          this.error.set(true)
-          this.instructions.set("The article of this package is not in the order")
+          this.showPackageError("The article of this package is not in the order")
           return
         }
 
@@ -105,8 +108,7 @@ export class ReceivingApp {
         this.instructions.set(pack.packagingUnit + " (" + pack.quantity + " pcs). Enter the number of packages")
       },
       error: (err: HttpErrorResponse) => {
-        this.error.set(true)
-        this.instructions.set(err.error?.detail ?? "Could not find the package with barcode: " + barcode)
+        this.showPackageError(err.error?.detail ?? "Could not find the package with barcode: " + barcode)
       }
     })
   }
@@ -139,8 +141,9 @@ export class ReceivingApp {
     let remaining = line.quantity - line.receivedQuantity
 
     if (pieces > remaining) {
-      this.error.set(true)
-      this.instructions.set("Cannot add more than " + Math.floor(remaining / pack.quantity) + " x " + pack.packagingUnit
+      this.currentPackage = null
+      this.state = ScanState.ARTICLE
+      this.showPackageError("Cannot add more than " + Math.floor(remaining / pack.quantity) + " x " + pack.packagingUnit
         + " (" + remaining + " pcs left)")
       return
     }
@@ -164,6 +167,18 @@ export class ReceivingApp {
     this.currentPackage = null
     this.error.set(false)
     this.order.set(localOrder)
+  }
+
+  showPackageError(message: string) {
+    this.error.set(true)
+    this.instructions.set(message)
+    this.showingMessage.set(true)
+    clearTimeout(this.messageTimer)
+    this.messageTimer = setTimeout(() => {
+      this.showingMessage.set(false)
+      this.error.set(false)
+      this.instructions.set("Scan package")
+    }, 3000)
   }
 
   //onMakeLoadUnit() { }
