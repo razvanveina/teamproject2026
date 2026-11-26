@@ -20,7 +20,7 @@ export class ShippingService {
     }
 
     getLabelStatus(cartonBarcode: string) {
-        return this.httpClient.get<{ status: string }>(`${this.url}/${cartonBarcode}/label`)
+        return this.httpClient.get<{ status: string, label: string }>(`${this.url}/${cartonBarcode}/label`)
     }
 
     confirmLabel(cartonBarcode: string, scannedLabel: string) {

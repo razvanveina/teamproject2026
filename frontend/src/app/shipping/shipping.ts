@@ -167,7 +167,7 @@ export class Shipping implements OnDestroy {
           this.stopLabelStatusPolling()
           this.shippingStep.set('label')
           this.error.set(false)
-          this.instructions.set(`Label printed. Please scan the barcode from the printed PDF`)
+          this.instructions.set(`Label printed. Please scan the barcode from the printed PDF: ${labelStatusResponse.label}`)
         } else if (labelStatusResponse.status === 'ERROR') {
           this.showPrintingFailure('Printing the label failed. Press Confirm to print it again')
         }

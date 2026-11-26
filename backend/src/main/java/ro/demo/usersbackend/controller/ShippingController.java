@@ -82,7 +82,7 @@ public class ShippingController {
 	@GetMapping("/{barcode}/label")
 	public Map<String, String> getLabelStatus(@PathVariable String barcode, Authentication authentication) {
 		synchronized (SHIPPING_LOCK) {
-			return Map.of("status", loadUnitService.getLabelStatus(barcode, authentication.getName()));
+			return loadUnitService.getLabelStatus(barcode, authentication.getName());
 		}
 	}
 

@@ -253,8 +253,8 @@ public class LoadUnitService {
 		}.run();
 	}
 
-	public String getLabelStatus(String barcode, String user) {
-		return new WithSessionAndTransaction<String>() {
+	public Map<String, String> getLabelStatus(String barcode, String user) {
+		return new WithSessionAndTransaction<Map<String, String>>() {
 			@Override
 			protected void executeBusinessLogic(Session session) {
 				LoadUnit carton = findLoadUnitByBarcode(session, barcode);
@@ -262,8 +262,9 @@ public class LoadUnitService {
 				checkShippedByUser(order, user, barcode);
 
 				PrintJob latestPrintJob = printJobService.findLatestPrintJobForOrder(order.getOrderId());
-				setReturnValue(
-						latestPrintJob == null ? Constants.STATUS_MISSING : latestPrintJob.getStatus().toString());
+				String status = latestPrintJob == null ? Constants.STATUS_MISSING
+						: latestPrintJob.getStatus().toString();
+				setReturnValue(Map.of("status", status, "label", order.getOrderId()));
 			}
 		}.run();
 	}
