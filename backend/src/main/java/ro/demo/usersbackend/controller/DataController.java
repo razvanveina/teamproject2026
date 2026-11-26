@@ -168,6 +168,15 @@ public class DataController {
 		}
 	}
 
+	@GetMapping("/Workplace/ip-check")
+	public Map<String, String> checkWorkplaceIp(@RequestParam String value, @RequestParam(required = false) Long id) {
+		String taken = workplaceUsingIp(value, id);
+		if (taken == null) {
+			return Map.of("message", "");
+		}
+		return Map.of("message", "IP " + value.trim() + " is already assigned to workplace " + taken);
+	}
+
 	@GetMapping("/{entity}/{id}")
 	public Map<String, Object> findOne(@PathVariable String entity, @PathVariable Long id) {
 		log.info("Data: read {} {}", entity, id);
