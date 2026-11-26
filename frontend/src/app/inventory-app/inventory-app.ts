@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { API_BASE_URL } from '../api.config';
 import { forkJoin, Observable, of } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
+import { HttpErrorResponse } from '@angular/common/http';
 
 export interface ScanLine {
     article: string;
@@ -228,9 +229,11 @@ export class InventoryApp {
                 this.openOrder(order);
                 this.cdr.markForCheck();
             },
-            error: error => {
+                        error: (error: HttpErrorResponse) => {
                 this.isComparing = false;
-                this.comparisonError = error.error?.message ?? 'Inventory order code was not found. Please try again.';
+                this.comparisonError = this.describeError(error, {
+                    404: 'No started inventory order has this code. Check the code or ask for the order to be created.'
+                }, 'Could not open the inventory order.');
                 this.cdr.markForCheck();
             }
         });
@@ -263,14 +266,31 @@ export class InventoryApp {
                 onSuccess();
                 this.cdr.markForCheck();
             },
-            error: error => {
+            error: (error: HttpErrorResponse) => {
                 this.isSaving = false;
-                this.comparisonError =
-                    error.error?.message ?? 'Could not save this inventory order line.';
+                this.comparisonError = this.describeError(error, {
+                    404: 'This line or inventory order no longer exists. Reload the order.',
+                    409: 'The line is already finished or the inventory order is closed. Reload the order.'
+                }, 'Could not save the scanned items.');
                 onError();
                 this.cdr.markForCheck();
             }
         });
+    }
+
+        // mesajul exact din backend, daca vine; altfel unul concret dupa codul HTTP al actiunii
+    private describeError(error: HttpErrorResponse, byStatus: Partial<Record<number, string>>, fallback: string): string {
+        const backendMessage = error.error?.detail ?? error.error?.message;
+        if (backendMessage) {
+            return backendMessage;
+        }
+        if (error.status === 0) {
+            return 'The server is not reachable. Check that the backend is running.';
+        }
+        if (error.status >= 500) {
+            return 'Server error. Check the backend log for the details.';
+        }
+        return byStatus[error.status] ?? fallback;
     }
 
     onScan(value: string): void {
@@ -312,10 +332,13 @@ export class InventoryApp {
                         this.step = 2;
                         this.cdr.markForCheck();
                     },
-                    error: error => {
+                    error: (error: HttpErrorResponse) => {
                         this.isComparing = false;
-                        this.comparisonError =
-                            error.error?.message ?? 'Could not start this inventory order line.';
+                        this.comparisonError = this.describeError(error, {
+                            400: `Load unit ${barcode} cannot be used: it is on the conveyor or at a station, or it has no location.`,
+                            404: 'The inventory order no longer exists. Reload the page.',
+                            409: `Load unit ${barcode} is not at ${this.currentOrderLine?.locationName || 'the line location'}, is already in this order, or another line is still open.`
+                        }, `Could not start the line with load unit ${barcode}.`);
                         this.cdr.markForCheck();
                     }
                 });
@@ -521,8 +544,10 @@ export class InventoryApp {
                     }
                     this.cdr.markForCheck();
                 },
-                error: () => {
-                    this.comparisonError = 'Could not load stock items for this load unit.';
+                error: (error: HttpErrorResponse) => {
+                    this.comparisonError = this.describeError(error, {
+                        404: 'The load unit or its stock no longer exists. It may have been moved meanwhile.'
+                    }, 'Could not load the stock of this load unit for the comparison.');
                     this.isComparing = false;
                     this.cdr.markForCheck();
                 }
@@ -668,10 +693,12 @@ export class InventoryApp {
                 this.step = 1;
                 this.cdr.markForCheck();
             },
-            error: error => {
+            error: (error: HttpErrorResponse) => {
                 this.isSaving = false;
-                this.comparisonError =
-                    error.error?.message ?? 'Could not finish this inventory order line.';
+                this.comparisonError = this.describeError(error, {
+                    404: 'This line or inventory order no longer exists. Reload the order.',
+                    409: 'The line is already finished, or a missing load unit still has reservations and cannot be removed.'
+                }, 'Could not finish the line.');
                 this.cdr.markForCheck();
             }
         });
@@ -702,9 +729,12 @@ export class InventoryApp {
                 this.step = 1;
                 this.cdr.markForCheck();
             },
-            error: error => {
+            error: (error: HttpErrorResponse) => {
                 this.isSaving = false;
-                this.comparisonError = error.error?.message ?? 'Could not finish this empty line.';
+                this.comparisonError = this.describeError(error, {
+                    404: 'This line or inventory order no longer exists. Reload the order.',
+                    409: 'Only a line where no load unit was scanned can be finished as empty.'
+                }, 'Could not finish the empty line.');
                 this.cdr.markForCheck();
             }
         });
@@ -728,10 +758,12 @@ export class InventoryApp {
                 this.showCompletionDialog = true;
                 this.cdr.markForCheck();
             },
-            error: error => {
+            error: (error: HttpErrorResponse) => {
                 this.isSaving = false;
-                this.comparisonError =
-                    error.error?.message ?? 'Could not save the inventory order. Please try again.';
+                this.comparisonError = this.describeError(error, {
+                    400: 'The inventory order has no lines yet. Add and finish at least one line.',
+                    409: 'Finish every line before finishing the inventory order.'
+                }, 'Could not finish the inventory order.');
                 this.cdr.markForCheck();
             }
         });
