@@ -161,6 +161,42 @@ button:active {
     transform: translateY(1px);
 }
 
+button[type="submit"]:disabled {
+    background: #b9c7d3;
+    border-color: #b9c7d3;
+    cursor: not-allowed;
+    transform: none;
+}
+
+input.invalid,
+input.invalid:hover {
+    border-color: #c2414f;
+}
+
+input.invalid:focus {
+    border-color: #c2414f;
+    box-shadow: 0 0 0 3px rgb(194 65 79 / 16%);
+}
+
+.field-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 0;
+    padding: 9px 12px;
+    color: #8a2433;
+    font-size: 0.88rem;
+    line-height: 1.4;
+    background: #fff6f7;
+    border: 1px solid #f0d0d5;
+    border-radius: 9px;
+}
+
+.field-warning svg {
+    flex: none;
+    margin-top: 1px;
+}
+
 button:focus-visible {
     outline: 3px solid #72dfd1;
     outline-offset: 2px;

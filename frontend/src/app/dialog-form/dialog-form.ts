@@ -13,6 +13,7 @@ interface FormField {
   required: boolean; // true when the column cannot be empty
   choices: Choice[]; // the lines of the dropdown list (select and lookup)
   parent: string; // the field this one depends on, e.g. "ARTICLE_ID" (empty = none)
+  check: string;
 }
 
 // One line of a dropdown list
@@ -48,6 +49,10 @@ export class DialogForm implements OnInit {
 
   // Which dropdown list is open now, e.g. "ARTICLE_ID" (empty = none)
   openField = signal('');
+
+  warnings = signal<Record<string, string>>({});
+
+  checkTimers: any = {};
 
   // What is written in each input, e.g. { BARCODE: "123", ARTICLE_ID: "13 - Milk" }
   values: any = {};
@@ -108,6 +113,7 @@ export class DialogForm implements OnInit {
                 required: false,
                 choices: [],
                 parent: '',
+                check: column.check ?? '',
               };
 
               if (dbColumn['DATA_TYPE'] === 'NUMBER') {
@@ -262,8 +268,39 @@ export class DialogForm implements OnInit {
     }
   }
 
+  checkValue(field: FormField, typed: any): void {
+    if (field.check === '') {
+      return;
+    }
+    clearTimeout(this.checkTimers[field.field]);
+    const value = (typed ?? '').toString().trim();
+    if (value === '') {
+      this.setWarning(field.field, '');
+      return;
+    }
+    this.checkTimers[field.field] = setTimeout(() => {
+      this.service.checkValue(field.check, value, this.id).subscribe((answer) => {
+        if ((this.values[field.field] ?? '').toString().trim() === value) {
+          this.setWarning(field.field, answer.message);
+        }
+      });
+    }, 300);
+  }
+
+  setWarning(name: string, message: string): void {
+    this.warnings.set({ ...this.warnings(), [name]: message });
+  }
+
+  hasWarning(): boolean {
+    return Object.values(this.warnings()).some((message) => message !== '');
+  }
+
   // Runs when the user clicks Save
   save(): void {
+    if (this.hasWarning()) {
+      return;
+    }
+
     const data: any = {};
 
     for (const field of this.fields()) {

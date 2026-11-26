@@ -7,6 +7,7 @@ export interface DialogColumn {
   options?: string[]; // the form shows a dropdown with these values, e.g. ["NEW", "ACTIVE"]
   lookup?: DialogLookup; // the form lets you pick a row of another entity, e.g. an article
   filterable?: boolean;
+  check?: string;
 }
 
 // A link to another entity, e.g. { "entity": "Article" }

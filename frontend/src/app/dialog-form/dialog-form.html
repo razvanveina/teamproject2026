@@ -36,14 +36,26 @@
             }
         </div>
         } @else {
-        <input [id]="field.field" [name]="field.field" [type]="field.type" [(ngModel)]="values[field.field]" />
+        <input [id]="field.field" [name]="field.field" [type]="field.type" [(ngModel)]="values[field.field]"
+            (ngModelChange)="checkValue(field, $event)" [class.invalid]="!!warnings()[field.field]" />
+        }
+
+        @if (warnings()[field.field]) {
+        <p class="field-warning" role="status">
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+                stroke-width="1.8" stroke-linecap="round">
+                <circle cx="8" cy="8" r="6.5"></circle>
+                <path d="M5.5 5.5l5 5M10.5 5.5l-5 5"></path>
+            </svg>
+            <span>{{ warnings()[field.field] }}</span>
+        </p>
         }
     </div>
     }
 
     <div class="form-actions">
         <button type="button" (click)="cancel()">Cancel</button>
-        <button type="submit">Save</button>
+        <button type="submit" [disabled]="hasWarning()">Save</button>
     </div>
 </form>
 }

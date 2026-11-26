@@ -38,6 +38,14 @@ export class DialogConfigService {
     return this.http.get<any[]>(API_BASE_URL + '/data/' + entity, { params: filters }); //coloanele si datele din tabel, e.g. /api/users
   }
 
+  checkValue(endpoint: string, value: string, id: string): Observable<{ message: string }> {
+    const params: any = { value: value };
+    if (id !== '') {
+      params.id = id;
+    }
+    return this.http.get<{ message: string }>(API_BASE_URL + endpoint, { params: params });
+  }
+
   getRow(entity: string, id: string): Observable<any> {
     return this.http.get<any>(API_BASE_URL + '/data/' + entity + '/' + id);
   }
