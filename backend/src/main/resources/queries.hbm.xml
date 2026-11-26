@@ -122,7 +122,7 @@
 
 	<query name="RetrievalOrder.findOrderIdsByStatus">
 	    <![CDATA[
-	        select o.orderId from RetrievalOrder o where o.status = :status
+	        select o.orderId from RetrievalOrder o where o.status = :status order by o.id
 	    ]]>
 	</query>
 
