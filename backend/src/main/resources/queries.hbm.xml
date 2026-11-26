@@ -128,6 +128,21 @@
 	    ]]>
 	</query>
 
+	<query name="RetrievalOrder.findNotFinished">
+	    <![CDATA[
+	        from RetrievalOrder o where o.status <> :finished order by o.id
+	    ]]>
+	</query>
+
+	<query name="StockItem.findFreeInStorage">
+	    <![CDATA[
+	        select s from StockItem s
+	        join s.loadUnit u
+	        join u.location l
+	        where s.reservation is null and type(l) = StorageLocation
+	    ]]>
+	</query>
+
 	<query name="RetrievalOrder.findOrderIdsByStatus">
 	    <![CDATA[
 	        select o.orderId from RetrievalOrder o where o.status = :status order by o.id

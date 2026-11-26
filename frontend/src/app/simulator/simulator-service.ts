@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Service } from '@angular/core';
 import { API_BASE_URL } from '../api.config';
+import { OrderCheck } from './models/order-check-model';
 
 @Service()
 export class SimulatorService {
@@ -26,5 +27,9 @@ export class SimulatorService {
 
     createRetrievalOrderFile() {
         return this.http.post<{ fileName: string }>(`${this.hostTestingUrl}/retrieval-order`, {})
+    }
+
+    checkRetrievalOrders() {
+        return this.http.get<OrderCheck[]>(`${this.hostTestingUrl}/order-check`)
     }
 }

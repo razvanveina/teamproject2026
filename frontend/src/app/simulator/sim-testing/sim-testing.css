@@ -1,5 +1,22 @@
 .testing {
-    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 1100px;
+}
+
+.card {
+    padding: 24px 28px;
+    background: white;
+    border: 1px solid #c9d1dc;
+    border-radius: 16px;
+    box-shadow: 0 4px 18px rgb(20 37 63 / 10%);
+}
+
+h2 {
+    margin: 0 0 16px;
+    color: #172b4d;
+    font-size: 24px;
 }
 
 .buttons {
@@ -8,11 +25,131 @@
     flex-wrap: wrap;
 }
 
+button {
+    height: 44px;
+    padding: 0 24px;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    background: linear-gradient(110deg, #172b4d, #203b5e);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #2c4a75;
+}
+
 .status {
-    margin-top: 12px;
-    color: green;
+    margin: 16px 0;
+    padding: 12px 16px;
+    color: #155724;
+    background: #d4edda;
+    border-radius: 10px;
 }
 
 .status.error {
-    color: red;
+    color: #5c4400;
+    background: #fff3b0;
+}
+
+.summary {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.tile {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 16px;
+    color: #44546f;
+    font-weight: 600;
+    border-radius: 12px;
+}
+
+.tile .count {
+    font-size: 32px;
+    font-weight: 700;
+}
+
+.tile.reserved {
+    background: #d4edda;
+}
+
+.tile.reserved .count {
+    color: #155724;
+}
+
+.tile.cannot {
+    background: #f8d7da;
+}
+
+.tile.cannot .count {
+    color: #842029;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th {
+    padding: 10px 12px;
+    text-align: left;
+    color: white;
+    background: #2c3e50;
+}
+
+td {
+    padding: 10px 12px;
+    vertical-align: top;
+    border-bottom: 1px solid #ddd;
+}
+
+.badge {
+    padding: 4px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    border-radius: 999px;
+}
+
+.badge.reserved {
+    color: #155724;
+    background: #d4edda;
+}
+
+.badge.reserving {
+    color: #44546f;
+    background: #e9ecef;
+}
+
+.selectable {
+    cursor: pointer;
+}
+
+.selectable:hover {
+    background: #f1f5f9;
+}
+
+.selectable.selected {
+    background: #dff1f3;
+}
+
+tr.short-row td {
+    background: #fdf0f1;
+}
+
+.badge.cannot {
+    color: #842029;
+    background: #f8d7da;
+}
+
+.empty {
+    margin: 0;
+    color: #44546f;
 }
