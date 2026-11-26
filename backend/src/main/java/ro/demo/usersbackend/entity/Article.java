@@ -12,7 +12,9 @@ import jakarta.persistence.Id;
 @Entity
 @NamedQueries({ //
 		@NamedQuery(name = "Article.findByBarcode", //
-				query = "from Article a where a.barcode = :barcode")//
+				query = "from Article a where a.barcode = :barcode"), //
+		@NamedQuery(name = "Article.findAll", //
+				query = "from Article a order by a.barcode") //
 })
 public class Article {
 	public static final String BY_BARCODE = "Article.findByBarcode";

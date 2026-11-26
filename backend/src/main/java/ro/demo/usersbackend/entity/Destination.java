@@ -1,5 +1,8 @@
 package ro.demo.usersbackend.entity;
 
+import org.hibernate.annotations.NamedQueries;
+import org.hibernate.annotations.NamedQuery;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -7,6 +10,10 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
 @Entity
+@NamedQueries({ //
+		@NamedQuery(name = "Destination.findAll", //
+				query = "from Destination d order by d.name") //
+})
 public class Destination {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

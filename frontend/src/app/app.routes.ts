@@ -22,6 +22,7 @@ import { ToteTransport } from './tote-transport/tote-transport';
 import { SimManagement } from './simulator/sim-management/sim-management';
 import { SimPicking } from './simulator/sim-picking/sim-picking';
 import { SimVisualization } from './simulator/sim-visualization/sim-visualization';
+import { SimTesting } from './simulator/sim-testing/sim-testing';
 
 export const routes: Routes = [
     { path: 'login', component: Login, title: 'Login' },
@@ -51,6 +52,7 @@ export const routes: Routes = [
             { path: 'sim/management', component: SimManagement, title: 'SIM-Management'},
             { path: 'sim/picking', component: SimPicking, title: 'Automatic Picking'},
             { path: 'sim/visualization', component: SimVisualization, title: 'SIM-Visualization'},
+            { path: 'sim/testing', component: SimTesting, title: 'SIM-Testing'},
             { path: 'accounts', component: Accounts, title: 'Accounts' },
             { path: 'accounts/add', component: AccountForm, title: 'Accounts - Add' }
         ]

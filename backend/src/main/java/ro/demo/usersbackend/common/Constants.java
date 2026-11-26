@@ -152,4 +152,9 @@ public final class Constants {
 	public static final String LINES = "lines";
 	public static final String ARTICLE = "article";
 	public static final String QUANTITY = "quantity";
+
+	// host testing
+	public static final String HOST_CONFIG_FILE = "/config.ini";
+	public static final String HOST_RECEIVING_FOLDER = "host_receiving_folder";
+	public static final String HOST_RETRIEVAL_FOLDER = "host_retrieval_folder";
 }

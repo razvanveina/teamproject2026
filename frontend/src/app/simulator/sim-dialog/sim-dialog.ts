@@ -17,7 +17,8 @@ export class SimulatorDialog {
   dialogs = signal<DialogEntry[]>([
     { id: 1, routerLink: "/sim/management", title: "Management" },
     //{ id: 2, routerLink: "/sim/picking", title: "Picking" },
-    { id: 2, routerLink: "/sim/visualization", title: "Visualization" }
+    { id: 2, routerLink: "/sim/visualization", title: "Visualization" },
+    { id: 3, routerLink: "/sim/testing", title: "Testing" }
   ]);
 
   toggle(): void {

@@ -26,7 +26,9 @@ import jakarta.persistence.Table;
 		@NamedQuery(name = "RetrievalOrder.findManualByStatus", //
 				query = "from RetrievalOrder o where o.status = :status and o.automatic = false order by o.id"), //
 		@NamedQuery(name = "RetrievalOrder.findByPickedBy", //
-				query = "from RetrievalOrder o where o.pickedBy = :pickedBy") //
+				query = "from RetrievalOrder o where o.pickedBy = :pickedBy"), //
+		@NamedQuery(name = "RetrievalOrder.findOrderIdsLike", //
+				query = "select o.orderId from RetrievalOrder o where o.orderId like :pattern") //
 })
 @Table(name = "RETRIEVAL_ORDER")
 public class RetrievalOrder {

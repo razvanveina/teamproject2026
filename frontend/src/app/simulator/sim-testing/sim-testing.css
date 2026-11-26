@@ -1,0 +1,18 @@
+.testing {
+    padding: 16px;
+}
+
+.buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.status {
+    margin-top: 12px;
+    color: green;
+}
+
+.status.error {
+    color: red;
+}

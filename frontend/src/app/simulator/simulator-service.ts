@@ -6,6 +6,7 @@ import { API_BASE_URL } from '../api.config';
 export class SimulatorService {
     private readonly http = inject(HttpClient);
     private readonly url = `${API_BASE_URL}/simulator`;
+    private readonly hostTestingUrl = `${API_BASE_URL}/host-testing`;
 
     triggerEvent(input: string) {
         return this.http.post(`${this.url}/sendEvent`, { name: input })
@@ -17,5 +18,13 @@ export class SimulatorService {
 
     getEntities() {
         return this.http.get<string[]>(`${this.url}/entities`)
+    }
+
+    createReceivingOrderFile() {
+        return this.http.post<{ fileName: string }>(`${this.hostTestingUrl}/receiving-order`, {})
+    }
+
+    createRetrievalOrderFile() {
+        return this.http.post<{ fileName: string }>(`${this.hostTestingUrl}/retrieval-order`, {})
     }
 }

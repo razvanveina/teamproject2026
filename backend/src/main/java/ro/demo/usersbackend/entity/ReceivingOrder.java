@@ -21,7 +21,9 @@ import jakarta.persistence.Table;
 @Table(name = "RECEIVING_ORDER")
 @NamedQueries({ //
 		@NamedQuery(name = "ReceivingOrder.findByOrderId", //
-				query = "from ReceivingOrder o where o.orderId = :orderId") //
+				query = "from ReceivingOrder o where o.orderId = :orderId"), //
+		@NamedQuery(name = "ReceivingOrder.findOrderIdsLike", //
+				query = "select o.orderId from ReceivingOrder o where o.orderId like :pattern") //
 })
 public class ReceivingOrder {
 	public static final String BY_ORDER_ID = "ReceivingOrder.findByOrderId";
