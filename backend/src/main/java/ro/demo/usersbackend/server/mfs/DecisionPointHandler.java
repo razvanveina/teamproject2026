@@ -24,7 +24,7 @@ public abstract class DecisionPointHandler extends PointHandler {
 	private static final Logger mfsLog = LogManager.getLogger("mfsMessages");
 
 	private final String point;
-	protected static final int WAIT = -1;
+	private static final int WAIT = -1;
 	private final Map<String, Long> waitingSince = new HashMap<>();
 
 	protected DecisionPointHandler(String point) {

@@ -22,7 +22,7 @@ public final class StationChooser {
 		}
 
 		// statiile unde PTTT nu are deja un alt order la care se lucreaza si alegem
-		// si alegem care e cea mai putin incarcata statie
+		// care e cea mai putin incarcata statie
 		String best = Constants.PTTS_POINTS.get(0);
 		boolean bestFree = false;
 		long bestCount = Long.MAX_VALUE;
