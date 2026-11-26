@@ -1,5 +1,7 @@
 package ro.demo.usersbackend.entity;
 
+import java.time.LocalDateTime;
+
 import org.hibernate.annotations.NamedQueries;
 import org.hibernate.annotations.NamedQuery;
 
@@ -58,6 +60,16 @@ public class TransportOrder {
 	@JoinColumn(name = "loadUnit_id", nullable = false)
 	private LoadUnit loadUnit;
 
+	@Column(nullable = false)
+	private LocalDateTime createdAt;
+
+	private LocalDateTime modifiedAt;
+
+	@Column(nullable = false)
+	private String createdBy;
+
+	private String modifiedBy;
+
 	public TransportOrder() {
 		super();
 	}
@@ -68,6 +80,10 @@ public class TransportOrder {
 		this.target = target;
 		this.status = status;
 		this.loadUnit = loadUnit;
+
+		createdAt = LocalDateTime.now();
+		createdBy = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).walk(frames -> frames.skip(1)
+				.findFirst().map(frame -> frame.getDeclaringClass().getSimpleName()).orElse("Unknown"));
 	}
 
 	public Location getSource() {
@@ -76,6 +92,7 @@ public class TransportOrder {
 
 	public void setSource(Location source) {
 		this.source = source;
+		setModifiedBy();
 	}
 
 	public Location getTarget() {
@@ -84,6 +101,7 @@ public class TransportOrder {
 
 	public void setTarget(Location target) {
 		this.target = target;
+		setModifiedBy();
 	}
 
 	public TransportOrderStatus getStatus() {
@@ -92,6 +110,7 @@ public class TransportOrder {
 
 	public void setStatus(TransportOrderStatus status) {
 		this.status = status;
+		setModifiedBy();
 	}
 
 	public TransportOrderErrorReason getErrorReason() {
@@ -100,6 +119,7 @@ public class TransportOrder {
 
 	public void setErrorReason(TransportOrderErrorReason errorReason) {
 		this.errorReason = errorReason;
+		setModifiedBy();
 	}
 
 	public LoadUnit getLoadUnit() {
@@ -116,6 +136,7 @@ public class TransportOrder {
 
 	public void setId(Long id) {
 		this.id = id;
+		setModifiedBy();
 	}
 
 	public String getAssignedTo() {
@@ -124,5 +145,12 @@ public class TransportOrder {
 
 	public void setAssignedTo(String assignedTo) {
 		this.assignedTo = assignedTo;
+		setModifiedBy();
+	}
+
+	private void setModifiedBy() {
+		modifiedAt = LocalDateTime.now();
+		modifiedBy = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).walk(frames -> frames.skip(1)
+				.findFirst().map(frame -> frame.getDeclaringClass().getSimpleName()).orElse("Unknown"));
 	}
 }

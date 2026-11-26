@@ -8,6 +8,10 @@
     { "field": "LOAD_UNIT_ID", "label": "Load Unit", "addable": true, "lookup": { "entity": "LoadUnit" }, "filterable": true },
     { "field": "SOURCE_ID", "label": "Source", "addable": true, "lookup": { "entity": "Location" }, "filterable": true },
     { "field": "TARGET_ID", "label": "Target", "addable": true, "lookup": { "entity": "Location" }, "filterable": true, "editable": true },
-    { "field": "STATUS", "label": "Status", "addable": true, "options": ["NEW", "ACTIVE", "FINISHED", "ERROR"], "filterable": true, "editable": true }
+    { "field": "STATUS", "label": "Status", "addable": true, "options": ["NEW", "ACTIVE", "FINISHED", "ERROR"], "filterable": true, "editable": true },
+	{ "field": "CREATED_BY", "label": "Created By"},
+	{ "field": "CREATED_AT", "label": "Created At"},
+	{ "field": "MODIFIED_BY", "label": "Modified By"},
+	{ "field": "MODIFIED_AT", "label": "Modified At"}
   ]
 }
