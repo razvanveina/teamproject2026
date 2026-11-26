@@ -120,6 +120,12 @@
 	    ]]>
 	</query>
 
+		<query name="StockItem.countOnLocation">
+	    <![CDATA[
+	        select count(s) from StockItem s where s.loadUnit.location.name = :location
+	    ]]>
+	</query>
+
 	<query name="ArticlePackagingUnitType.findSingleUnitByArticle">
 	    <![CDATA[
 	        from ArticlePackagingUnitType p
@@ -170,7 +176,7 @@
 	    ]]>
 	</query>
 
-		<query name="LoadUnit.findFreePalletIdsInDecanting">
+	<query name="LoadUnit.findFreePalletIdsInDecanting">
 	    <![CDATA[
 	        select u.id from LoadUnit u
 	        where u.type = :pallet and u.location.name = :decanting

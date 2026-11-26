@@ -13,19 +13,28 @@ public final class StationChooser {
 			for (int i = 0; i < Constants.PTTS_POINTS.size(); i++) {
 				String ptts = Constants.PTTS_POINTS.get(i);
 				String pttt = Constants.PTTT_POINTS.get(i);
-				long busy = orderItemsOn(session, ptts, orderId, ignore)
-						+ orderItemsOn(session, pttt, orderId, ignore) + openOrdersFor(session, ptts, orderId);
+				long busy = orderItemsOn(session, ptts, orderId, ignore) + orderItemsOn(session, pttt, orderId, ignore)
+						+ openOrdersFor(session, ptts, orderId);
 				if (busy > 0) {
 					return ptts;
 				}
 			}
 		}
+
+		// statiile unde PTTT nu are deja un alt order la care se lucreaza si alegem
+		// si alegem care e cea mai putin incarcata statie
 		String best = Constants.PTTS_POINTS.get(0);
+		boolean bestFree = false;
 		long bestCount = Long.MAX_VALUE;
-		for (String ptts : Constants.PTTS_POINTS) {
+		for (int i = 0; i < Constants.PTTS_POINTS.size(); i++) {
+			String ptts = Constants.PTTS_POINTS.get(i);
+			String pttt = Constants.PTTT_POINTS.get(i);
+			boolean free = session.createNamedQuery("StockItem.countOnLocation", Long.class)
+					.setParameter("location", pttt).getSingleResult() == 0;
 			long count = openOrdersTo(session, ptts) + totesOn(session, ptts);
-			if (count < bestCount) {
+			if ((free && !bestFree) || (free == bestFree && count < bestCount)) {
 				best = ptts;
+				bestFree = free;
 				bestCount = count;
 			}
 		}
