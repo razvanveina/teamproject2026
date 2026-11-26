@@ -403,3 +403,7 @@ input {
 .order-popup .confirm {
     margin-top: 16px;
 }
+
+.popup .confirm {
+    color: black;
+}

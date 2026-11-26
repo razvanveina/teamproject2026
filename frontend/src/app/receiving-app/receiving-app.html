@@ -53,5 +53,47 @@
         <!-- <button (click)=onMakeLoadUnit() class="makeloadunit">Create LU</button> -->
         <button (click)=onConfirm() class="confirm">Confirm</button>
         <button (click)=onOrders() class="order">Orders</button>
+        <button (click)="openOrderPicker()" class="choose-button">Choose Order</button>
     </div>
 </div>
+
+@if (showOrderPicker()) {
+<div class="backdrop">
+    <section class="popup" role="dialog" aria-modal="true" aria-label="Choose receiving order">
+        <header>
+            <h3>Choose receiving order</h3>
+            <button type="button" class="picker-close" aria-label="Close" (click)="closeOrderPicker()">&times;</button>
+        </header>
+
+        @if (openOrders().length === 0) {
+        <p class="picker-empty">No open receiving orders.</p>
+        } @else {
+        <div class="order-scroll">
+            <table class="order-list">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Order</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (o of openOrders(); track o['ID']) {
+                    <tr class="selectable" [class.selected]="o['ORDER_ID'] === selectedOrderId()" tabindex="0"
+                        (click)="selectOrder(o['ORDER_ID'])" (keydown.enter)="selectOrder(o['ORDER_ID'])"
+                        (dblclick)="chooseOrder(o['ORDER_ID'])">
+                        <td>{{ o['ID'] }}</td>
+                        <td>{{ o['ORDER_ID'] }}</td>
+                        <td>{{ o['STATUS'] }}</td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <button type="button" class="picker-confirm" [disabled]="selectedOrderId() === null"
+            (click)="confirmOrder()">Confirm</button>
+        }
+    </section>
+</div>
+}

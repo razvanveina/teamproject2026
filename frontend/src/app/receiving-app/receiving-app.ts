@@ -5,6 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { ScannedPackage } from '../models/receiving-order.model';
 import { PackageOption } from '../models/receiving-order.model';
+import { DialogConfigService } from '../services/dialog-config.service';
 
 @Component({
   imports: [],
@@ -14,6 +15,7 @@ import { PackageOption } from '../models/receiving-order.model';
 })
 export class ReceivingApp {
   receivingService = inject(ReceivingOrderService)
+  private dialogService = inject(DialogConfigService)
   private router = inject(Router)
 
   @ViewChild('barcodeInput')
@@ -32,6 +34,9 @@ export class ReceivingApp {
   error = signal(false);
   showingMessage = signal(false)
   messageTimer: any
+  showOrderPicker = signal(false)
+  openOrders = signal<any[]>([])
+  selectedOrderId = signal<string | null>(null)
   order = signal<ReceivingOrder>({
     orderId: '',
     status: "",
@@ -203,6 +208,43 @@ export class ReceivingApp {
         this.instructions.set(err.error.detail)
       }
     })
+  }
+
+  openOrderPicker() {
+    this.dialogService.getRows('ReceivingOrder').subscribe({
+      next: (rows: any[]) => {
+        this.openOrders.set(rows.filter(row => row['STATUS'] !== "FINISHED"))
+        this.selectedOrderId.set(this.displayTable() ? this.order().orderId : null)
+        this.showOrderPicker.set(true)
+      },
+      error: (err: HttpErrorResponse) => {
+        this.error.set(true)
+        this.instructions.set(err.error?.detail ?? "Could not load the receiving orders")
+      }
+    })
+  }
+
+  closeOrderPicker() {
+    this.showOrderPicker.set(false)
+  }
+
+  selectOrder(orderId: string) {
+    this.selectedOrderId.set(orderId)
+  }
+
+  confirmOrder() {
+    let orderId = this.selectedOrderId()
+    if (orderId !== null) {
+      this.chooseOrder(orderId)
+    }
+  }
+
+  chooseOrder(orderId: string) {
+    this.closeOrderPicker()
+    clearTimeout(this.messageTimer)
+    this.showingMessage.set(false)
+    this.barcodeInput.nativeElement.value = ''
+    this.scanOrder(orderId)
   }
 
   onOrders() {
