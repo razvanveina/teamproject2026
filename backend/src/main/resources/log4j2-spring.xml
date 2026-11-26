@@ -2,6 +2,9 @@
 <Configuration status="INFO">
     <Properties>
         <Property name="pattern">%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%t] %40.40F:%4.4L - %msg%n</Property>
+        <Property name="maxSize">50 MB</Property>
+        <Property name="backups">10</Property>
+        <Property name="applicationLog">${sys:logName:-server}</Property>
     </Properties>
 
     <Appenders>
@@ -9,33 +12,54 @@
             <PatternLayout pattern="${pattern}" />
         </Console>
 
-        <File name="ApplicationFile" fileName="log/server.log" append="true">
+        <RollingFile name="ApplicationFile" fileName="log/${applicationLog}.log"
+                     filePattern="log/${applicationLog}-%i.log">
             <PatternLayout pattern="${pattern}" />
-        </File>
+            <SizeBasedTriggeringPolicy size="${maxSize}" />
+            <DefaultRolloverStrategy max="${backups}" fileIndex="min" />
+        </RollingFile>
 
-        <File name="HostReceivingFile" fileName="log/hostReceiving.log" append="true">
+        <RollingFile name="HostReceivingFile" fileName="log/hostReceiving.log"
+                     filePattern="log/hostReceiving-%i.log">
             <PatternLayout pattern="${pattern}" />
-        </File>
+            <SizeBasedTriggeringPolicy size="${maxSize}" />
+            <DefaultRolloverStrategy max="${backups}" fileIndex="min" />
+        </RollingFile>
 
-        <File name="HostRetrievalFile" fileName="log/hostRetrieval.log" append="true">
+        <RollingFile name="HostRetrievalFile" fileName="log/hostRetrieval.log"
+                     filePattern="log/hostRetrieval-%i.log">
             <PatternLayout pattern="${pattern}" />
-        </File>
+            <SizeBasedTriggeringPolicy size="${maxSize}" />
+            <DefaultRolloverStrategy max="${backups}" fileIndex="min" />
+        </RollingFile>
 
-        <File name="ReplenishmentFile" fileName="log/replenishment.log" append="true">
+        <RollingFile name="ReplenishmentFile" fileName="log/replenishment.log"
+                     filePattern="log/replenishment-%i.log">
             <PatternLayout pattern="${pattern}" />
-        </File>
+            <SizeBasedTriggeringPolicy size="${maxSize}" />
+            <DefaultRolloverStrategy max="${backups}" fileIndex="min" />
+        </RollingFile>
 
-        <File name="ReservationFile" fileName="log/reservation.log" append="true">
+        <RollingFile name="ReservationFile" fileName="log/reservation.log"
+                     filePattern="log/reservation-%i.log">
             <PatternLayout pattern="${pattern}" />
-        </File>
+            <SizeBasedTriggeringPolicy size="${maxSize}" />
+            <DefaultRolloverStrategy max="${backups}" fileIndex="min" />
+        </RollingFile>
 
-        <File name="ToteTransportFile" fileName="log/toteTransport.log" append="true">
+        <RollingFile name="ToteTransportFile" fileName="log/toteTransport.log"
+                     filePattern="log/toteTransport-%i.log">
             <PatternLayout pattern="${pattern}" />
-        </File>
+            <SizeBasedTriggeringPolicy size="${maxSize}" />
+            <DefaultRolloverStrategy max="${backups}" fileIndex="min" />
+        </RollingFile>
 
-        <File name="MfsMessagesFile" fileName="log/mfsMessages.log" append="true">
+        <RollingFile name="MfsMessagesFile" fileName="log/mfsMessages.log"
+                     filePattern="log/mfsMessages-%i.log">
             <PatternLayout pattern="${pattern}" />
-        </File>
+            <SizeBasedTriggeringPolicy size="${maxSize}" />
+            <DefaultRolloverStrategy max="${backups}" fileIndex="min" />
+        </RollingFile>
     </Appenders>
 
     <Loggers>

@@ -51,6 +51,7 @@ public class Sim {
 
 	public static void main(String[] args) throws IOException {
 		System.setProperty(Constants.LOG_CONFIGURATION_PROPERTY, Constants.LOG_CONFIGURATION_FILE);
+		System.setProperty(Constants.LOG_NAME_PROPERTY, Constants.SIM_LOG_NAME);
 		Sim sim = new Sim();
 		sim.run(args);
 		SimWindow window = new SimWindow(sim);

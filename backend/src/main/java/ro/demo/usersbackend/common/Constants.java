@@ -100,6 +100,8 @@ public final class Constants {
 	// logging
 	public static final String LOG_CONFIGURATION_PROPERTY = "log4j2.configurationFile";
 	public static final String LOG_CONFIGURATION_FILE = "log4j2-spring.xml";
+	public static final String LOG_NAME_PROPERTY = "logName";
+	public static final String SIM_LOG_NAME = "sim";
 
 	// timings
 
