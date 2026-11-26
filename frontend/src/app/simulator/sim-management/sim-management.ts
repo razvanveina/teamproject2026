@@ -21,6 +21,7 @@ export class SimManagement {
   entities = signal<string[]>([]);
   message = signal('');
   isError = signal(false);
+  inventoryMessage = signal('');
 
   @ViewChild('barcode')
   barcodeInput!: ElementRef<HTMLInputElement>;
@@ -62,6 +63,19 @@ export class SimManagement {
       },
       error: (err: HttpErrorResponse) => {
         this.showMessage(err.error?.detail ?? err.error?.message ?? 'The load unit cannot be created', true);
+      }
+    });
+  }
+
+  createTestInventoryOrder() {
+    this.log.action('Create test inventory order');
+    this.service.createTestInventoryOrder().subscribe({
+      next: (order) => {
+        const locations = order.lines.map(line => line.locationName).join(', ');
+        this.inventoryMessage.set(`Inventory order ${order.code} created for ${locations}`);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.inventoryMessage.set(err.error?.detail ?? err.error?.message ?? 'Could not create the test inventory order.');
       }
     });
   }

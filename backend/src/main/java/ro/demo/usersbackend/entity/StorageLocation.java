@@ -16,11 +16,14 @@ import ro.demo.usersbackend.common.Constants;
 						+ "and l.id not in (select t.target.id from TransportOrder t where t.status in ?1) "
 						+ "order by l.x asc"),
 		@NamedQuery(name = "StorageLocation.findByName", //
-				query = "select l from StorageLocation l where l.name = :name") })
+				query = "select l from StorageLocation l where l.name = :name"),
+		@NamedQuery(name = StorageLocation.FIND_OCCUPIED, //
+				query = "from StorageLocation l where exists (select lu.id from LoadUnit lu where lu.location = l)") })
 public class StorageLocation extends Location {
 
 	public static final String FIND_CLOSEST_FREE_SLOT = "StorageLocation.findClosestFreeSlot";
 	public static final String FIND_BY_NAME = "StorageLocation.findByName";
+	public static final String FIND_OCCUPIED = "StorageLocation.findOccupied";
 
 	private int x;
 

@@ -165,4 +165,7 @@ public final class Constants {
 	public static final String CARTON_BARCODE = "5%05d"; // 500001, 500002, ...
 	public static final String CARTON = "carton"; // cheia din datele etichetei
 	public static final String CARTON_TITLE = "Carton: ";
+
+	public static final int TEST_INVENTORY_LINES = 3; // cate locatii are o comanda de inventar de test
+	public static final String INVENTORY_ORDER_CODE = "IO-%04d";
 }

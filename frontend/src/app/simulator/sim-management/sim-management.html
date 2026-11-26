@@ -32,7 +32,16 @@
 
         <button (click)=createLU(barcode.value)>Create LU</button>
     </div>
-
+    @if (message()) {
+    <p class="message" [class.error]="isError()">{{ message() }}</p>
+    }
+</div>
+<div class="card">
+    <h2>Create inventory order</h2>    
+        <button (click)="createTestInventoryOrder()">Create test inventory order</button>
+        @if (inventoryMessage()) {
+            <p>{{ inventoryMessage() }}</p>
+        }
     @if (message()) {
     <p class="message" [class.error]="isError()">{{ message() }}</p>
     }

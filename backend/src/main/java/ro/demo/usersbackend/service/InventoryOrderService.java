@@ -2,12 +2,15 @@ package ro.demo.usersbackend.service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.hibernate.Hibernate;
 import org.hibernate.Session;
@@ -59,6 +62,7 @@ import ro.demo.usersbackend.repository.StockItemRepository;
 @Service
 public class InventoryOrderService {
 	private static final Logger log = LoggerFactory.getLogger(InventoryOrderService.class);
+	private static final Pattern INVENTORY_ORDER_CODE_PATTERN = Pattern.compile("IO-(\\d{4})");
 
 	private InventoryOrder findStartedOrder(Session session, Long orderId) {
 		InventoryOrder order = new InventoryOrderRepository(session).findById(orderId).orElseThrow(
@@ -369,6 +373,20 @@ public class InventoryOrderService {
 		}
 	}
 
+	// o linie NEW pe o locatie de depozit, la fel ca liniile planificate din
+	// Administration
+	private InventoryOrderLine insertPlannedLine(Session session, InventoryOrder order, Location location) {
+		InventoryOrderLine line = new InventoryOrderLine();
+		line.setInventoryOrder(order);
+		line.setLocation(location);
+		line.setLocationName(location.getName());
+		line.setStatus(InventoryOrderLineStatus.NEW);
+		line.setStockAdjustmentsCalculated(false);
+		line.setStockUpdated(false);
+		new InventoryOrderLineRepository(session).insert(line);
+		return line;
+	}
+
 	private void updateInventoryOrderLineStock(Session session, InventoryOrderLine line) {
 		LoadUnit loadUnit = findEligibleLoadUnit(session, line.getLoadUnitBarcode());
 		Map<ItemKey, ScannedInventoryItemRequest> scannedItems = getScannedItems(scannedItemsOf(session, line));
@@ -379,6 +397,18 @@ public class InventoryOrderService {
 			}
 		}
 		updateExistingStockItems(session, loadUnit, stockItems, scannedItems);
+	}
+
+	private String generateInventoryOrderCode(Session session) {
+		int highest = 0;
+		for (String code : session.createNamedQuery(InventoryOrder.CODES_LIKE, String.class)
+				.setParameter("pattern", "IO-____").getResultList()) {
+			Matcher matcher = INVENTORY_ORDER_CODE_PATTERN.matcher(code);
+			if (matcher.matches()) {
+				highest = Math.max(highest, Integer.parseInt(matcher.group(1)));
+			}
+		}
+		return String.format(Constants.INVENTORY_ORDER_CODE, highest + 1);
 	}
 
 	public InventoryOrderLineResponse createPlannedInventoryOrderLine(Long orderId, Integer locationId) {
@@ -398,16 +428,7 @@ public class InventoryOrderService {
 					throw new ResponseStatusException(HttpStatus.CONFLICT,
 							"This location already has a line in the inventory order.");
 				}
-
-				InventoryOrderLine line = new InventoryOrderLine();
-				line.setInventoryOrder(order);
-				line.setLocation(location);
-				line.setLocationName(location.getName());
-				line.setStatus(InventoryOrderLineStatus.NEW);
-				line.setStockAdjustmentsCalculated(false);
-				line.setStockUpdated(false);
-				lineRepository.insert(line);
-				setReturnValue(toLineResponse(session, line));
+				setReturnValue(toLineResponse(session, insertPlannedLine(session, order, location)));
 			}
 		}.run();
 	}
@@ -632,6 +653,37 @@ public class InventoryOrderService {
 				order.setStatus(InventoryOrderStatus.FINISHED);
 				order.setFinishedAt(now);
 				new InventoryOrderRepository(session).save(order);
+			}
+		}.run();
+	}
+
+	// comanda de inventar de test: cateva locatii de depozit ocupate, alese la
+	// intamplare
+	public synchronized InventoryOrderResponse createTestInventoryOrder() {
+		return new WithSessionAndTransaction<InventoryOrderResponse>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				List<StorageLocation> occupied = new ArrayList<>(
+						session.createNamedQuery(StorageLocation.FIND_OCCUPIED, StorageLocation.class).getResultList());
+				if (occupied.isEmpty()) {
+					throw new ResponseStatusException(HttpStatus.CONFLICT,
+							"No storage location holds a load unit, there is nothing to count.");
+				}
+				Collections.shuffle(occupied);
+
+				InventoryOrder order = new InventoryOrder();
+				order.setCode(generateInventoryOrderCode(session));
+				order.setCreatedAt(LocalDateTime.now());
+				order.setReasonMessage("INVENTORY");
+				order.setStatus(InventoryOrderStatus.STARTED);
+				new InventoryOrderRepository(session).insert(order);
+
+				for (StorageLocation location : occupied.subList(0,
+						Math.min(Constants.TEST_INVENTORY_LINES, occupied.size()))) {
+					insertPlannedLine(session, order, location);
+				}
+				session.flush();
+				setReturnValue(toOrderResponse(session, order));
 			}
 		}.run();
 	}

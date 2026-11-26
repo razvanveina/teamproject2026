@@ -79,4 +79,9 @@ public class InventoryOrderController {
 		inventoryOrderService.finishInventoryOrder(orderId);
 		return ResponseEntity.noContent().build();
 	}
+
+	@PostMapping("/test")
+	public InventoryOrderResponse createTestInventoryOrder() {
+		return inventoryOrderService.createTestInventoryOrder();
+	}
 }

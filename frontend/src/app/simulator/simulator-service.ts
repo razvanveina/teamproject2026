@@ -32,4 +32,8 @@ export class SimulatorService {
     checkRetrievalOrders() {
         return this.http.get<OrderCheck[]>(`${this.hostTestingUrl}/order-check`)
     }
+
+    createTestInventoryOrder() {
+        return this.http.post<{ code: string, lines: { locationName: string }[] }>(`${API_BASE_URL}/inventory-orders/test`, {})
+    }
 }

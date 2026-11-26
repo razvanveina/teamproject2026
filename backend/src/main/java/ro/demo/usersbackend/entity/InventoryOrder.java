@@ -22,11 +22,13 @@ import jakarta.persistence.OneToMany;
 		@NamedQuery(name = "InventoryOrder.findByCodeAndStatus", //
 				query = "from InventoryOrder o where o.code = :code and o.status = :status"), //
 		@NamedQuery(name = "InventoryOrder.countByCode", //
-				query = "select count(o) from InventoryOrder o where o.code = :code")//
-})
+				query = "select count(o) from InventoryOrder o where o.code = :code"), //
+		@NamedQuery(name = InventoryOrder.CODES_LIKE, //
+				query = "select o.code from InventoryOrder o where o.code like :pattern") })
 public class InventoryOrder {
 	public static final String BY_CODE_AND_STATUS = "InventoryOrder.findByCodeAndStatus";
 	public static final String COUNT_BY_CODE = "InventoryOrder.countByCode";
+	public static final String CODES_LIKE = "InventoryOrder.findCodesLike";
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
