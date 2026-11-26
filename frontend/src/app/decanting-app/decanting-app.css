@@ -9,3 +9,43 @@
     opacity: 0.4;
     cursor: not-allowed;
 }
+
+/* in dreapta barei de jos, sub input */
+.bottom .choose-button {
+    width: auto;
+    margin-left: auto;
+    padding: 0 30px;
+    white-space: nowrap;
+}
+
+.bottom .choose-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.picker-confirm {
+    display: block;
+    width: 30%;
+    min-width: 160px;
+    height: 50px;
+    margin: 20px auto 0;
+    font-size: 20px;
+    color: black;
+    background: #fff3b0;
+    border: 1px solid #e0c96a;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.picker-confirm:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.order-list .stock-row td {
+    padding: 8px 16px 14px 32px;
+    font-size: 18px;
+    color: #4a5d75;
+    white-space: normal;
+    background: #f1f8f9;
+}

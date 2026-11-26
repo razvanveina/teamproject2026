@@ -35,10 +35,53 @@
     <div class="right">
         <input [type]="step() === 'QUANTITY' ? 'number' : 'text'" [placeholder]="placeholder()" #input
             (keyup.enter)="onScan(input.value); input.value = ''">
+        
     </div>
 
     <div class="bottom">
         <button (click)="onCancel()" class="cancel">Cancel</button>
         <!-- <button (click)="onNewTote()" class="new-tote" [disabled]="step() !== 'LOAD_UNIT'">New empty tote</button> -->
+        <button (click)="openLoadUnitPicker()" class="choose-button" [disabled]="step() !== 'LOAD_UNIT'">Load Units at Decanting</button>
     </div>
 </div>
+@if (showLoadUnitPicker()) {
+<div class="backdrop">
+    <section class="popup" role="dialog" aria-modal="true" aria-label="Choose load unit">
+        <header>
+            <h3>Choose load unit</h3>
+            <button type="button" class="picker-close" aria-label="Close" (click)="closeLoadUnitPicker()">&times;</button>
+        </header>
+
+        @if (loadUnitsAtDecanting().length === 0) {
+        <p class="picker-empty">No load unit with items is waiting at decanting.</p>
+        } @else {
+        <div class="order-scroll">
+            <table class="order-list">
+                <thead>
+                    <tr>
+                        <th>Load unit</th>
+                    </tr>
+                </thead>
+                <tbody>
+                     @for (loadUnit of loadUnitsAtDecanting(); track loadUnit.barcode) {
+                    <tr class="selectable" [class.selected]="loadUnit.barcode === selectedLoadUnit()" tabindex="0"
+                        (click)="selectLoadUnit(loadUnit.barcode)" (keydown.enter)="selectLoadUnit(loadUnit.barcode)"
+                        (dblclick)="chooseLoadUnit(loadUnit.barcode)">
+                        <td>{{ loadUnit.barcode }}</td>
+                    </tr>
+                    @if (loadUnit.barcode === selectedLoadUnit()) {
+                    <tr class="stock-row">
+                        <td>{{ loadUnit.stock }}</td>
+                    </tr>
+                    }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <button type="button" class="picker-confirm" [disabled]="selectedLoadUnit() === null"
+            (click)="confirmLoadUnit()">Confirm</button>
+        }
+    </section>
+</div>
+}

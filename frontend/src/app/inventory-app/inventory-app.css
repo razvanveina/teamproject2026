@@ -168,7 +168,7 @@ td {
     display: flex;
     align-items: center;
     padding: 20px;
-    font-size: 35px;
+    font-size: 30px;
 }
 
 .right {
@@ -182,8 +182,6 @@ td {
     display: flex;
     align-items: center;
     gap: 10px;
-    height: 130px;
-    padding: 0 10px;
     box-sizing: border-box;
 }
 
@@ -492,9 +490,9 @@ input {
 .left,
 .right,
 .bottom {
-    border-radius: 15px;
-    background: #d4d4d4;
-    box-shadow: 0 5px 18px rgb(20 37 63 / 12%);
+    border-radius: 12px;
+    background: lightgray;
+    box-shadow: 0 4px 12px rgb(20 37 63 / 10%);
 }
 
 .left {
@@ -532,15 +530,11 @@ input {
 .scan-input {
     width: 90%;
     height: 20%;
-    padding: 4px 8px;
-    box-sizing: border-box;
     font-size: 25px;
 }
 
 .bottom {
     gap: 10px;
-    height: 130px;
-    padding: 0 10px;
 }
 
 .bottom > button {
@@ -570,7 +564,7 @@ input {
 @media (max-width: 760px) {
     .container {
         grid-template-columns: 1fr 1fr;
-        grid-template-rows: minmax(0, 1fr) minmax(140px, 25%) 100px;
+        grid-template-rows: auto 25% 100px;
         width: 90vw;
         height: 80vh;
     }

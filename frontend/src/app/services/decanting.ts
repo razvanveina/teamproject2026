@@ -36,4 +36,8 @@ export class DecantingApi {
     createEmptyTote(): Observable<{ toteBarcode: string }> {
         return this.http.post<{ toteBarcode: string }>(`${this.url}/tote`, {});
     }
+
+    loadUnitsAtDecanting(): Observable<{ barcode: string, stock: string }[]> {
+        return this.http.get<{ barcode: string, stock: string }[]>(`${this.url}/load-units`);
+    }
 }

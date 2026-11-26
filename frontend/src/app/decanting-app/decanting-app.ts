@@ -20,6 +20,9 @@ export class DecantingApp {
   currentItem = signal<DecantingItem | null>(null);
   instructions = signal('Scan the barcode of the load unit to decant.');
   hasError = signal(false);
+  showLoadUnitPicker = signal(false);
+  loadUnitsAtDecanting = signal<{ barcode: string, stock: string }[]>([]);
+  selectedLoadUnit = signal<string | null>(null);
 
   placeholder(): string {
     switch (this.step()) {
@@ -39,6 +42,39 @@ export class DecantingApp {
       case 'ITEM': this.scanItem(input); break;
       case 'QUANTITY': this.enterQuantity(input); break;
     }
+  }
+
+  openLoadUnitPicker(): void {
+    this.log.action('DECANT CHOOSE LU');
+    this.api.loadUnitsAtDecanting().subscribe({
+      next: (barcodes) => {
+        this.loadUnitsAtDecanting.set(barcodes);
+        this.selectedLoadUnit.set(null);
+        this.showLoadUnitPicker.set(true);
+      },
+      error: (err: HttpErrorResponse) => this.showError(err.error?.detail ?? err.error?.message
+        ?? 'Could not load the load units at decanting.'),
+    });
+  }
+
+  closeLoadUnitPicker(): void {
+    this.showLoadUnitPicker.set(false);
+  }
+
+  selectLoadUnit(barcode: string): void {
+    this.selectedLoadUnit.set(barcode);
+  }
+
+  confirmLoadUnit(): void {
+    const barcode = this.selectedLoadUnit();
+    if (barcode !== null) {
+      this.chooseLoadUnit(barcode);
+    }
+  }
+
+  chooseLoadUnit(barcode: string): void {
+    this.closeLoadUnitPicker();
+    this.scanLoadUnit(barcode);
   }
 
   private scanLoadUnit(barcode: string): void {

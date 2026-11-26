@@ -1,9 +1,11 @@
 package ro.demo.usersbackend.service;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.hibernate.Session;
 import org.springframework.http.HttpStatus;
@@ -61,6 +63,36 @@ public class DecantingService {
 				setReturnValue(response(loadUnit, null, items, false));
 			}
 		}.run();
+	}
+
+	// paletii si cartoanele din zona de decanting care mai au ceva de decantat;
+	// tote-urile nu se decanteaza
+	public List<Map<String, String>> findLoadUnitsAtDecanting() {
+		return new WithSessionAndTransaction<List<Map<String, String>>>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				List<Map<String, String>> loadUnits = new ArrayList<>();
+				for (LoadUnit loadUnit : new LoadUnitRepository(session).findByLocationName(Constants.DECANTING)) {
+					if (loadUnit.getType() == LoadUnitType.TOTE) {
+						continue;
+					}
+					List<StockItem> items = availableItems(session, loadUnit);
+					if (!items.isEmpty()) {
+						loadUnits.add(Map.of("barcode", loadUnit.getBarcode(), "stock", describeStock(items)));
+					}
+				}
+				setReturnValue(loadUnits);
+			}
+		}.run();
+	}
+
+	// de ex. "Mere (PIECE) x 20, Pere (BAX3) x 5"
+	private String describeStock(List<StockItem> items) {
+		return items.stream()
+				.map(item -> item.getArticlePackagingUnitType().getArticle().getDescription() + " ("
+						+ item.getArticlePackagingUnitType().getPackagingUnitType().getName() + ") x "
+						+ item.getQuantity())
+				.collect(Collectors.joining(", "));
 	}
 
 	public DecantingResponse transfer(DecantingTransferRequest request) {
@@ -134,7 +166,8 @@ public class DecantingService {
 		return new LoadUnitRepository(session).save(tote);
 	}
 
-	// sarim peste barcode-urile folosite deja de alt load unit (create din SQL, Sim Management sau dialog)
+	// sarim peste barcode-urile folosite deja de alt load unit (create din SQL, Sim
+	// Management sau dialog)
 	private String generateToteBarcode(Session session) {
 		LoadUnitRepository loadUnitRepository = new LoadUnitRepository(session);
 		String barcode;
