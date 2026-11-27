@@ -9,6 +9,7 @@ import ro.demo.usersbackend.dto.ProcessResponse;
 import ro.demo.usersbackend.server.automatic.AutomaticRetrievalService;
 import ro.demo.usersbackend.server.host.HostReceivingProcess;
 import ro.demo.usersbackend.server.host.HostRetrievalProcess;
+import ro.demo.usersbackend.server.picking.StationChooser;
 import ro.demo.usersbackend.server.printing.PrintingService;
 import ro.demo.usersbackend.server.replenishment.ReplenishmentProcess;
 import ro.demo.usersbackend.server.reservation.ReservationService;
@@ -17,7 +18,7 @@ import ro.demo.usersbackend.server.transport.ToteTransportService;
 public class ProcessManager {
 	private final AbstractProcess[] processes = { new HostReceivingProcess(), new HostRetrievalProcess(),
 			new ReservationService(), new ToteTransportService(), new ReplenishmentProcess(),
-			new AutomaticRetrievalService(), new PrintingService() };
+			new AutomaticRetrievalService(new StationChooser()), new PrintingService() };
 	private final Map<String, Thread> threads = new HashMap<>();
 
 	private static ProcessManager instance;

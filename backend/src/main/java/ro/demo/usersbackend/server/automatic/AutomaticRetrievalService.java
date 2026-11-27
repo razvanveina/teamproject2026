@@ -49,9 +49,11 @@ public class AutomaticRetrievalService extends AbstractProcess {
 	private final JMSContext context;
 	private final JMSConsumer replies;
 	private final LUCHandler lucHandler = new LUCHandler();
+	private final StationChooser stationChooser;
 
-	public AutomaticRetrievalService() {
+	public AutomaticRetrievalService(StationChooser stationChooser) {
 		super("automaticRetrievalService");
+		this.stationChooser = stationChooser;
 		context = new ActiveMQConnectionFactory(Broker.URL).createContext();
 		replies = context.createConsumer(context.createQueue(MfsMessages.RESPONSE_QUEUE));
 	}
@@ -203,7 +205,7 @@ public class AutomaticRetrievalService extends AbstractProcess {
 
 	// tote-ul pleaca din locatia de picking direct spre statia PTTS1
 	private void createTransportOrder(Session session, LoadUnit loadUnit) {
-		String stationName = StationChooser.sourceStationFor(session, automaticOrderId(loadUnit),
+		String stationName = stationChooser.sourceStationFor(session, automaticOrderId(loadUnit),
 				loadUnit.getBarcode());
 		Location station = session.createNamedQuery("Location.findByName", Location.class)
 				.setParameter("name", stationName).uniqueResultOptional().orElse(null);

@@ -4,11 +4,9 @@ import org.hibernate.Session;
 
 import ro.demo.usersbackend.common.Constants;
 
-public final class StationChooser {
-	private StationChooser() {
-	}
+public class StationChooser {
 
-	public static String sourceStationFor(Session session, Long orderId, String ignore) {
+	public String sourceStationFor(Session session, Long orderId, String ignore) {
 		if (orderId != null) {
 			for (int i = 0; i < Constants.PTTS_POINTS.size(); i++) {
 				String ptts = Constants.PTTS_POINTS.get(i);
@@ -41,7 +39,7 @@ public final class StationChooser {
 		return best;
 	}
 
-	public static String freeTargetStation(Session session) {
+	public String freeTargetStation(Session session) {
 		for (String pttt : Constants.PTTT_POINTS) {
 			if (isTargetFree(session, pttt)) {
 				return pttt;
@@ -50,29 +48,29 @@ public final class StationChooser {
 		return null;
 	}
 
-	public static boolean isTargetFree(Session session, String pttt) {
+	public boolean isTargetFree(Session session, String pttt) {
 		long onIt = totesOn(session, pttt);
 		return onIt == 0 && openOrdersTo(session, pttt) == 0;
 	}
 
-	private static long openOrdersTo(Session session, String target) {
+	private long openOrdersTo(Session session, String target) {
 		return session.createNamedQuery("TransportOrder.countOpenByTargetName", Long.class)
 				.setParameter("target", target).setParameterList("open", Constants.OPEN_TRANSPORT_STATUSES)
 				.getSingleResult();
 	}
 
-	private static long totesOn(Session session, String location) {
+	private long totesOn(Session session, String location) {
 		return session.createNamedQuery("LoadUnit.countByLocationName", Long.class).setParameter("name", location)
 				.getSingleResult();
 	}
 
-	private static long openOrdersFor(Session session, String target, Long orderId) {
+	private long openOrdersFor(Session session, String target, Long orderId) {
 		return session.createNamedQuery("TransportOrder.countOpenToTargetForOrder", Long.class)
 				.setParameter("target", target).setParameterList("open", Constants.OPEN_TRANSPORT_STATUSES)
 				.setParameter("orderId", orderId).getSingleResult();
 	}
 
-	private static long orderItemsOn(Session session, String location, Long orderId, String ignore) {
+	private long orderItemsOn(Session session, String location, Long orderId, String ignore) {
 		return session.createNamedQuery("StockItem.countForOrderOnLocation", Long.class)
 				.setParameter("location", location).setParameter("orderId", orderId).setParameter("ignore", ignore)
 				.getSingleResult();

@@ -39,10 +39,12 @@ public class SimPickingService {
 	public static final Logger log = LogManager.getLogger("application");
 
 	private final PickingLocks locks;
+	private final StationChooser stationChooser;
 
 	public SimPickingService(PickingLocks locks) {
 		super();
 		this.locks = locks;
+		this.stationChooser = new StationChooser();
 	}
 
 	public int stationCount() {
@@ -219,9 +221,9 @@ public class SimPickingService {
 		String barcode = source.getBarcode();
 		String next;
 		if (empty) {
-			next = chooseStation(session, StationChooser::freeTargetStation);
+			next = chooseStation(session, stationChooser::freeTargetStation);
 		} else if (orderId != null) {
-			next = chooseStation(session, s -> StationChooser.sourceStationFor(s, orderId, barcode));
+			next = chooseStation(session, s -> stationChooser.sourceStationFor(s, orderId, barcode));
 		} else {
 			next = Constants.TPT1;
 		}
