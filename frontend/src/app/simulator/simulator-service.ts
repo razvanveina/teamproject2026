@@ -36,4 +36,8 @@ export class SimulatorService {
     createTestInventoryOrder() {
         return this.http.post<{ code: string, lines: { locationName: string }[] }>(`${API_BASE_URL}/inventory-orders/test`, {})
     }
+
+    cleanDatabase() {
+        return this.http.post<{ message: string }>(`${this.hostTestingUrl}/clean-database`, {})
+    }
 }

@@ -20,6 +20,8 @@ export class SimTesting {
   selectedOrderId = signal('');
   statusFilter = signal(''); // gol = toate statusurile
   resultFilter = signal(''); // gol = toate rezultatele
+  cleanMessage = signal('');
+  showCleanConfirm = signal(false);
 
   // tabelul se reincarca la fiecare secunda, ca locatiile load unit-urilor sa fie la zi
   private ordersTimer: ReturnType<typeof setInterval> | undefined;
@@ -31,6 +33,28 @@ export class SimTesting {
 
   ngOnDestroy(): void {
     clearInterval(this.ordersTimer);
+  }
+
+    // butonul Clean database doar deschide popup-ul de confirmare
+  askCleanDatabase(): void {
+    this.showCleanConfirm.set(true);
+  }
+
+  cancelCleanDatabase(): void {
+    this.showCleanConfirm.set(false);
+  }
+
+  confirmCleanDatabase(): void {
+    this.showCleanConfirm.set(false);
+    this.log.action('TESTING Clean database');
+    this.service.cleanDatabase().subscribe({
+      next: (response) => {
+        this.cleanMessage.set(response.message);
+        this.loadOrders();
+      },
+      error: (err: HttpErrorResponse) => this.cleanMessage.set(err.error?.detail ?? err.error?.message
+        ?? 'The database could not be cleaned.'),
+    });
   }
 
   loadOrders(): void {

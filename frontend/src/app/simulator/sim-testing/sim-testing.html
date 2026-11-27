@@ -1,5 +1,14 @@
 <div class="testing">
     <div class="card">
+        <h2>Database</h2>
+        <div class="buttons">
+            <button type="button" class="danger" (click)="askCleanDatabase()">Clean database</button>
+        </div>
+        @if (cleanMessage()) {
+        <p class="status">{{ cleanMessage() }}</p>
+        }
+    </div>
+    <div class="card">
         <h2>Host files</h2>
         <div class="buttons">
             <button type="button" (click)="createReceivingOrder()">Create test receiving order</button>
@@ -150,3 +159,19 @@
         }
     </div>
 </div>
+@if (showCleanConfirm()) {
+<div class="backdrop" (click)="cancelCleanDatabase()">
+    <section class="confirm-popup" role="alertdialog" aria-modal="true" aria-labelledby="clean-title"
+        (click)="$event.stopPropagation()">
+        <h3 id="clean-title">Are you sure?</h3>
+        <p>This deletes all orders, load units, stock, reservations and transport orders.</p>
+        <p class="keeps">Articles, locations, destinations, printers and users stay.</p>
+        <p class="warning">This cannot be undone.</p>
+
+        <div class="confirm-actions">
+            <button type="button" class="confirm-cancel" (click)="cancelCleanDatabase()">Cancel</button>
+            <button type="button" class="danger" (click)="confirmCleanDatabase()">Delete data</button>
+        </div>
+    </section>
+</div>
+}
