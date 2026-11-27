@@ -25,8 +25,9 @@ import jakarta.persistence.OneToMany;
 		@NamedQuery(name = "LoadUnit.findByLocationOrderByIdAsc", //
 				query = "from LoadUnit lu where lu.location = :location order by lu.id asc"), //
 		@NamedQuery(name = LoadUnit.COUNT_BY_LOCATION_NAME, //
-				query = "select count(lu) from LoadUnit lu where lu.location.name = :name")//
-})
+				query = "select count(lu) from LoadUnit lu where lu.location.name = :name"), //
+		@NamedQuery(name = LoadUnit.BY_LOCATION_NAME, //
+				query = "from LoadUnit lu where lu.location.name = :name") })
 public class LoadUnit {
 	public static final String BY_BARCODE = "LoadUnit.findByBarcode";
 	public static final String BY_LOCATION_ORDER_BY_ID_ASC = "LoadUnit.findByLocationOrderByIdAsc";
