@@ -43,6 +43,11 @@ public class DP2Handler extends DecisionPointHandler {
 					mfsLog.warn("Multiple active transport orders for load unit " + loadUnitBarcode);
 				}
 
+				if (to.get(0).getTarget().getName().startsWith("PICK")) {
+					setReturnValue(0);
+					return;
+				}
+
 				Location dp = locationRepository.findByName(Constants.DP2).get();
 				Location storage = locationRepository.findByName(Constants.TPT1).get();
 				Location nextPoint = locationRepository.findByName(Constants.DP1).get();
