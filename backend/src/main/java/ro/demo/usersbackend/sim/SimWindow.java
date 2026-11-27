@@ -497,7 +497,7 @@ public class SimWindow extends JPanel {
 	private void openLoadUnitInfoDialog(String barcode, LoadUnitInfo loadUnitInfo) {
 		JButton deleteButton = new JButton("Delete");
 		deleteButton.setFocusPainted(false);
-		JPanel buttonRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+		JPanel buttonRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
 		buttonRow.add(deleteButton);
 
 		JPanel dialogContent = new JPanel(new BorderLayout(0, 12));
@@ -507,9 +507,17 @@ public class SimWindow extends JPanel {
 		JOptionPane infoPane = new JOptionPane(dialogContent, JOptionPane.PLAIN_MESSAGE, JOptionPane.DEFAULT_OPTION,
 				null, new Object[] {});
 		JDialog dialog = infoPane.createDialog(this, loadUnitTitle(barcode, loadUnitInfo));
-		deleteButton.addActionListener(e -> deleteLoadUnit(barcode, dialog));
+		deleteButton.addActionListener(e -> confirmDeleteLoadUnit(barcode, dialog));
 		dialog.setModal(false);
 		dialog.setVisible(true);
+	}
+
+	private void confirmDeleteLoadUnit(String barcode, JDialog dialog) {
+		int answer = JOptionPane.showConfirmDialog(dialog, "Delete load unit " + barcode + " from the simulator?",
+				"Delete", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+		if (answer == JOptionPane.YES_OPTION) {
+			deleteLoadUnit(barcode, dialog);
+		}
 	}
 
 	private void deleteLoadUnit(String barcode, JDialog dialog) {
