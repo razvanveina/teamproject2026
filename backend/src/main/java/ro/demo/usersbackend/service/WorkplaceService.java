@@ -14,7 +14,7 @@ import ro.demo.usersbackend.entity.Workplace;
 
 @Service
 public class WorkplaceService {
-	private static final Logger log = LogManager.getLogger("application");
+	private static final Logger log = LogManager.getLogger(WorkplaceService.class);
 
 	public String findNameFor(String remoteAddress) {
 		InetAddress client;

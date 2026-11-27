@@ -5,6 +5,8 @@
         <Property name="maxSize">50 MB</Property>
         <Property name="backups">10</Property>
         <Property name="applicationLog">${sys:logName:-server}</Property>
+        <Property name="basePackage">ro.demo.usersbackend</Property>
+        <Property name="serverPackage">${basePackage}.server</Property>
     </Properties>
 
     <Appenders>
@@ -19,15 +21,43 @@
             <DefaultRolloverStrategy max="${backups}" fileIndex="min" />
         </RollingFile>
 
-        <RollingFile name="HostReceivingFile" fileName="log/hostReceiving.log"
-                     filePattern="log/hostReceiving-%i.log">
+        <RollingFile name="ControllerFile" fileName="log/controller.log"
+                     filePattern="log/controller-%i.log">
             <PatternLayout pattern="${pattern}" />
             <SizeBasedTriggeringPolicy size="${maxSize}" />
             <DefaultRolloverStrategy max="${backups}" fileIndex="min" />
         </RollingFile>
 
-        <RollingFile name="HostRetrievalFile" fileName="log/hostRetrieval.log"
-                     filePattern="log/hostRetrieval-%i.log">
+        <RollingFile name="MessagingFile" fileName="log/messaging.log"
+                     filePattern="log/messaging-%i.log">
+            <PatternLayout pattern="${pattern}" />
+            <SizeBasedTriggeringPolicy size="${maxSize}" />
+            <DefaultRolloverStrategy max="${backups}" fileIndex="min" />
+        </RollingFile>
+
+        <RollingFile name="AutomaticFile" fileName="log/automatic.log"
+                     filePattern="log/automatic-%i.log">
+            <PatternLayout pattern="${pattern}" />
+            <SizeBasedTriggeringPolicy size="${maxSize}" />
+            <DefaultRolloverStrategy max="${backups}" fileIndex="min" />
+        </RollingFile>
+
+        <RollingFile name="HostFile" fileName="log/host.log"
+                     filePattern="log/host-%i.log">
+            <PatternLayout pattern="${pattern}" />
+            <SizeBasedTriggeringPolicy size="${maxSize}" />
+            <DefaultRolloverStrategy max="${backups}" fileIndex="min" />
+        </RollingFile>
+
+        <RollingFile name="MfsFile" fileName="log/mfs.log"
+                     filePattern="log/mfs-%i.log">
+            <PatternLayout pattern="${pattern}" />
+            <SizeBasedTriggeringPolicy size="${maxSize}" />
+            <DefaultRolloverStrategy max="${backups}" fileIndex="min" />
+        </RollingFile>
+
+        <RollingFile name="PrintingFile" fileName="log/printing.log"
+                     filePattern="log/printing-%i.log">
             <PatternLayout pattern="${pattern}" />
             <SizeBasedTriggeringPolicy size="${maxSize}" />
             <DefaultRolloverStrategy max="${backups}" fileIndex="min" />
@@ -47,15 +77,22 @@
             <DefaultRolloverStrategy max="${backups}" fileIndex="min" />
         </RollingFile>
 
-        <RollingFile name="ToteTransportFile" fileName="log/toteTransport.log"
-                     filePattern="log/toteTransport-%i.log">
+        <RollingFile name="TransportFile" fileName="log/transport.log"
+                     filePattern="log/transport-%i.log">
             <PatternLayout pattern="${pattern}" />
             <SizeBasedTriggeringPolicy size="${maxSize}" />
             <DefaultRolloverStrategy max="${backups}" fileIndex="min" />
         </RollingFile>
 
-        <RollingFile name="MfsMessagesFile" fileName="log/mfsMessages.log"
-                     filePattern="log/mfsMessages-%i.log">
+        <RollingFile name="ServiceFile" fileName="log/service.log"
+                     filePattern="log/service-%i.log">
+            <PatternLayout pattern="${pattern}" />
+            <SizeBasedTriggeringPolicy size="${maxSize}" />
+            <DefaultRolloverStrategy max="${backups}" fileIndex="min" />
+        </RollingFile>
+
+        <RollingFile name="SimFile" fileName="log/sim.log"
+                     filePattern="log/sim-%i.log">
             <PatternLayout pattern="${pattern}" />
             <SizeBasedTriggeringPolicy size="${maxSize}" />
             <DefaultRolloverStrategy max="${backups}" fileIndex="min" />
@@ -63,39 +100,64 @@
     </Appenders>
 
     <Loggers>
-        <Logger name="application" level="info" additivity="false">
+        <Logger name="${basePackage}" level="info" additivity="false">
             <AppenderRef ref="Console" />
             <AppenderRef ref="ApplicationFile" />
         </Logger>
 
-        <Logger name="hostReceiving" level="info" additivity="false">
+        <Logger name="${basePackage}.controller" level="info" additivity="false">
             <AppenderRef ref="Console" />
-            <AppenderRef ref="HostReceivingFile" />
+            <AppenderRef ref="ControllerFile" />
         </Logger>
 
-        <Logger name="hostRetrieval" level="info" additivity="false">
+        <Logger name="${basePackage}.messaging" level="info" additivity="false">
             <AppenderRef ref="Console" />
-            <AppenderRef ref="HostRetrievalFile" />
+            <AppenderRef ref="MessagingFile" />
         </Logger>
 
-        <Logger name="replenishment" level="info" additivity="false">
+        <Logger name="${serverPackage}.automatic" level="info" additivity="false">
+            <AppenderRef ref="Console" />
+            <AppenderRef ref="AutomaticFile" />
+        </Logger>
+
+        <Logger name="${serverPackage}.host" level="info" additivity="false">
+            <AppenderRef ref="Console" />
+            <AppenderRef ref="HostFile" />
+        </Logger>
+
+        <Logger name="${serverPackage}.mfs" level="info" additivity="false">
+            <AppenderRef ref="Console" />
+            <AppenderRef ref="MfsFile" />
+        </Logger>
+
+        <Logger name="${serverPackage}.printing" level="info" additivity="false">
+            <AppenderRef ref="Console" />
+            <AppenderRef ref="PrintingFile" />
+        </Logger>
+
+        <Logger name="${serverPackage}.replenishment" level="info" additivity="false">
             <AppenderRef ref="Console" />
             <AppenderRef ref="ReplenishmentFile" />
         </Logger>
 
-        <Logger name="reservation" level="info" additivity="false">
+        <Logger name="${serverPackage}.reservation" level="info" additivity="false">
             <AppenderRef ref="Console" />
             <AppenderRef ref="ReservationFile" />
         </Logger>
 
-        <Logger name="toteTransport" level="info" additivity="false">
+        <Logger name="${serverPackage}.transport" level="info" additivity="false">
             <AppenderRef ref="Console" />
-            <AppenderRef ref="ToteTransportFile" />
+            <AppenderRef ref="TransportFile" />
         </Logger>
 
-        <Logger name="mfsMessages" level="info" additivity="false">
+        <Logger name="${basePackage}.service" level="info" additivity="false">
             <AppenderRef ref="Console" />
-            <AppenderRef ref="MfsMessagesFile" />
+            <AppenderRef ref="ServiceFile" />
+        </Logger>
+
+        <Logger name="${basePackage}.sim" level="info" additivity="false">
+            <AppenderRef ref="Console" />
+            <AppenderRef ref="SimFile" />
         </Logger>
 
         <Root level="info">

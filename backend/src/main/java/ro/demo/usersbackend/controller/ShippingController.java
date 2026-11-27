@@ -24,7 +24,7 @@ import ro.demo.usersbackend.service.LoadUnitService;
 @RestController
 @RequestMapping("/api/shipping")
 public class ShippingController {
-	public static final Logger log = LogManager.getLogger("application");
+	private static final Logger log = LogManager.getLogger(ShippingController.class);
 
 	private static final Object SHIPPING_LOCK = new Object();
 

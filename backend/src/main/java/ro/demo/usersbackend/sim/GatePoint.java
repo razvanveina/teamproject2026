@@ -1,8 +1,13 @@
 package ro.demo.usersbackend.sim;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 // gate de la capatul liniei de dupa OUT: cartonul ajunge, anunta serverul (ARRIVED)
 // si dupa GATE_DWELL iese din sim, adica a fost incarcat in camion
 public class GatePoint extends ServerPoint {
+
+	private static final Logger log = LogManager.getLogger(GatePoint.class);
 
 	private long arrivedAt;
 	private TimeKeeper timeKeeper = TimeKeeper.getInstance();

@@ -23,7 +23,7 @@ import ro.demo.usersbackend.service.SimPickingService;
 @RequestMapping("/api/sim-picking")
 public class SimPickingController {
 	private final SimPickingService simPickingService;
-	public static final Logger log = LogManager.getLogger("application");
+	private static final Logger log = LogManager.getLogger(SimPickingController.class);
 
 	public SimPickingController(SimPickingService simPickingService) {
 		this.simPickingService = simPickingService;

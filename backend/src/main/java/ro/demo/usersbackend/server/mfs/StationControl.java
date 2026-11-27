@@ -9,8 +9,7 @@ import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.messaging.Broker;
 
 public final class StationControl {
-	public static final Logger log = LogManager.getLogger("application");
-	private static final Logger mfsLog = LogManager.getLogger("mfsMessages");
+	private static final Logger log = LogManager.getLogger(StationControl.class);
 
 	private static StationControl instance;
 
@@ -28,7 +27,7 @@ public final class StationControl {
 	public void release(String station) throws Exception {
 		try (JMSContext context = new ActiveMQConnectionFactory(Broker.URL).createContext()) {
 			context.createProducer().send(context.createQueue(station), Constants.RELEASE);
-			mfsLog.info("SERVER -> SIM [{}] {}", station, Constants.RELEASE);
+			log.info("SERVER -> SIM [{}] {}", station, Constants.RELEASE);
 		}
 		log.info("{}: released", station);
 	}

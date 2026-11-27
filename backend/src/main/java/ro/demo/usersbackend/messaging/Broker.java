@@ -8,7 +8,7 @@ import org.apache.logging.log4j.Logger;
 public class Broker {
 	public static final String URL = "tcp://localhost:61616";
 	public static final String CLIENT_URL = "failover:(" + URL + ")";
-	public static final Logger log = LogManager.getLogger("application");
+	private static final Logger log = LogManager.getLogger(Broker.class);
 	private static BrokerService broker;
 
 	public static synchronized void start() throws Exception {

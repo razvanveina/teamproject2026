@@ -24,7 +24,7 @@ import ro.demo.usersbackend.service.PickingService;
 @RestController
 @RequestMapping("/api/picking")
 public class PickingController {
-	public static final Logger log = LogManager.getLogger("application");
+	private static final Logger log = LogManager.getLogger(PickingController.class);
 
 	private final PickingService pickingService;
 

@@ -25,8 +25,7 @@ import ro.demo.usersbackend.messaging.MfsMessages.LoadUnitInfoItem;
 import ro.demo.usersbackend.repository.LoadUnitRepository;
 
 public final class SimLoadUnitInfoListener {
-	private final Logger log = LogManager.getLogger("application");
-	private final Logger mfsLog = LogManager.getLogger("mfsMessages");
+	private static final Logger log = LogManager.getLogger(SimLoadUnitInfoListener.class);
 
 	private JMSContext context;
 
@@ -46,7 +45,7 @@ public final class SimLoadUnitInfoListener {
 			}
 			String json = MfsMessages.toJson(findLoadUnitInfo(barcodeMessage.getText().trim()));
 			context.createProducer().send(replyTo, json);
-			mfsLog.info("SERVER -> SIM [load unit info] {}", json);
+			log.info("SERVER -> SIM [load unit info] {}", json);
 		} catch (Exception e) {
 			log.error("Sim load unit info: reply not sent {}", e.toString());
 		}

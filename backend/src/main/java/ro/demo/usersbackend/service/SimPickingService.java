@@ -34,7 +34,7 @@ import ro.demo.usersbackend.server.mfs.StationControl;
 // statia de picking din simulator: tote-ul sursa sta pe PTTS1, tote-ul tinta pe PTTT1
 @Service
 public class SimPickingService {
-	public static final Logger log = LogManager.getLogger("application");
+	private static final Logger log = LogManager.getLogger(SimPickingService.class);
 
 	private final PickingLocks locks;
 

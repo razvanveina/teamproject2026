@@ -45,7 +45,7 @@ import ro.demo.usersbackend.repository.StockItemRepository;
 // toata logica statiei de picking, pe entitati
 @Service
 public class PickingService {
-	public static final Logger log = LogManager.getLogger("application");
+	private static final Logger log = LogManager.getLogger(PickingService.class);
 
 	private final TransportOrderService transportOrderService;
 

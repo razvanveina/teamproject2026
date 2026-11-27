@@ -22,7 +22,7 @@ import ro.demo.usersbackend.service.DecantingService;
 @RequestMapping("/api/decanting")
 @CrossOrigin(origins = "http://localhost:4200")
 public class DecantingController {
-	public static final Logger log = LogManager.getLogger("application");
+	private static final Logger log = LogManager.getLogger(DecantingController.class);
 	private final DecantingService decantingService;
 
 	public DecantingController(DecantingService decantingService) {

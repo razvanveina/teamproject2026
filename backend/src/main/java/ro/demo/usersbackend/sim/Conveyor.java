@@ -24,7 +24,7 @@ import ro.demo.usersbackend.messaging.MfsMessages.Created;
 
 public class Conveyor extends Entity {
 
-	private static final Logger log = LogManager.getLogger("application");
+	private static final Logger log = LogManager.getLogger(Conveyor.class);
 
 	public record ToteOnBelt(SimLoadUnit loadUnit, double progress) {
 	}

@@ -20,7 +20,7 @@ import ro.demo.usersbackend.server.process.AbstractProcess;
 // muta load unit-urile din HBW care au stoc rezervat la DECANTING (si pentru ro automate)
 //  acm si trimite inapoi in HBW paletii din DECANTING care nu mai au stoc rezervat
 public class ReplenishmentProcess extends AbstractProcess {
-	private static final Logger Log = LogManager.getLogger("replenishment");
+	private static final Logger log = LogManager.getLogger(ReplenishmentProcess.class);
 
 	public ReplenishmentProcess() {
 		super("replenishmentProcess");
@@ -77,12 +77,12 @@ public class ReplenishmentProcess extends AbstractProcess {
 		Location decanting = session.createNamedQuery(Location.BY_NAME, Location.class)
 				.setParameter("name", Constants.DECANTING).uniqueResultOptional().orElse(null);
 		if (decanting == null) {
-			Log.error("location {} is missing", Constants.DECANTING);
+			log.error("location {} is missing", Constants.DECANTING);
 			return;
 		}
 
 		session.persist(new TransportOrder(loadUnit.getLocation(), decanting, TransportOrderStatus.NEW, loadUnit));
-		Log.info("load unit {} goes from {} to {}", loadUnit.getBarcode(), loadUnit.getLocation().getName(),
+		log.info("load unit {} goes from {} to {}", loadUnit.getBarcode(), loadUnit.getLocation().getName(),
 				Constants.DECANTING);
 	}
 
@@ -92,11 +92,11 @@ public class ReplenishmentProcess extends AbstractProcess {
 				.setParameterList("open", Constants.OPEN_TRANSPORT_STATUSES).setMaxResults(1).uniqueResultOptional()
 				.orElse(null);
 		if (target == null) {
-			Log.warn("no free HBW location, load unit {} stays in {}", loadUnit.getBarcode(), Constants.DECANTING);
+			log.warn("no free HBW location, load unit {} stays in {}", loadUnit.getBarcode(), Constants.DECANTING);
 			return;
 		}
 
 		session.persist(new TransportOrder(loadUnit.getLocation(), target, TransportOrderStatus.NEW, loadUnit));
-		Log.info("load unit {} goes from {} to {}", loadUnit.getBarcode(), Constants.DECANTING, target.getName());
+		log.info("load unit {} goes from {} to {}", loadUnit.getBarcode(), Constants.DECANTING, target.getName());
 	}
 }

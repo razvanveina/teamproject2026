@@ -20,7 +20,7 @@ import ro.demo.usersbackend.server.process.AbstractProcess;
 
 // proces care muta tote-urile cu marfa: de la decanting pe banda (automat, prin TPS2), de la TPT1 la locatia de picking
 public class ToteTransportService extends AbstractProcess {
-	private static final Logger log = LogManager.getLogger("toteTransport");
+	private static final Logger log = LogManager.getLogger(ToteTransportService.class);
 
 	public ToteTransportService() {
 		super("toteTransportService");

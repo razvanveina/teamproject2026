@@ -1,11 +1,16 @@
 package ro.demo.usersbackend.sim;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import jakarta.jms.JMSConsumer;
 import jakarta.jms.JMSContext;
 import jakarta.jms.JMSException;
 import jakarta.jms.Message;
 
 public class StationPoint extends ServerPoint {
+
+	private static final Logger log = LogManager.getLogger(StationPoint.class);
 
 	private boolean released;
 	private JMSConsumer consumer;

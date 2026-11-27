@@ -2,6 +2,8 @@ package ro.demo.usersbackend.server.mfs;
 
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hibernate.Session;
 
 import ro.demo.usersbackend.common.Constants;
@@ -16,6 +18,8 @@ import ro.demo.usersbackend.repository.LocationRepository;
 import ro.demo.usersbackend.repository.TransportOrderRepository;
 
 public class DP2Handler extends DecisionPointHandler {
+	private static final Logger log = LogManager.getLogger(DP2Handler.class);
+
 	public DP2Handler() {
 		super(Constants.DP2);
 	}
@@ -40,7 +44,7 @@ public class DP2Handler extends DecisionPointHandler {
 				List<TransportOrder> to = transportOrderRepository.findActiveByLoadUnit(loadUnit);
 
 				if (to.size() > 1) {
-					mfsLog.warn("Multiple active transport orders for load unit " + loadUnitBarcode);
+					log.warn("Multiple active transport orders for load unit " + loadUnitBarcode);
 				}
 
 				if (to.get(0).getTarget().getName().startsWith("PICK")) {

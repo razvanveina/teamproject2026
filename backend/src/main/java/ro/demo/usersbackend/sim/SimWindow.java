@@ -72,7 +72,7 @@ public class SimWindow extends JPanel {
 	private static final double MIN_ZOOM = 0.25;
 	private static final double MAX_ZOOM = 8;
 
-	private final transient Logger log = LogManager.getLogger("application");
+	private static final Logger log = LogManager.getLogger(SimWindow.class);
 	private Sim sim;
 	private TimeKeeper timeKeeper = TimeKeeper.getInstance();
 	private double zoom = 1;

@@ -13,7 +13,7 @@ import ro.demo.usersbackend.messaging.MfsMessages;
 import ro.demo.usersbackend.messaging.MfsMessages.Arrived;
 
 public abstract class PointHandler implements TelegramHandler {
-	public static final Logger log = LogManager.getLogger("application");
+	private static final Logger log = LogManager.getLogger(PointHandler.class);
 
 	private final String point;
 

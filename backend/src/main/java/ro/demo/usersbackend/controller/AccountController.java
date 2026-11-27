@@ -23,7 +23,7 @@ import ro.demo.usersbackend.service.AccountService;
 @RestController
 @RequestMapping("/api/accounts")
 public class AccountController {
-	private static final Logger log = LogManager.getLogger("application");
+	private static final Logger log = LogManager.getLogger(AccountController.class);
 	private final AccountService accountService;
 
 	public AccountController(AccountService accountService) {

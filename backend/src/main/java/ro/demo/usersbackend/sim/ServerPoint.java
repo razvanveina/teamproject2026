@@ -23,7 +23,7 @@ import ro.demo.usersbackend.messaging.MfsMessages.Created;
 
 public abstract class ServerPoint extends Entity {
 
-	protected final Logger log = LogManager.getLogger("application");
+	private static final Logger log = LogManager.getLogger(ServerPoint.class);
 	protected SimLoadUnit loadUnit;
 	private SimLoadUnit pendingLoadUnit;
 	private Long transportOrderId;

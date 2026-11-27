@@ -23,8 +23,7 @@ import ro.demo.usersbackend.repository.LoadUnitRepository;
 
 // raspunde la butonul Setup din simulator cu load unit-urile care stau pe punctele de banda in DB
 public final class SimSetupListener {
-	public static final Logger log = LogManager.getLogger("application");
-	private static final Logger mfsLog = LogManager.getLogger("mfsMessages");
+	private static final Logger log = LogManager.getLogger(SimSetupListener.class);
 
 	// punctele de banda plus OUT; gate-urile nu, cartonul de acolo a iesit deja
 	private static final List<String> SETUP_POINTS = Stream
@@ -52,7 +51,7 @@ public final class SimSetupListener {
 			}
 			String json = MfsMessages.toJson(findLoadUnitsOnPoints());
 			context.createProducer().send(replyTo, json);
-			mfsLog.info("SERVER -> SIM [setup] {}", json);
+			log.info("SERVER -> SIM [setup] {}", json);
 		} catch (Exception e) {
 			log.error("Sim setup: reply not sent {}", e.toString());
 		}

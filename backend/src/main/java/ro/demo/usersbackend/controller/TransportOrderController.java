@@ -26,7 +26,7 @@ import ro.demo.usersbackend.service.TransportOrderService;
 @RequestMapping("/api/transport-orders")
 @CrossOrigin(origins = "http://localhost:4200")
 public class TransportOrderController {
-	public static final Logger log = LogManager.getLogger("application");
+	private static final Logger log = LogManager.getLogger(TransportOrderController.class);
 
 	private static final Object ASSIGN_LOCK = new Object();
 	

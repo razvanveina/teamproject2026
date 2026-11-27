@@ -20,7 +20,7 @@ import ro.demo.usersbackend.service.AuthService;
 @RequestMapping("/auth")
 public class AuthController {
 	private final AuthService authService;
-	public static final Logger log = LogManager.getLogger("application");
+	private static final Logger log = LogManager.getLogger(AuthController.class);
 
 	public AuthController(AuthService authService) {
 		super();

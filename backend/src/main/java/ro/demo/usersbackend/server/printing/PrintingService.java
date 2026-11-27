@@ -28,7 +28,7 @@ import ro.demo.usersbackend.entity.PrinterType;
 import ro.demo.usersbackend.server.process.AbstractProcess;
 
 public class PrintingService extends AbstractProcess {
-	private static final Logger log = LogManager.getLogger("application");
+	private static final Logger log = LogManager.getLogger(PrintingService.class);
 	private final ObjectMapper jsonMapper = new ObjectMapper();
 
 	public PrintingService() {

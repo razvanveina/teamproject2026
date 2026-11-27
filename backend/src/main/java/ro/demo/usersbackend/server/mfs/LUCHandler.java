@@ -12,7 +12,7 @@ import ro.demo.usersbackend.repository.LoadUnitRepository;
 import ro.demo.usersbackend.service.LoadUnitService;
 
 public class LUCHandler implements TelegramHandler {
-	public static final Logger log = LogManager.getLogger("application");
+	private static final Logger log = LogManager.getLogger(LUCHandler.class);
 
 	private final LoadUnitService loadUnitService = new LoadUnitService();
 

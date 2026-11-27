@@ -22,7 +22,7 @@ import ro.demo.usersbackend.entity.StockItem;
 import ro.demo.usersbackend.server.process.AbstractProcess;
 
 public class ReservationService extends AbstractProcess {
-	private static final Logger Log = LogManager.getLogger("reservation");
+	private static final Logger log = LogManager.getLogger(ReservationService.class);
 
 	public ReservationService() {
 		super("reservationService");
@@ -47,7 +47,7 @@ public class ReservationService extends AbstractProcess {
 				process(orderId);
 			}
 		} catch (Exception e) {
-			Log.error("cannot scan retrieval orders: {}", e.toString());
+			log.error("cannot scan retrieval orders: {}", e.toString());
 		}
 	}
 
@@ -63,11 +63,11 @@ public class ReservationService extends AbstractProcess {
 				}
 			}.run();
 			if (reserved) {
-				Log.info("order {} reserved", orderId);
-				items.forEach(item -> Log.info(item));
+				log.info("order {} reserved", orderId);
+				items.forEach(item -> log.info(item));
 			}
 		} catch (Exception e) {
-			Log.error("order {} not processed {}", orderId, e.toString());
+			log.error("order {} not processed {}", orderId, e.toString());
 		}
 	}
 
@@ -76,7 +76,7 @@ public class ReservationService extends AbstractProcess {
 			int available = findAvailableStock(session, line.getArticle()).stream()
 					.mapToInt(StockItem::getTotalQuantity).sum();
 			if (available < missingPieces(line)) {
-				Log.warn("order {} skipped, article {} has {} available, needs {}", order.getOrderId(),
+				log.warn("order {} skipped, article {} has {} available, needs {}", order.getOrderId(),
 						line.getArticle().getBarcode(), available, missingPieces(line));
 				return false;
 			}

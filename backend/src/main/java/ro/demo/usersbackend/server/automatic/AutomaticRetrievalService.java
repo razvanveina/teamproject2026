@@ -40,8 +40,7 @@ import ro.demo.usersbackend.server.mfs.TelegramHandling;
 import ro.demo.usersbackend.server.process.AbstractProcess;
 
 public class AutomaticRetrievalService extends AbstractProcess {
-	public static final Logger log = LogManager.getLogger("automaticRetrieval");
-	private static final Logger mfsLog = LogManager.getLogger("mfsMessages");
+	private static final Logger log = LogManager.getLogger(AutomaticRetrievalService.class);
 
 	// conexiunea la broker si consumerul de raspunsuri traiesc cat procesul, nu le
 	// refacem la fiecare tura
@@ -73,7 +72,7 @@ public class AutomaticRetrievalService extends AbstractProcess {
 		while ((message = replies.receive(Constants.ACK_GET_WAIT)) != null) {
 			try {
 				String text = ((TextMessage) message).getText();
-				mfsLog.info("SIM -> SERVER [{}] {}", MfsMessages.RESPONSE_QUEUE, text);
+				log.info("SIM -> SERVER [{}] {}", MfsMessages.RESPONSE_QUEUE, text);
 				JsonNode node = MfsMessages.fromJson(text, JsonNode.class);
 				if ("ACK_GET".equals(node.path("type").asText())) {
 					AckGet ack = MfsMessages.fromJson(text, AckGet.class);
@@ -142,7 +141,7 @@ public class AutomaticRetrievalService extends AbstractProcess {
 					queueName = MfsMessages.DECANTING_REQUEST_QUEUE;
 				}
 				context.createProducer().send(context.createQueue(queueName), MfsMessages.toJson(message));
-				mfsLog.info("SERVER -> SIM [{}] {}", queueName, MfsMessages.toJson(message));
+				log.info("SERVER -> SIM [{}] {}", queueName, MfsMessages.toJson(message));
 				log.info("Automatic retrieval: sent {}", MfsMessages.toJson(message));
 			} catch (RuntimeException e) {
 				log.error("Automatic retrieval: order {} not sent {}", orderId, e.toString());

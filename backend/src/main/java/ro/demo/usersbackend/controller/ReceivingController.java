@@ -22,7 +22,7 @@ import ro.demo.usersbackend.service.ReceivingService;
 @RestController
 @RequestMapping("/api/receiving")
 public class ReceivingController {
-	public static final Logger log = LogManager.getLogger("application");
+	private static final Logger log = LogManager.getLogger(ReceivingController.class);
 
 	private final ReceivingService receivingService;
 

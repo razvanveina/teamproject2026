@@ -29,7 +29,7 @@ import ro.demo.usersbackend.repository.PrinterRepository;
 
 @Service
 public class PrintJobService {
-	private static final Logger log = LogManager.getLogger("application");
+	private static final Logger log = LogManager.getLogger(PrintJobService.class);
 	private final ObjectMapper jsonMapper = new ObjectMapper();
 
 	public void createShippingLabel(RetrievalOrder order, String cartonBarcode) {

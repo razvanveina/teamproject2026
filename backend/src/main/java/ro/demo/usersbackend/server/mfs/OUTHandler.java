@@ -1,5 +1,7 @@
 package ro.demo.usersbackend.server.mfs;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hibernate.Session;
 
 import ro.demo.usersbackend.common.Constants;
@@ -9,6 +11,8 @@ import ro.demo.usersbackend.messaging.MfsMessages;
 import ro.demo.usersbackend.messaging.MfsMessages.Arrived;
 
 public class OUTHandler extends PointHandler {
+	private static final Logger log = LogManager.getLogger(OUTHandler.class);
+
 	public OUTHandler() {
 		super(Constants.OUT);
 	}

@@ -18,7 +18,7 @@ import ro.demo.usersbackend.service.HostTestingService;
 @RestController
 @RequestMapping("/api/host-testing")
 public class HostTestingController {
-	private final Logger log = LogManager.getLogger("application");
+	private static final Logger log = LogManager.getLogger(HostTestingController.class);
 	private final HostTestingService hostTestingService;
 
 	public HostTestingController(HostTestingService hostTestingService) {

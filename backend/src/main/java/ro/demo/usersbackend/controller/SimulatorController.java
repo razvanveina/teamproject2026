@@ -21,7 +21,7 @@ import ro.demo.usersbackend.service.SimulatorService;
 @RestController
 @RequestMapping("/api/simulator")
 public class SimulatorController {
-	private static final Logger log = LogManager.getLogger("application");
+	private static final Logger log = LogManager.getLogger(SimulatorController.class);
 
 	private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
 

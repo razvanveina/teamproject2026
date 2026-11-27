@@ -1,5 +1,8 @@
 package ro.demo.usersbackend.sim;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import jakarta.jms.JMSConsumer;
 import jakarta.jms.JMSContext;
 import jakarta.jms.JMSException;
@@ -10,6 +13,8 @@ import ro.demo.usersbackend.messaging.MfsMessages.AckGet;
 import ro.demo.usersbackend.messaging.MfsMessages.Get;
 
 public class SourceTransportPoint extends ServerPoint {
+
+	private static final Logger log = LogManager.getLogger(SourceTransportPoint.class);
 
 	private long loadedAt;
 	private boolean acknowledged;

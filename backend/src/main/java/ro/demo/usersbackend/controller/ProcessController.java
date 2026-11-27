@@ -18,7 +18,7 @@ import ro.demo.usersbackend.server.process.ProcessManager;
 @RestController
 @RequestMapping("/api/processes")
 public class ProcessController {
-	public static final Logger log = LogManager.getLogger("application");
+	private static final Logger log = LogManager.getLogger(ProcessController.class);
 	private ProcessManager processManager = ProcessManager.getInstance();
 
 	@GetMapping

@@ -42,7 +42,12 @@ public class Sim {
 	private static final Path SNAPSHOT = Path.of("sim-snapshot.bin");
 	private static final Path SNAPSHOT_TMP = Path.of("sim-snapshot.bin.tmp");
 
-	private final Logger log = LogManager.getLogger("application");
+	static {
+		System.setProperty(Constants.LOG_CONFIGURATION_PROPERTY, Constants.LOG_CONFIGURATION_FILE);
+		System.setProperty(Constants.LOG_NAME_PROPERTY, Constants.SIM_LOG_NAME);
+	}
+
+	private static final Logger log = LogManager.getLogger(Sim.class);
 	private final List<Entity> entities = new ArrayList<>();
 
 //	private Sim sim;
@@ -53,8 +58,6 @@ public class Sim {
 	private boolean skipSave = false;
 
 	public static void main(String[] args) throws IOException {
-		System.setProperty(Constants.LOG_CONFIGURATION_PROPERTY, Constants.LOG_CONFIGURATION_FILE);
-		System.setProperty(Constants.LOG_NAME_PROPERTY, Constants.SIM_LOG_NAME);
 		Sim sim = new Sim();
 		sim.run(args);
 		SimWindow window = new SimWindow(sim);
@@ -373,47 +376,47 @@ public class Sim {
 	}
 
 	public void run(String[] args) {
-		Conveyor c1 = add(new Conveyor("C01", 10, new Point(58, 440), 560, 300, 120, 300, 120, 560));
+		Conveyor c1 = add(new Conveyor("C01", 12, new Point(58, 440), 560, 300, 120, 300, 120, 560));
 		Conveyor c2 = add(new Conveyor("C02", 3, new Point(654, 524), 560, 560, 768, 560));
-		Conveyor c3 = add(new Conveyor("C03", 10, new Point(1536, 505), 1408, 560, 1500, 560, 1500, 430));
+		Conveyor c3 = add(new Conveyor("C03", 3, new Point(1536, 505), 1408, 560, 1500, 560, 1500, 430));
 		Conveyor c4 = add(new Conveyor("C04", 3, new Point(654, 345), 768, 300, 560, 300));
 		Conveyor c5 = add(new Conveyor("C05", 2, new Point(804, 220), 768, 300, 768, 130));
 		Conveyor c6 = add(new Conveyor("C06", 2, new Point(498, 220), 560, 130, 560, 300));
 		Conveyor c7 = add(
 				new Conveyor("C07", Constants.PTTS_LANE_SLOTS, new Point(498, 630), 560, 560, 560, 690, 664, 690));
 		Conveyor c8 = add(new Conveyor("C08", 3, new Point(804, 630), 664, 690, 768, 690, 768, 560));
-		Conveyor c9 = add(new Conveyor("C09", 2, new Point(1450, 945), 1408, 900, 1540, 900));
+		Conveyor c9 = add(new Conveyor("C09", 1, new Point(1450, 945), 1408, 900, 1540, 900));
 		Conveyor c10 = add(new Conveyor("C10", 7, new Point(325, 605), 120, 560, 560, 560));
 		Conveyor c11 = add(new Conveyor("C11", 5, new Point(58, 730), 120, 560, 120, 900));
 		Conveyor c12 = add(new Conveyor("C12", 7, new Point(325, 945), 120, 900, 560, 900));
 		Conveyor c14 = add(new Conveyor("C14", 2, new Point(1580, 392), 1660, 430, 1500, 430));
-		Conveyor c15 = add(new Conveyor("C15", 10, new Point(1130, 345), 1500, 430, 1500, 300, 768, 300));
+		Conveyor c15 = add(new Conveyor("C15", 15, new Point(1130, 345), 1500, 430, 1500, 300, 768, 300));
 
 		Conveyor c16 = add(
 				new Conveyor("C16", Constants.PTTT_LANE_SLOTS, new Point(498, 840), 560, 900, 560, 770, 664, 770));
 		Conveyor c17 = add(new Conveyor("C17", 3, new Point(804, 805), 664, 770, 768, 770, 768, 900));
 		Conveyor c18 = add(new Conveyor("C18", 3, new Point(650, 945), 560, 900, 768, 900));
-		Conveyor c19 = add(new Conveyor("C19", 2, new Point(808, 524), 768, 560, 880, 560));
+		Conveyor c19 = add(new Conveyor("C19", 1, new Point(808, 524), 768, 560, 880, 560));
 		Conveyor c20 = add(
 				new Conveyor("C20", Constants.PTTS_LANE_SLOTS, new Point(828, 705), 880, 560, 880, 690, 984, 690));
 		Conveyor c21 = add(new Conveyor("C21", 3, new Point(1124, 630), 984, 690, 1088, 690, 1088, 560));
 		Conveyor c22 = add(new Conveyor("C22", 3, new Point(970, 524), 880, 560, 1088, 560));
-		Conveyor c23 = add(new Conveyor("C23", 2, new Point(1128, 524), 1088, 560, 1200, 560));
+		Conveyor c23 = add(new Conveyor("C23", 1, new Point(1128, 524), 1088, 560, 1200, 560));
 		Conveyor c24 = add(
 				new Conveyor("C24", Constants.PTTS_LANE_SLOTS, new Point(1148, 705), 1200, 560, 1200, 690, 1304, 690));
 		Conveyor c25 = add(new Conveyor("C25", 3, new Point(1444, 630), 1304, 690, 1408, 690, 1408, 560));
 		Conveyor c26 = add(new Conveyor("C26", 3, new Point(1290, 524), 1200, 560, 1408, 560));
-		Conveyor c27 = add(new Conveyor("C27", 2, new Point(808, 945), 768, 900, 880, 900));
+		Conveyor c27 = add(new Conveyor("C27", 1, new Point(808, 945), 768, 900, 880, 900));
 		Conveyor c28 = add(
 				new Conveyor("C28", Constants.PTTT_LANE_SLOTS, new Point(828, 865), 880, 900, 880, 770, 984, 770));
 		Conveyor c29 = add(new Conveyor("C29", 3, new Point(1124, 805), 984, 770, 1088, 770, 1088, 900));
 		Conveyor c30 = add(new Conveyor("C30", 3, new Point(970, 945), 880, 900, 1088, 900));
-		Conveyor c31 = add(new Conveyor("C31", 2, new Point(1128, 945), 1088, 900, 1200, 900));
+		Conveyor c31 = add(new Conveyor("C31", 1, new Point(1128, 945), 1088, 900, 1200, 900));
 		Conveyor c32 = add(
 				new Conveyor("C32", Constants.PTTT_LANE_SLOTS, new Point(1148, 865), 1200, 900, 1200, 770, 1304, 770));
 		Conveyor c33 = add(new Conveyor("C33", 3, new Point(1444, 805), 1304, 770, 1408, 770, 1408, 900));
 		Conveyor c34 = add(new Conveyor("C34", 3, new Point(1290, 945), 1200, 900, 1408, 900));
-		Conveyor c35 = add(new Conveyor("C35", 5, new Point(1640, 1010), 1540, 900, 1700, 900, 1700, 1120, 1600, 1120));
+		Conveyor c35 = add(new Conveyor("C35", 8, new Point(1640, 1010), 1540, 900, 1700, 900, 1700, 1120, 1600, 1120));
 		Conveyor c36 = add(new Conveyor("C36", 3, new Point(1490, 1165), 1600, 1120, 1380, 1120));
 		Conveyor c37 = add(new Conveyor("C37", 3, new Point(1270, 1165), 1380, 1120, 1160, 1120));
 		Conveyor c38 = add(new Conveyor("C38", 3, new Point(1050, 1165), 1160, 1120, 940, 1120));

@@ -16,7 +16,7 @@ import ro.demo.usersbackend.dto.LogRequest;
 @RequestMapping("/api/log")
 @CrossOrigin(origins = "http://localhost:4200")
 public class LogController {
-	public static final Logger log = LogManager.getLogger("application");
+	private static final Logger log = LogManager.getLogger(LogController.class);
 
 	@PostMapping
 	public ResponseEntity<Void> log(@Valid @RequestBody LogRequest request) {

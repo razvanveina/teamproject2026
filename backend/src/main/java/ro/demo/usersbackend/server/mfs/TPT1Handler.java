@@ -1,5 +1,7 @@
 package ro.demo.usersbackend.server.mfs;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hibernate.Session;
 
 import ro.demo.usersbackend.common.Constants;
@@ -13,6 +15,8 @@ import ro.demo.usersbackend.messaging.MfsMessages.Arrived;
 import ro.demo.usersbackend.server.transport.ToteTransportService;
 
 public class TPT1Handler extends PointHandler {
+	private static final Logger log = LogManager.getLogger(TPT1Handler.class);
+
 	public TPT1Handler() {
 		super(Constants.TPT1);
 	}

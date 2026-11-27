@@ -8,7 +8,7 @@ import org.apache.logging.log4j.Logger;
 import ro.demo.usersbackend.common.Constants;
 
 public class TelegramHandling {
-	public static final Logger log = LogManager.getLogger("application");
+	private static final Logger log = LogManager.getLogger(TelegramHandling.class);
 
 	private static TelegramHandling instance;
 

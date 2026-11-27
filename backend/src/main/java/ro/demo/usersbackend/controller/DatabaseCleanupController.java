@@ -13,7 +13,7 @@ import ro.demo.usersbackend.service.DatabaseCleanupService;
 @RestController
 @RequestMapping("/api/host-testing")
 public class DatabaseCleanupController {
-	private static final Logger log = LogManager.getLogger("application");
+	private static final Logger log = LogManager.getLogger(DatabaseCleanupController.class);
 
 	private final DatabaseCleanupService databaseCleanupService = new DatabaseCleanupService();
 

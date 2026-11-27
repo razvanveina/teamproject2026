@@ -10,7 +10,7 @@ import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
 // butonul Clean database din Testing: sterge datele de lucru, pastreaza datele de baza
 // (articole, ambalaje, locatii, destinatii, imprimante, useri) si porneste secventele si ID-urile de la 1
 public class DatabaseCleanupService {
-	private static final Logger log = LogManager.getLogger("application");
+	private static final Logger log = LogManager.getLogger(DatabaseCleanupService.class);
 
 	public synchronized void cleanWorkingData() {
 		new WithSessionAndTransaction<Void>() {

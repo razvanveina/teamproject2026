@@ -23,7 +23,7 @@ import ro.demo.usersbackend.service.UserService;
 @RequestMapping("/api/users")
 @CrossOrigin(origins = "http://localhost:4200")
 public class UserController {
-	public static final Logger log = LogManager.getLogger("application");
+	private static final Logger log = LogManager.getLogger(UserController.class);
 
 	private final UserService userService;
 

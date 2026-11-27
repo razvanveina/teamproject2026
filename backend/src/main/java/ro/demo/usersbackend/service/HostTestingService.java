@@ -45,7 +45,7 @@ public class HostTestingService {
 	public static final String CANNOT_BE_FULFILLED = "CANNOT_BE_FULFILLED";
 	public static final String FINISHED = "FINISHED";
 
-	private final Logger log = LogManager.getLogger("application");
+	private static final Logger log = LogManager.getLogger(HostTestingService.class);
 	private final String testOrderIdFormat = "T%04d";
 	private final String testOrderIdLikePattern = "T____";
 	private final Pattern testOrderIdPattern = Pattern.compile("T(\\d{4})");

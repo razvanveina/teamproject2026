@@ -27,7 +27,7 @@ import ro.demo.usersbackend.entity.ReceivingOrderStatus;
 import ro.demo.usersbackend.server.process.AbstractProcess;
 
 public class HostReceivingProcess extends AbstractProcess {
-	private static final Logger Log = LogManager.getLogger("hostReceiving");
+	private static final Logger log = LogManager.getLogger(HostReceivingProcess.class);
 
 	private Path folder;
 
@@ -45,14 +45,14 @@ public class HostReceivingProcess extends AbstractProcess {
 		try {
 			if (folder == null) {
 				folder = Path.of(readFolder());
-				Log.info("watching path {}", folder.toAbsolutePath());
+				log.info("watching path {}", folder.toAbsolutePath());
 			}
 
 			try (Stream<Path> files = Files.list(folder)) {
 				files.filter(f -> f.toString().endsWith(".xml")).forEach(f -> process(f));
 			}
 		} catch (Exception e) {
-			Log.error("cannot scan {}: {}", folder.toAbsolutePath(), e.toString());
+			log.error("cannot scan {}: {}", folder.toAbsolutePath(), e.toString());
 		}
 	}
 
@@ -110,7 +110,7 @@ public class HostReceivingProcess extends AbstractProcess {
 							throw new IllegalArgumentException("article " + barcode + " doesn't exist");
 						}
 						if (found.size() > 1) {
-							Log.warn("in {} with barcode {} matches {} articles", name, barcode, found.size());
+							log.warn("in {} with barcode {} matches {} articles", name, barcode, found.size());
 						}
 						Article article;
 						if (found.isEmpty()) {
@@ -136,16 +136,16 @@ public class HostReceivingProcess extends AbstractProcess {
 			}.run();
 
 			if (created) {
-				Log.info("in {}, order {} created", name, orderId);
-				items.forEach(item -> Log.info(item));
+				log.info("in {}, order {} created", name, orderId);
+				items.forEach(item -> log.info(item));
 				Files.delete(file);
-				Log.info("{} deleted", name);
+				log.info("{} deleted", name);
 			} else {
-				Log.warn("in {}, order {} already exists", name, orderId);
+				log.warn("in {}, order {} already exists", name, orderId);
 			}
 
 		} catch (Exception e) {
-			Log.error("{} not processsed {}", name, e.toString());
+			log.error("{} not processsed {}", name, e.toString());
 		}
 	}
 

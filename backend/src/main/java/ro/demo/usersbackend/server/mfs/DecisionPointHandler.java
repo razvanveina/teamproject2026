@@ -22,7 +22,7 @@ import ro.demo.usersbackend.messaging.MfsMessages;
 import ro.demo.usersbackend.messaging.MfsMessages.Arrived;
 
 public abstract class DecisionPointHandler extends PointHandler {
-	public static final Logger mfsLog = LogManager.getLogger("mfsMessages");
+	private static final Logger log = LogManager.getLogger(DecisionPointHandler.class);
 
 	private final String point;
 	private static final int WAIT = -1;
@@ -65,7 +65,7 @@ public abstract class DecisionPointHandler extends PointHandler {
 	private void sendReply(String reply) {
 		try (JMSContext context = new ActiveMQConnectionFactory(Broker.URL).createContext()) {
 			context.createProducer().send(context.createQueue(point), reply);
-			mfsLog.info("SERVER -> SIM [{}] {}", point, reply);
+			log.info("SERVER -> SIM [{}] {}", point, reply);
 		}
 	}
 
