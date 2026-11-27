@@ -181,7 +181,7 @@ public class AutomaticRetrievalService extends AbstractProcess {
 							if (location.getArea() != pickingArea.get() || !(location instanceof StorageLocation)) {
 								continue orders;
 							}
-							if (new TransportOrderRepository(session).findActiveByLoadUnit(loadUnit).size() > 0) {
+							if (new TransportOrderRepository(session).findActiveAndNewByLoadUnit(loadUnit).size() > 0) {
 								continue orders;
 							}
 						}
@@ -191,7 +191,8 @@ public class AutomaticRetrievalService extends AbstractProcess {
 						for (Reservation reservation : line.getReservations()) {
 							try {
 								LoadUnit loadUnit = reservation.getStockItem().getLoadUnit();
-								if (new TransportOrderRepository(session).findActiveByLoadUnit(loadUnit).size() <= 0) {
+								if (new TransportOrderRepository(session).findActiveAndNewByLoadUnit(loadUnit)
+										.size() <= 0) {
 									createTransportOrder(session, loadUnit);
 								}
 							} catch (RuntimeException e) {
