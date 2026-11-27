@@ -3,7 +3,9 @@ package ro.demo.usersbackend.server.mfs;
 import org.hibernate.Session;
 
 import ro.demo.usersbackend.common.Constants;
+import ro.demo.usersbackend.common.Queries;
 import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
+import ro.demo.usersbackend.entity.StockItem;
 
 public class DP2Handler extends DecisionPointHandler {
 	public DP2Handler() {
@@ -23,9 +25,9 @@ public class DP2Handler extends DecisionPointHandler {
 		return new WithSessionAndTransaction<Integer>() {
 			@Override
 			protected void executeBusinessLogic(Session session) {
-				long stockItems = session.createNamedQuery("StockItem.countByLoadUnitBarcode", Long.class)
+				long stockItems = session.createNamedQuery(StockItem.COUNT_BY_LOAD_UNIT_BARCODE, Long.class)
 						.setParameter("barcode", loadUnit).getSingleResult();
-				long automatic = session.createNamedQuery("StockItem.countAutomaticByLoadUnitBarcode", Long.class)
+				long automatic = session.createNamedQuery(Queries.COUNT_AUTOMATIC_BY_LOAD_UNIT_BARCODE, Long.class)
 						.setParameter("barcode", loadUnit).getSingleResult();
 				setReturnValue((stockItems == 0 || automatic > 0) ? 1 : 0);
 			}

@@ -26,13 +26,26 @@ import jakarta.persistence.ManyToOne;
 		@NamedQuery(name = "TransportOrder.findByStatusAndAssignedToIsNullOrderByIdAsc", //
 				query = "from TransportOrder o where o.assignedTo is null and o.status in :statuses order by o.id asc"),
 		@NamedQuery(name = "TransportOrder.findActiveByLoadUnit", //
-				query = "from TransportOrder o where o.status = :status and o.loadUnit = :loadUnit") })
+				query = "from TransportOrder o where o.status = :status and o.loadUnit = :loadUnit"), //
+		@NamedQuery(name = TransportOrder.FIND_ACTIVE_BY_LOAD_UNIT_AND_TARGET, //
+				query = "from TransportOrder t where t.loadUnit = :loadUnit and t.target = :target and t.status = :active"), //
+		@NamedQuery(name = TransportOrder.FIND_ACTIVE_TARGET_NAME, //
+				query = "select t.target.name from TransportOrder t where t.loadUnit.barcode = :barcode and t.status = :active order by t.id desc"), //
+		@NamedQuery(name = TransportOrder.COUNT_IN_LANE_TO_TARGET, //
+				query = "select count(t) from TransportOrder t where t.status = :active and t.target.name = :target"
+						+ " and t.loadUnit.location.name = :point and t.loadUnit.barcode <> :barcode"), //
+		@NamedQuery(name = TransportOrder.COUNT_OPEN_BY_TARGET_NAME, //
+				query = "select count(t) from TransportOrder t where t.target.name = :target and t.status in :open") })
 public class TransportOrder {
 	public static final String FIND_BY_STATUS_AND_NOT_SOURCE_ODERED_BY_ID = "TransportOrder.findByStatusAndNotSourceOrderByIdAsc";
 	public static final String FIND_BY_STATUS_AND_SOURCE_ODERED_BY_ID = "TransportOrder.findByStatusAndSourceOrderByIdAsc";
 	public static final String FIND_BY_STATUS_AND_ASSIGNED_TO_ODERED_BY_ID = "TransportOrder.findByStatusAndAssignedToOrderByIdAsc";
 	public static final String FIND_BY_STATUS_AND_ASSIGNED_TO_IS_NULL_ODERED_BY_ID = "TransportOrder.findByStatusAndAssignedToIsNullOrderByIdAsc";
-	public static final String FIND_ACTIVE_BY_LOAD_UNIT = "TransportOder.findActiveByLoadUnit";
+	public static final String FIND_ACTIVE_BY_LOAD_UNIT = "TransportOrder.findActiveByLoadUnit";
+	public static final String FIND_ACTIVE_BY_LOAD_UNIT_AND_TARGET = "TransportOrder.findActiveByLoadUnitAndTarget";
+	public static final String FIND_ACTIVE_TARGET_NAME = "TransportOrder.findActiveTargetName";
+	public static final String COUNT_IN_LANE_TO_TARGET = "TransportOrder.countInLaneToTarget";
+	public static final String COUNT_OPEN_BY_TARGET_NAME = "TransportOrder.countOpenByTargetName";
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

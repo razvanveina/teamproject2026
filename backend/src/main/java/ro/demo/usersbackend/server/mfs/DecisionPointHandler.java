@@ -14,6 +14,7 @@ import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
 import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.Location;
+import ro.demo.usersbackend.entity.StockItem;
 import ro.demo.usersbackend.entity.TransportOrder;
 import ro.demo.usersbackend.entity.TransportOrderStatus;
 import ro.demo.usersbackend.messaging.Broker;
@@ -82,7 +83,7 @@ public abstract class DecisionPointHandler extends PointHandler {
 		return new WithSessionAndTransaction<Boolean>() {
 			@Override
 			protected void executeBusinessLogic(Session session) {
-				setReturnValue(session.createNamedQuery("StockItem.countByLoadUnitBarcode", Long.class)
+				setReturnValue(session.createNamedQuery(StockItem.COUNT_BY_LOAD_UNIT_BARCODE, Long.class)
 						.setParameter("barcode", barcode).getSingleResult() > 0);
 			}
 		}.run();
@@ -92,7 +93,7 @@ public abstract class DecisionPointHandler extends PointHandler {
 		return new WithSessionAndTransaction<String>() {
 			@Override
 			protected void executeBusinessLogic(Session session) {
-				setReturnValue(session.createNamedQuery("TransportOrder.findActiveTargetName", String.class)
+				setReturnValue(session.createNamedQuery(TransportOrder.FIND_ACTIVE_TARGET_NAME, String.class)
 						.setParameter("barcode", loadUnit).setParameter("active", TransportOrderStatus.ACTIVE)
 						.setMaxResults(1).uniqueResultOptional().orElse(null));
 			}
@@ -131,7 +132,7 @@ public abstract class DecisionPointHandler extends PointHandler {
 
 				LoadUnit tote = session.createNamedQuery(LoadUnit.BY_BARCODE, LoadUnit.class)
 						.setParameter("barcode", loadUnit).getSingleResult();
-				Location zone = session.createNamedQuery("Location.findByName", Location.class)
+				Location zone = session.createNamedQuery(Location.BY_NAME, Location.class)
 						.setParameter("name", pttt).getSingleResult();
 				session.persist(new TransportOrder(tote.getLocation(), zone, TransportOrderStatus.ACTIVE, tote));
 				setReturnValue(0);
@@ -150,9 +151,9 @@ public abstract class DecisionPointHandler extends PointHandler {
 		boolean room = new WithSessionAndTransaction<Boolean>() {
 			@Override
 			protected void executeBusinessLogic(Session session) {
-				long inStation = session.createNamedQuery("LoadUnit.countByLocationName", Long.class)
+				long inStation = session.createNamedQuery(LoadUnit.COUNT_BY_LOCATION_NAME, Long.class)
 						.setParameter("name", ptts).getSingleResult();
-				long inLane = session.createNamedQuery("TransportOrder.countInLaneToTarget", Long.class)
+				long inLane = session.createNamedQuery(TransportOrder.COUNT_IN_LANE_TO_TARGET, Long.class)
 						.setParameter("active", TransportOrderStatus.ACTIVE).setParameter("target", ptts)
 						.setParameter("point", point).setParameter("barcode", loadUnit).getSingleResult();
 				setReturnValue(inStation + inLane < Constants.PTTS_LANE_SLOTS + 1);
@@ -180,9 +181,9 @@ public abstract class DecisionPointHandler extends PointHandler {
 
 	// cate tote-uri are punctul: in el + pe drum spre el (cu TO deschis)
 	private long countInZone(Session session, String point) {
-		return session.createNamedQuery("LoadUnit.countByLocationName", Long.class).setParameter("name", point)
+		return session.createNamedQuery(LoadUnit.COUNT_BY_LOCATION_NAME, Long.class).setParameter("name", point)
 				.getSingleResult()
-				+ session.createNamedQuery("TransportOrder.countOpenByTargetName", Long.class)
+				+ session.createNamedQuery(TransportOrder.COUNT_OPEN_BY_TARGET_NAME, Long.class)
 						.setParameter("target", point).setParameterList("open", Constants.OPEN_TRANSPORT_STATUSES)
 						.getSingleResult();
 	}

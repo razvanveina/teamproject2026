@@ -36,9 +36,9 @@ public abstract class PointHandler implements TelegramHandler {
 	}
 
 	private void arrive(Session session, String barcode) {
-		Location location = session.createNamedQuery("Location.findByName", Location.class).setParameter("name", point)
+		Location location = session.createNamedQuery(Location.BY_NAME, Location.class).setParameter("name", point)
 				.uniqueResultOptional().orElse(null);
-		LoadUnit loadUnit = session.createNamedQuery("LoadUnit.findByBarcode", LoadUnit.class)
+		LoadUnit loadUnit = session.createNamedQuery(LoadUnit.BY_BARCODE, LoadUnit.class)
 				.setParameter("barcode", barcode).uniqueResultOptional().orElse(null);
 
 		if (location == null || loadUnit == null) {
@@ -50,7 +50,7 @@ public abstract class PointHandler implements TelegramHandler {
 		log.info("{}: load unit {} arrived", point, loadUnit.getBarcode());
 
 		for (TransportOrder order : session
-				.createNamedQuery("TransportOrder.findActiveByLoadUnitAndTarget", TransportOrder.class)
+				.createNamedQuery(TransportOrder.FIND_ACTIVE_BY_LOAD_UNIT_AND_TARGET, TransportOrder.class)
 				.setParameter("loadUnit", loadUnit).setParameter("target", location)
 				.setParameter("active", TransportOrderStatus.ACTIVE).getResultList()) {
 			order.setStatus(TransportOrderStatus.FINISHED);

@@ -4,6 +4,7 @@ import org.hibernate.Session;
 
 import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
+import ro.demo.usersbackend.entity.StockItem;
 import ro.demo.usersbackend.messaging.MfsMessages;
 import ro.demo.usersbackend.messaging.MfsMessages.Arrived;
 
@@ -20,7 +21,7 @@ public class OUTHandler extends PointHandler {
 		long reserved = new WithSessionAndTransaction<Long>() {
 			@Override
 			protected void executeBusinessLogic(Session session) {
-				setReturnValue(session.createNamedQuery("StockItem.countReservedByLoadUnitBarcode", Long.class)
+				setReturnValue(session.createNamedQuery(StockItem.COUNT_RESERVED_BY_LOAD_UNIT_BARCODE, Long.class)
 						.setParameter("barcode", barcode).getSingleResult());
 			}
 		}.run();

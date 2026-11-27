@@ -4,6 +4,7 @@ import org.hibernate.Session;
 
 import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
+import ro.demo.usersbackend.entity.StockItem;
 
 public class DP3Handler extends DecisionPointHandler {
 
@@ -21,7 +22,7 @@ public class DP3Handler extends DecisionPointHandler {
 		long stockItems = new WithSessionAndTransaction<Long>() {
 			@Override
 			protected void executeBusinessLogic(Session session) {
-				setReturnValue(session.createNamedQuery("StockItem.countByLoadUnitBarcode", Long.class)
+				setReturnValue(session.createNamedQuery(StockItem.COUNT_BY_LOAD_UNIT_BARCODE, Long.class)
 						.setParameter("barcode", loadUnit).getSingleResult());
 			}
 		}.run();

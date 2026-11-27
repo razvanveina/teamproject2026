@@ -50,14 +50,6 @@
     	]]>
 	</query>
 
-	<query name="TransportOrder.countInLaneToTarget">
-	    <![CDATA[
-	        select count(t) from TransportOrder t
-	        where t.status = :active and t.target.name = :target
-	          and t.loadUnit.location.name = :point and t.loadUnit.barcode <> :barcode
-	    ]]>
-	</query>
-
 	<query name="TransportOrder.countActiveByLoadUnit">
     <![CDATA[
         select count(t) from TransportOrder t
@@ -175,19 +167,6 @@
 	    ]]>
 	</query>
 
-	<query name="StockItem.countReservedByLoadUnitBarcode">
-	    <![CDATA[
-	        select count(s) from StockItem s
-	        where s.loadUnit.barcode = :barcode and s.reservation is not null
-	    ]]>
-	</query>
-
-	<query name="StockItem.countByLoadUnitBarcode">
-	    <![CDATA[
-	        select count(s) from StockItem s where s.loadUnit.barcode = :barcode
-	    ]]>
-	</query>
-
 	<query name="StockItem.countAutomaticByLoadUnitBarcode">
 	    <![CDATA[
 	        select count(s) from StockItem s
@@ -216,21 +195,6 @@
             WHERE load_unit_id = :loadUnitId
         ]]>
 	</sql-query>
-
-	<query name="TransportOrder.findActiveByLoadUnitAndTarget">
-	    <![CDATA[
-	        from TransportOrder t
-	        where t.loadUnit = :loadUnit and t.target = :target and t.status = :active
-	    ]]>
-	</query>
-
-	<query name="TransportOrder.findActiveTargetName">
-	    <![CDATA[
-	        select t.target.name from TransportOrder t
-	        where t.loadUnit.barcode = :barcode and t.status = :active
-	        order by t.id desc
-	    ]]>
-	</query>
 
 	<sql-query name="releaseReservationsForLoadUnit">
         <![CDATA[
@@ -290,13 +254,6 @@
 		]]>
 	</query>
 
-	<query name="TransportOrder.countOpenByTargetName">
-	    <![CDATA[
-	        select count(t) from TransportOrder t
-	        where t.target.name = :target and t.status in :open
-	    ]]>
-	</query>
-
 	<query name="TransportOrder.countOpenToTargetForOrder">
 	    <![CDATA[
 	        select count(distinct t) from TransportOrder t, StockItem s
@@ -310,12 +267,6 @@
 	        select count(s) from StockItem s
 	        where s.loadUnit.location.name = :location and s.loadUnit.barcode <> :ignore
 	        and s.reservation.retrievalOrderLine.order.id = :orderId
-	    ]]>
-	</query>
-
-	<query name="LoadUnit.countByLocationName">
-	    <![CDATA[
-	        select count(u) from LoadUnit u where u.location.name = :name
 	    ]]>
 	</query>
 

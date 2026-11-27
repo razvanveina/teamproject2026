@@ -37,15 +37,15 @@ public class TPT1Handler extends PointHandler {
 	}
 
 	private boolean deliver(Session session, String barcode) {
-		LoadUnit loadUnit = session.createNamedQuery("LoadUnit.findByBarcode", LoadUnit.class)
+		LoadUnit loadUnit = session.createNamedQuery(LoadUnit.BY_BARCODE, LoadUnit.class)
 				.setParameter("barcode", barcode).uniqueResultOptional().orElse(null);
 		if (loadUnit == null) {
 			return false;
 		}
 
 		for (TransportOrder order : session
-				.createNamedQuery("TransportOrder.findActiveByLoadUnit", TransportOrder.class)
-				.setParameter("loadUnit", loadUnit).setParameter("active", TransportOrderStatus.ACTIVE)
+				.createNamedQuery(TransportOrder.FIND_ACTIVE_BY_LOAD_UNIT, TransportOrder.class)
+				.setParameter("loadUnit", loadUnit).setParameter("status", TransportOrderStatus.ACTIVE)
 				.getResultList()) {
 			if (!Constants.CONVEYOR_POINTS.contains(order.getTarget().getName())) {
 				loadUnit.setLocation(order.getTarget());
