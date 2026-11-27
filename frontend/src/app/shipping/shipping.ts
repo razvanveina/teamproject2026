@@ -169,10 +169,14 @@ export class Shipping implements OnDestroy {
       next: (labelStatusResponse) => {
         if (labelStatusResponse.status === 'PRINTED') {
           this.stopLabelStatusPolling()
-          this.shippingStep.set('label')
+          // scanarea etichetei e sarita temporar, cartonul pleaca direct la gate.
+          // this.shippingStep.set('label')
           this.error.set(false)
           this.expectedLabel.set(labelStatusResponse.label)
-          this.instructions.set(`Label printed. Please scan the barcode from the printed PDF: ${labelStatusResponse.label}`)
+          // this.instructions.set(`Label printed. Please scan the barcode from the printed PDF: ${labelStatusResponse.label}`)
+          this.instructions.set(`Label ${labelStatusResponse.label} printed, sending carton ${this.labelCartonBarcode()} to the gate...`)
+          this.scannedLabel.set(labelStatusResponse.label)
+          this.confirmScannedLabel()
         } else if (labelStatusResponse.status === 'ERROR') {
           this.showPrintingFailure('Printing the label failed. Press Confirm to print it again')
         }
