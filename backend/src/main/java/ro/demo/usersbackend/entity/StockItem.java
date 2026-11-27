@@ -25,7 +25,10 @@ import jakarta.persistence.ManyToOne;
 				query = "select count(s) from StockItem s where s.loadUnit.location.name = :location"), //
 		@NamedQuery(name = StockItem.COUNT_FOR_ORDER_ON_LOCATION, //
 				query = "select count(s) from StockItem s where s.loadUnit.location.name = :location"
-						+ " and s.loadUnit.barcode <> :ignore and s.reservation.retrievalOrderLine.order.id = :orderId") })
+						+ " and s.loadUnit.barcode <> :ignore and s.reservation.retrievalOrderLine.order.id = :orderId"),
+		@NamedQuery(name = StockItem.FIND_FREE_IN_STORAGE, //
+				query = "select s from StockItem s join s.loadUnit u join u.location l"
+						+ " where s.reservation is null and type(l) = StorageLocation") })
 public class StockItem {
 
 	public static final String FIND_BY_LOADUNIT_ORDER_BY_ID_ASC = "StockItem.findByLoadUnitOrderByIdAsc";
@@ -33,6 +36,7 @@ public class StockItem {
 	public static final String COUNT_RESERVED_BY_LOAD_UNIT_BARCODE = "StockItem.countReservedByLoadUnitBarcode";
 	public static final String COUNT_ON_LOCATION = "StockItem.countOnLocation";
 	public static final String COUNT_FOR_ORDER_ON_LOCATION = "StockItem.countForOrderOnLocation";
+	public static final String FIND_FREE_IN_STORAGE = "StockItem.findFreeInStorage";
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

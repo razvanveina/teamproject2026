@@ -190,11 +190,11 @@ public class SimPickingService {
 	// e creat direct ACTIVE: tote-ul e deja pe banda, il inchide PointHandler cand
 	// ajunge
 	private void routeSource(Session session, LoadUnit source, String from) {
-		// un tote are un singur drum: daca are deja un TO activ (Confirm apasat de doua ori), nu mai cream altul
+		// un tote are un singur drum: daca are deja un TO activ (Confirm apasat de doua
+		// ori), nu mai cream altul
 		List<TransportOrder> activeOrders = session
-				.createNamedQuery("TransportOrder.findActiveByLoadUnit", TransportOrder.class)
-				.setParameter("loadUnit", source).setParameter("status", TransportOrderStatus.ACTIVE)
-				.getResultList();
+				.createNamedQuery(TransportOrder.FIND_ACTIVE_BY_LOAD_UNIT, TransportOrder.class)
+				.setParameter("loadUnit", source).setParameterList("status", List.of(TransportOrderStatus.ACTIVE)).getResultList();
 		if (!activeOrders.isEmpty()) {
 			log.warn("Sim picking: tote {} already goes to {}, no second transport order", source.getBarcode(),
 					activeOrders.get(0).getTarget().getName());

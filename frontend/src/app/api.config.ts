@@ -1,5 +1,5 @@
 // export const URL = 'http://TIMW0322.wamas.com';
-export const URL = 'http://localhost';
+export const URL = 'http://TIMW0357.wamas.com';
 
 export const SIM_URL = URL + ':8888'
 

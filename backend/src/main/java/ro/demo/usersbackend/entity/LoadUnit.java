@@ -27,12 +27,16 @@ import jakarta.persistence.OneToMany;
 		@NamedQuery(name = LoadUnit.COUNT_BY_LOCATION_NAME, //
 				query = "select count(lu) from LoadUnit lu where lu.location.name = :name"), //
 		@NamedQuery(name = LoadUnit.BY_LOCATION_NAME, //
-				query = "from LoadUnit lu where lu.location.name = :name") })
+				query = "from LoadUnit lu where lu.location.name = :name"), //
+		@NamedQuery(name = LoadUnit.FIND_BY_TYPE_IN_DECANTING_OR_TPT1, //
+				query = "from LoadUnit u where u.type = :type and u.location.name in :places") //
+})
 public class LoadUnit {
 	public static final String BY_BARCODE = "LoadUnit.findByBarcode";
 	public static final String BY_LOCATION_ORDER_BY_ID_ASC = "LoadUnit.findByLocationOrderByIdAsc";
 	public static final String BY_LOCATION_NAME = "LoadUnit.findByLocationName";
 	public static final String COUNT_BY_LOCATION_NAME = "LoadUnit.countByLocationName";
+	public static final String FIND_BY_TYPE_IN_DECANTING_OR_TPT1 = "LoadUnit.findByTypeInDecantingOrTpt1";
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

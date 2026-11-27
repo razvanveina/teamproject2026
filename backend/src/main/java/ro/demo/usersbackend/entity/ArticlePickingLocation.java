@@ -1,5 +1,8 @@
 package ro.demo.usersbackend.entity;
 
+import org.hibernate.annotations.NamedQueries;
+import org.hibernate.annotations.NamedQuery;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -9,7 +12,13 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 
 @Entity
+@NamedQueries({ //
+		@NamedQuery(name = ArticlePickingLocation.FIND_BY_ARTICLE, //
+				query = "from ArticlePickingLocation a where a.article = :article") //
+})
 public class ArticlePickingLocation {
+	public static final String FIND_BY_ARTICLE = "ArticlePickingLocation.findByArticle";
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;

@@ -30,7 +30,9 @@ import jakarta.persistence.Table;
 		@NamedQuery(name = "RetrievalOrder.findOrderIdsLike", //
 				query = "select o.orderId from RetrievalOrder o where o.orderId like :pattern"), //
 		@NamedQuery(name = "RetrievalOrder.findOrderIdsByStatus", //
-				query = "select o.orderId from RetrievalOrder o where o.status = :status order by o.id") //
+				query = "select o.orderId from RetrievalOrder o where o.status = :status order by o.id"), //
+		@NamedQuery(name = RetrievalOrder.FIND_ALL_BY_ID, //
+				query = "from RetrievalOrder o order by o.id") //
 })
 @Table(name = "RETRIEVAL_ORDER")
 public class RetrievalOrder {
@@ -39,6 +41,7 @@ public class RetrievalOrder {
 	public static final String MANUAL_BY_STATUS = "RetrievalOrder.findManualByStatus";
 	public static final String BY_PICKED_BY = "RetrievalOrder.findByPickedBy";
 	public static final String ORDER_IDS_BY_STATUS = "RetrievalOrder.findOrderIdsByStatus";
+	public static final String FIND_ALL_BY_ID = "RetrievalOrder.findAllById";
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

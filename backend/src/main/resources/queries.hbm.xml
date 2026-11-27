@@ -43,19 +43,6 @@
     ]]>
 	</query>
 
-	<query name="TransportOrder.countActiveByTarget">
-	    <![CDATA[
-	        select count(t) from TransportOrder t
-	        where t.target = :location and t.status in :open
-	    ]]>
-	</query>
-
-	<query name="TransportOrder.countOpenByLoadUnit">
-		<![CDATA[
-	        select count(t) from TransportOrder t where t.loadUnit = :tote and t.status in :open
-	    ]]>
-	</query>
-
 	<query name="StorageLocation.findFreePickingLocations">
 	    <![CDATA[
 	        from StorageLocation l
@@ -63,22 +50,6 @@
 	        and l.id not in (select a.location.id from ArticlePickingLocation a)
 	    ]]>
 	</query>
-
-	<query name="ArticlePickingLocation.findByArticle">
-	    <![CDATA[
-	        from ArticlePickingLocation a
-	        where a.article = :article
-	    ]]>
-	</query>
-
-	<query name="LoadUnit.findByTypeInDecantingOrTpt1">
-    	<![CDATA[
-        	from LoadUnit u
-        	where u.type = :type and u.location.name in :places
-    	]]>
-	</query>
-
-	<!--('DECANTING', 'TPT1') -->
 
 	<query name="StockItem.findFreeByArticle">
 	    <![CDATA[
@@ -88,21 +59,6 @@
 	        join s.articlePackagingUnitType p
 	        where p.article = :article and s.reservation is null and type(l) = StorageLocation
 	        order by case when l.name like :pick then 0 else 1 end, s.id
-	    ]]>
-	</query>
-
-	<query name="RetrievalOrder.findAllById">
-	    <![CDATA[
-	        from RetrievalOrder o order by o.id
-	    ]]>
-	</query>
-
-	<query name="StockItem.findFreeInStorage">
-	    <![CDATA[
-	        select s from StockItem s
-	        join s.loadUnit u
-	        join u.location l
-	        where s.reservation is null and type(l) = StorageLocation
 	    ]]>
 	</query>
 

@@ -27,6 +27,10 @@ import jakarta.persistence.ManyToOne;
 				query = "from TransportOrder o where o.assignedTo is null and o.status in :statuses order by o.id asc"),
 		@NamedQuery(name = TransportOrder.FIND_ACTIVE_BY_LOAD_UNIT, //
 				query = "from TransportOrder o where o.status in :status and o.loadUnit = :loadUnit"), //
+		@NamedQuery(name = TransportOrder.COUNT_ACTIVE_BY_TARGET, //
+				query = "select count(t) from TransportOrder t where t.target = :location and t.status in :open"), //
+		@NamedQuery(name = TransportOrder.COUNT_OPEN_BY_LOAD_UNIT, //
+				query = "select count(t) from TransportOrder t where t.loadUnit = :tote and t.status in :open"), //
 		@NamedQuery(name = TransportOrder.FIND_ACTIVE_BY_LOAD_UNIT_AND_TARGET, //
 				query = "from TransportOrder t where t.loadUnit = :loadUnit and t.target = :target and t.status = :active"), //
 		@NamedQuery(name = TransportOrder.FIND_ACTIVE_TARGET_NAME, //
@@ -53,6 +57,8 @@ public class TransportOrder {
 	public static final String COUNT_OPEN_BY_TARGET_NAME = "TransportOrder.countOpenByTargetName";
 	public static final String COUNT_BY_LOAD_UNIT_BARCODE = "TransportOrder.countOpenByLoadUnitBarcode";
 	public static final String FIND_IDS_TO_SEND_TO_CONVEYOR = "TransportOrder.findIdsToSendToConveyor";
+	public static final String COUNT_ACTIVE_BY_TARGET = "TransportOrder.countActiveByTarget";
+	public static final String COUNT_OPEN_BY_LOAD_UNIT = "TransportOrder.countOpenByLoadUnit";
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
