@@ -2,7 +2,6 @@ package ro.demo.usersbackend.service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,7 +30,6 @@ import ro.demo.usersbackend.repository.LoadUnitRepository;
 import ro.demo.usersbackend.repository.LocationRepository;
 import ro.demo.usersbackend.repository.TransportOrderRepository;
 import ro.demo.usersbackend.server.mfs.StationControl;
-import ro.demo.usersbackend.server.picking.StationChooser;
 
 // statia de picking din simulator: tote-ul sursa sta pe PTTS1, tote-ul tinta pe PTTT1
 @Service
@@ -39,12 +37,10 @@ public class SimPickingService {
 	public static final Logger log = LogManager.getLogger("application");
 
 	private final PickingLocks locks;
-	private final StationChooser stationChooser;
 
 	public SimPickingService(PickingLocks locks) {
 		super();
 		this.locks = locks;
-		this.stationChooser = new StationChooser();
 	}
 
 	public int stationCount() {
@@ -183,8 +179,8 @@ public class SimPickingService {
 	}
 
 	// TO-ul tote-ului sursa, dupa ce a ramas in el:
-	// gol -> PTTT1 (prin EMPTY), stoc pentru un order automat -> PTTS1 (inca o
-	// tura),
+	// gol sau stoc pentru un order automat -> urmatorul DP din PickingConfig, care
+	// decide mai departe,
 	// altfel (stoc liber sau pentru un order manual) -> TPT1, de unde merge inapoi
 	// in picking
 	// e creat direct ACTIVE: tote-ul e deja pe banda, il inchide PointHandler cand
@@ -217,33 +213,19 @@ public class SimPickingService {
 			}
 		}
 
-		Long orderId = automaticOrder;
 		String barcode = source.getBarcode();
 		String next;
-		if (empty) {
-			next = chooseStation(session, stationChooser::freeTargetStation);
-		} else if (orderId != null) {
-			next = chooseStation(session, s -> stationChooser.sourceStationFor(s, orderId, barcode));
+		if (empty || automaticOrder != null) {
+			// gol sau cu marfa pentru un order automat: merge la urmatorul DP, care decide mai departe
+			next = PickingConfig.getByPickingTargetLocation(from).getTargetLocationAfterConfirm();
 		} else {
+			// stoc liber sau pentru un order manual: iese de pe banda
 			next = Constants.TPT1;
 		}
 
-		if (next == null) {
-			log.info("Sim picking: empty tote {} has no free target zone, it goes on without a TO", barcode);
-			return;
-		}
 		new TransportOrderRepository(session).insert(new TransportOrder(location(session, from),
 				location(session, next), TransportOrderStatus.ACTIVE, source));
 		log.info("Sim picking: tote {} goes from {} to {}", barcode, from, next);
-	}
-
-	private String chooseStation(Session session, Function<Session, String> choice) {
-		try {
-			return choice.apply(session);
-		} catch (RuntimeException e) {
-			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-					"Cannot choose a picking zone: " + e.getMessage());
-		}
 	}
 
 	private Location location(Session session, String name) {
