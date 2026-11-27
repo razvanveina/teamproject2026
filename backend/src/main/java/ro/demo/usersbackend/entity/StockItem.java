@@ -20,12 +20,19 @@ import jakarta.persistence.ManyToOne;
 		@NamedQuery(name = StockItem.COUNT_BY_LOAD_UNIT_BARCODE, //
 				query = "select count(s) from StockItem s where s.loadUnit.barcode = :barcode"), //
 		@NamedQuery(name = StockItem.COUNT_RESERVED_BY_LOAD_UNIT_BARCODE, //
-				query = "select count(s) from StockItem s where s.loadUnit.barcode = :barcode and s.reservation is not null") })
+				query = "select count(s) from StockItem s where s.loadUnit.barcode = :barcode and s.reservation is not null"), //
+		@NamedQuery(name = StockItem.COUNT_ON_LOCATION, //
+				query = "select count(s) from StockItem s where s.loadUnit.location.name = :location"), //
+		@NamedQuery(name = StockItem.COUNT_FOR_ORDER_ON_LOCATION, //
+				query = "select count(s) from StockItem s where s.loadUnit.location.name = :location"
+						+ " and s.loadUnit.barcode <> :ignore and s.reservation.retrievalOrderLine.order.id = :orderId") })
 public class StockItem {
 
 	public static final String FIND_BY_LOADUNIT_ORDER_BY_ID_ASC = "StockItem.findByLoadUnitOrderByIdAsc";
 	public static final String COUNT_BY_LOAD_UNIT_BARCODE = "StockItem.countByLoadUnitBarcode";
 	public static final String COUNT_RESERVED_BY_LOAD_UNIT_BARCODE = "StockItem.countReservedByLoadUnitBarcode";
+	public static final String COUNT_ON_LOCATION = "StockItem.countOnLocation";
+	public static final String COUNT_FOR_ORDER_ON_LOCATION = "StockItem.countForOrderOnLocation";
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

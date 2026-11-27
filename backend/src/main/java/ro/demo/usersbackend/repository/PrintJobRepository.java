@@ -13,7 +13,7 @@ public class PrintJobRepository extends BaseRepository<PrintJob, Long> {
 	}
 
 	public Optional<PrintJob> findLatestByOrderId(String orderId) {
-		return session.createNamedQuery(PrintJob.LATEST_BY_ORDER_ID, PrintJob.class)
+		return session.createNamedQuery(PrintJob.FIND_LATEST_BY_ORDER_ID, PrintJob.class)
 				.setParameter("orderId", orderId).setMaxResults(1).uniqueResultOptional();
 	}
 }

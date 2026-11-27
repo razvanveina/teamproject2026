@@ -105,12 +105,6 @@
 	    ]]>
 	</query>
 
-		<query name="StockItem.countOnLocation">
-	    <![CDATA[
-	        select count(s) from StockItem s where s.loadUnit.location.name = :location
-	    ]]>
-	</query>
-
 	<query name="RetrievalOrder.findAllById">
 	    <![CDATA[
 	        from RetrievalOrder o order by o.id
@@ -238,34 +232,10 @@
         ]]>
 	</sql-query>
 
-	<query name="PrintJob.findNewIdsByPrinterType">
-	    <![CDATA[
-	        select j.id from PrintJob j
-	        where j.status = :status and j.printer.type = :printerType
-	    ]]>
-	</query>
-
-	<query name="PrintJob.findLatestByOrderId">
-		<![CDATA[
-			from PrintJob j
-			where function('json_value', j.data, '$.orderId') = :orderId
-			order by j.id desc
-			fetch first 1 rows only
-		]]>
-	</query>
-
 	<query name="TransportOrder.countOpenToTargetForOrder">
 	    <![CDATA[
 	        select count(distinct t) from TransportOrder t, StockItem s
 	        where s.loadUnit = t.loadUnit and t.target.name = :target and t.status in :open
-	        and s.reservation.retrievalOrderLine.order.id = :orderId
-	    ]]>
-	</query>
-
-	<query name="StockItem.countForOrderOnLocation">
-	    <![CDATA[
-	        select count(s) from StockItem s
-	        where s.loadUnit.location.name = :location and s.loadUnit.barcode <> :ignore
 	        and s.reservation.retrievalOrderLine.order.id = :orderId
 	    ]]>
 	</query>

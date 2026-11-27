@@ -69,7 +69,7 @@ public class PrintingService extends AbstractProcess {
 	}
 
 	private List<Long> findNewPdfPrintJobIds(Session session) {
-		return session.createNamedQuery("PrintJob.findNewIdsByPrinterType", Long.class)
+		return session.createNamedQuery(PrintJob.FIND_NEW_IDS_BY_PRINTER_TYPE, Long.class)
 				.setParameter("status", PrintJobStatus.NEW).setParameter("printerType", PrinterType.PDF)
 				.getResultList();
 	}

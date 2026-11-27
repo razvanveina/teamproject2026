@@ -2,6 +2,9 @@ package ro.demo.usersbackend.entity;
 
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.NamedQueries;
+import org.hibernate.annotations.NamedQuery;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -14,8 +17,13 @@ import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 
 @Entity
+@NamedQueries({ @NamedQuery(name = PrintJob.FIND_LATEST_BY_ORDER_ID, //
+		query = "from PrintJob j where function('json_value', j.data, '$.orderId') = :orderId order by j.id desc"),
+		@NamedQuery(name = PrintJob.FIND_NEW_IDS_BY_PRINTER_TYPE, //
+				query = "select j.id from PrintJob j where j.status = :status and j.printer.type = :printerType") })
 public class PrintJob {
-	public static final String LATEST_BY_ORDER_ID = "PrintJob.findLatestByOrderId";
+	public static final String FIND_LATEST_BY_ORDER_ID = "PrintJob.findLatestByOrderId";
+	public static final String FIND_NEW_IDS_BY_PRINTER_TYPE = "PrintJob.findNewIdsByPrinterType";
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

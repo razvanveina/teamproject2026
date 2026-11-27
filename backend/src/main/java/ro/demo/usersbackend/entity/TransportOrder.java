@@ -34,7 +34,7 @@ import jakarta.persistence.ManyToOne;
 		@NamedQuery(name = TransportOrder.COUNT_IN_LANE_TO_TARGET, //
 				query = "select count(t) from TransportOrder t where t.status = :active and t.target.name = :target"
 						+ " and t.loadUnit.location.name = :point and t.loadUnit.barcode <> :barcode"), //
-		@NamedQuery(name = TransportOrder.COUNT_OPEN_BY_TARGET_NAME, //
+		@NamedQuery(name = "TransportOrder.countOpenByTargetName", //
 				query = "select count(t) from TransportOrder t where t.target.name = :target and t.status in :open") })
 public class TransportOrder {
 	public static final String FIND_BY_STATUS_AND_NOT_SOURCE_ODERED_BY_ID = "TransportOrder.findByStatusAndNotSourceOrderByIdAsc";
