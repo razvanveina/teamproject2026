@@ -92,6 +92,20 @@ public class Conveyor extends Entity {
 	public synchronized void setSpeedFactor(double speedFactor) {
 		this.speedFactor = speedFactor;
 		computeTravelTimes();
+		retimeMovingTotes();
+	}
+
+	private void retimeMovingTotes() {
+		long currentTime = timeKeeper.currentSimulationTime();
+		for (Tote tote : totes) {
+			if (tote.moveDuration == 0 || hasArrived(tote, currentTime)) {
+				continue;
+			}
+			double currentPosition = currentPosition(tote, currentTime);
+			tote.startPosition = currentPosition;
+			tote.moveStartedAt = currentTime;
+			tote.moveDuration = Math.max(1, Math.round((slotPosition(tote.slotIndex) - currentPosition) * travelTime));
+		}
 	}
 
 	public synchronized boolean createLU(SimLoadUnit createdLoadUnit) {
