@@ -26,7 +26,7 @@ import jakarta.persistence.ManyToOne;
 		@NamedQuery(name = TransportOrder.FIND_BY_STATUS_AND_ASSIGNED_TO_IS_NULL_ODERED_BY_ID, //
 				query = "from TransportOrder o where o.assignedTo is null and o.status in :statuses order by o.id asc"),
 		@NamedQuery(name = TransportOrder.FIND_ACTIVE_BY_LOAD_UNIT, //
-				query = "from TransportOrder o where o.status = :status and o.loadUnit = :loadUnit"), //
+				query = "from TransportOrder o where o.status in :status and o.loadUnit = :loadUnit"), //
 		@NamedQuery(name = TransportOrder.FIND_ACTIVE_BY_LOAD_UNIT_AND_TARGET, //
 				query = "from TransportOrder t where t.loadUnit = :loadUnit and t.target = :target and t.status = :active"), //
 		@NamedQuery(name = TransportOrder.FIND_ACTIVE_TARGET_NAME, //
