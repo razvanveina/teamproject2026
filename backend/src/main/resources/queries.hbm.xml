@@ -58,13 +58,6 @@
 	    ]]>
 	</query>
 
-	<query name="TransportOrder.findActiveByLoadUnit">
-	    <![CDATA[
-	        from TransportOrder t
-	        where t.loadUnit = :loadUnit and t.status = :active
-	    ]]>
-	</query>
-
 	<query name="TransportOrder.countActiveByLoadUnit">
     <![CDATA[
         select count(t) from TransportOrder t
