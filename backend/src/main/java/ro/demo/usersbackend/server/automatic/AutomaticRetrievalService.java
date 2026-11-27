@@ -26,7 +26,6 @@ import ro.demo.usersbackend.entity.Reservation;
 import ro.demo.usersbackend.entity.RetrievalOrder;
 import ro.demo.usersbackend.entity.RetrievalOrderLine;
 import ro.demo.usersbackend.entity.RetrievalOrderStatus;
-import ro.demo.usersbackend.entity.StockItem;
 import ro.demo.usersbackend.entity.StorageLocation;
 import ro.demo.usersbackend.entity.TransportOrder;
 import ro.demo.usersbackend.entity.TransportOrderStatus;
@@ -38,7 +37,6 @@ import ro.demo.usersbackend.repository.AreaRepository;
 import ro.demo.usersbackend.repository.TransportOrderRepository;
 import ro.demo.usersbackend.server.mfs.LUCHandler;
 import ro.demo.usersbackend.server.mfs.TelegramHandling;
-import ro.demo.usersbackend.server.picking.StationChooser;
 import ro.demo.usersbackend.server.process.AbstractProcess;
 
 public class AutomaticRetrievalService extends AbstractProcess {
@@ -50,11 +48,9 @@ public class AutomaticRetrievalService extends AbstractProcess {
 	private final JMSContext context;
 	private final JMSConsumer replies;
 	private final LUCHandler lucHandler = new LUCHandler();
-	private final StationChooser stationChooser;
 
-	public AutomaticRetrievalService(StationChooser stationChooser) {
+	public AutomaticRetrievalService() {
 		super("automaticRetrievalService");
-		this.stationChooser = stationChooser;
 		context = new ActiveMQConnectionFactory(Broker.URL).createContext();
 		replies = context.createConsumer(context.createQueue(MfsMessages.RESPONSE_QUEUE));
 	}
@@ -98,7 +94,7 @@ public class AutomaticRetrievalService extends AbstractProcess {
 		}
 	}
 
-	// tote-ul e pe banda; TO-ul ramane ACTIVE pana ajunge la PTTS1 (il inchide
+	// tote-ul e pe banda; TO-ul ramane ACTIVE pana ajunge la DP1 (il inchide
 	// PointHandler)
 	private void confirmGet(Session session, AckGet ack) {
 		TransportOrder order = session.find(TransportOrder.class, ack.transportOrderId());
@@ -110,7 +106,7 @@ public class AutomaticRetrievalService extends AbstractProcess {
 				order.getLoadUnit().getBarcode(), order.getTarget().getName());
 	}
 
-	// to-urile NEW spre PTTS1: in tranzactie le trecem pe ACTIVE si pregatim
+	// to-urile NEW spre DP1: in tranzactie le trecem pe ACTIVE si pregatim
 	// GET-ul,
 	// dupa commit trimitem GET-ul (in afara tranzactiei)
 	private void sendRequests() {
@@ -119,7 +115,7 @@ public class AutomaticRetrievalService extends AbstractProcess {
 			protected void executeBusinessLogic(Session session) {
 				setReturnValue(session.createNamedQuery(TransportOrder.FIND_IDS_TO_SEND_TO_CONVEYOR, Long.class)
 						.setParameter("status", TransportOrderStatus.NEW)
-						.setParameterList("stations", Constants.PTTS_POINTS)
+						.setParameterList("stations", List.of(Constants.DP1))
 						.setParameter("decanting", Constants.DECANTING).setParameter("tote", LoadUnitType.TOTE)
 						.getResultList());
 			}
@@ -206,31 +202,29 @@ public class AutomaticRetrievalService extends AbstractProcess {
 		}.run();
 	}
 
-	// tote-ul pleaca din locatia de picking direct spre statia PTTS1
+	// tote-ul pleaca din locatia de picking direct spre DP1
 	private void createTransportOrder(Session session, LoadUnit loadUnit) {
-		String stationName = stationChooser.sourceStationFor(session, automaticOrderId(loadUnit),
-				loadUnit.getBarcode());
-		Location station = session.createNamedQuery(Location.BY_NAME, Location.class).setParameter("name", stationName)
+		Location dp1 = session.createNamedQuery(Location.BY_NAME, Location.class).setParameter("name", Constants.DP1)
 				.uniqueResultOptional().orElse(null);
-		if (station == null) {
-			log.error("Automatic retrieval: location {} is missing", stationName);
+		if (dp1 == null) {
+			log.error("Automatic retrieval: location {} is missing", Constants.DP1);
 			return;
 		}
 
-		session.persist(new TransportOrder(loadUnit.getLocation(), station, TransportOrderStatus.NEW, loadUnit));
+		session.persist(new TransportOrder(loadUnit.getLocation(), dp1, TransportOrderStatus.NEW, loadUnit));
 		log.info("Automatic retrieval: load unit {} goes from {} to {}", loadUnit.getBarcode(),
-				loadUnit.getLocation().getName(), stationName);
+				loadUnit.getLocation().getName(), Constants.DP1);
 	}
 
-	private Long automaticOrderId(LoadUnit tote) {
-		for (StockItem item : tote.getStockItems()) {
-			if (item.getReservation() != null) {
-				RetrievalOrder order = item.getReservation().getRetrievalOrderLine().getOrder();
-				if (order.isAutomatic()) {
-					return order.getId();
-				}
-			}
-		}
-		return null;
-	}
+//	private Long automaticOrderId(LoadUnit tote) {
+//		for (StockItem item : tote.getStockItems()) {
+//			if (item.getReservation() != null) {
+//				RetrievalOrder order = item.getReservation().getRetrievalOrderLine().getOrder();
+//				if (order.isAutomatic()) {
+//					return order.getId();
+//				}
+//			}
+//		}
+//		return null;
+//	}
 }

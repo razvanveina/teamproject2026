@@ -59,6 +59,10 @@ public class RetrievalOrder {
 	@JoinColumn(name = "destination_id", nullable = false)
 	private Destination destination;
 
+	@ManyToOne
+	@JoinColumn(name = "pickingLocation_id")
+	private Location pickingLocation;
+
 	@Column(nullable = false)
 	private boolean automatic;
 
@@ -130,5 +134,13 @@ public class RetrievalOrder {
 
 	public void setPickedBy(String pickedBy) {
 		this.pickedBy = pickedBy;
+	}
+
+	public Location getPickingLocation() {
+		return pickingLocation;
+	}
+
+	public void setPickingLocation(Location pickingLocation) {
+		this.pickingLocation = pickingLocation;
 	}
 }
