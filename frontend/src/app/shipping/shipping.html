@@ -54,5 +54,46 @@
         <button (click)=onCancel() class="cancel">Cancel</button>
         <button (click)=onReprint() [disabled]="shippingStep() !== 'label'" class="confirm">RePrint</button>
         <button (click)=onConfirm() [disabled]="confirmDisabled()" class="confirm">Confirm</button>
+        <button (click)="openLoadUnitPicker()" class="choose-button" [disabled]="shippingStep() !== 'items'">Totes for Shipping</button>
     </div>
 </div>
+@if (showLoadUnitPicker()) {
+<div class="backdrop">
+    <section class="popup" role="dialog" aria-modal="true" aria-label="Choose load unit">
+        <header>
+            <h3>Totes waiting at OUT</h3>
+            <button type="button" class="picker-close" aria-label="Close" (click)="closeLoadUnitPicker()">&times;</button>
+        </header>
+
+        @if (loadUnitsAtOut().length === 0) {
+        <p class="picker-empty">No tote or carton is waiting at OUT.</p>
+        } @else {
+        <div class="order-scroll">
+            <table class="order-list">
+                <thead>
+                    <tr>
+                        <th>Load unit</th>
+                        <th>Type</th>
+                        <th>Order</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (loadUnit of loadUnitsAtOut(); track loadUnit.barcode) {
+                    <tr class="selectable" [class.selected]="loadUnit.barcode === selectedLoadUnit()" tabindex="0"
+                        (click)="selectLoadUnit(loadUnit.barcode)" (keydown.enter)="selectLoadUnit(loadUnit.barcode)"
+                        (dblclick)="chooseLoadUnit(loadUnit.barcode)">
+                        <td>{{ loadUnit.barcode }}</td>
+                        <td>{{ loadUnit.type }}</td>
+                        <td>{{ loadUnit.order }}</td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <button type="button" class="picker-confirm" [disabled]="selectedLoadUnit() === null"
+            (click)="confirmLoadUnit()">Confirm</button>
+        }
+    </section>
+</div>
+}

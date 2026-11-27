@@ -31,6 +31,9 @@ export class Shipping implements OnDestroy {
     location: '',
     items: []
   })
+  showLoadUnitPicker = signal(false)
+  loadUnitsAtOut = signal<{ barcode: string, type: string, order: string }[]>([])
+  selectedLoadUnit = signal<string | null>(null)
 
   private labelStatusPollTimer: ReturnType<typeof setInterval> | undefined
 
@@ -227,5 +230,40 @@ export class Shipping implements OnDestroy {
       clearInterval(this.labelStatusPollTimer)
       this.labelStatusPollTimer = undefined
     }
+  }
+
+    openLoadUnitPicker() {
+    this.shippingService.loadUnitsAtOut().subscribe({
+      next: (loadUnits) => {
+        this.loadUnitsAtOut.set(loadUnits)
+        this.selectedLoadUnit.set(null)
+        this.showLoadUnitPicker.set(true)
+      },
+      error: (err: HttpErrorResponse) => {
+        this.error.set(true)
+        this.instructions.set(err.error?.detail ?? err.error?.message ?? 'Could not load the load units at OUT')
+      }
+    })
+  }
+
+  closeLoadUnitPicker() {
+    this.showLoadUnitPicker.set(false)
+  }
+
+  selectLoadUnit(barcode: string) {
+    this.selectedLoadUnit.set(barcode)
+  }
+
+  confirmLoadUnit() {
+    const barcode = this.selectedLoadUnit()
+    if (barcode !== null) {
+      this.chooseLoadUnit(barcode)
+    }
+  }
+
+  // la fel ca o scanare: onScan incarca load unit-ul si cere cartonul pentru tote
+  chooseLoadUnit(barcode: string) {
+    this.closeLoadUnitPicker()
+    this.onScan(barcode)
   }
 }

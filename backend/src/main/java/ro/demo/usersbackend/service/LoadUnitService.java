@@ -346,9 +346,31 @@ public class LoadUnitService {
 				}
 
 				order.setShippingUser(user);
-				setReturnValue(new LoadUnitResponse(order.getOrderId(), loadUnit.getBarcode(),
-						loadUnit.getType().toString(), loadUnit.getLocation().getName(),
-						toStockItemResponses(loadUnit.getStockItems())));
+				setReturnValue(
+						new LoadUnitResponse(order.getOrderId(), loadUnit.getBarcode(), loadUnit.getType().toString(),
+								loadUnit.getLocation().getName(), toStockItemResponses(loadUnit.getStockItems())));
+			}
+		}.run();
+	}
+
+	// load unit-urile de la OUT gata de shipping: tote-uri si cartoane cu stoc
+	// rezervat pentru o comanda PICKED
+	public List<Map<String, String>> findLoadUnitsAtOut() {
+		return new WithSessionAndTransaction<List<Map<String, String>>>() {
+			@Override
+			protected void executeBusinessLogic(Session session) {
+				List<Map<String, String>> loadUnits = new ArrayList<>();
+				for (LoadUnit loadUnit : new LoadUnitRepository(session).findByLocationName(Constants.OUT)) {
+					if (loadUnit.getType() != LoadUnitType.TOTE && loadUnit.getType() != LoadUnitType.CARTON) {
+						continue;
+					}
+					loadUnit.getStockItems().stream().filter(item -> item.getReservation() != null).findFirst()
+							.map(item -> item.getReservation().getRetrievalOrderLine().getOrder())
+							.filter(order -> order.getStatus() == RetrievalOrderStatus.PICKED)
+							.ifPresent(order -> loadUnits.add(Map.of("barcode", loadUnit.getBarcode(), "type",
+									loadUnit.getType().name(), "order", order.getOrderId())));
+				}
+				setReturnValue(loadUnits);
 			}
 		}.run();
 	}
@@ -366,9 +388,9 @@ public class LoadUnitService {
 				checkShippedByUser(order, user, toteBarcode);
 
 				LoadUnit carton = findOrCreateGeneratedCarton(session);
-				setReturnValue(new LoadUnitResponse(order.getOrderId(), carton.getBarcode(),
-						carton.getType().toString(), carton.getLocation().getName(),
-						toStockItemResponses(carton.getStockItems())));
+				setReturnValue(
+						new LoadUnitResponse(order.getOrderId(), carton.getBarcode(), carton.getType().toString(),
+								carton.getLocation().getName(), toStockItemResponses(carton.getStockItems())));
 			}
 		}.run();
 	}

@@ -97,6 +97,8 @@ tbody tr:hover:not(.completed) td {
 }
 
 .bottom {
+    display: flex;
+    align-items: center;
     background: lightgrey;
 }
 
@@ -138,4 +140,146 @@ button {
 .confirm:disabled {
     cursor: not-allowed;
     background-color: gray;
+}
+
+.bottom .choose-button {
+    width: auto;
+    margin-left: auto;
+    padding: 0 30px;
+    white-space: nowrap;
+}
+
+.choose-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* popup Waiting Totes, la fel ca la Decanting si Receiving */
+.backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgb(0 0 0 / 45%);
+}
+
+.popup {
+    width: 100%;
+    max-width: 900px;
+    max-height: 80vh;
+    overflow: auto;
+    padding: 20px 24px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 12px 40px rgb(0 0 0 / 25%);
+    font-family: "Segoe UI", "Inter", "Aptos", sans-serif;
+}
+
+.popup header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.popup h3 {
+    margin: 0;
+    font-size: 30px;
+}
+
+.popup .picker-close {
+    width: 44px;
+    height: 44px;
+    margin: 0 0 0 auto;
+    font-size: 30px;
+    line-height: 1;
+    color: black;
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.popup .picker-close:hover {
+    background: #eff3f6;
+}
+
+.picker-empty {
+    margin: 0 0 10px;
+    font-size: 20px;
+}
+
+.order-scroll {
+    max-height: 50vh;
+    margin-bottom: 16px;
+    overflow: auto;
+    background: #fff;
+    border: 1px solid #e1e8ef;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgb(23 43 77 / 6%);
+}
+
+.order-list {
+    width: 100%;
+    border-collapse: collapse;
+    color: #354b66;
+}
+
+.order-list th,
+.order-list td {
+    padding: 11px 16px;
+    font-size: 20px;
+    text-align: left;
+    white-space: nowrap;
+    background: transparent;
+    border-bottom: 1px solid #e9eef3;
+}
+
+.order-list th {
+    position: sticky;
+    top: 0;
+    color: #dce8f5;
+    background: #203b5e;
+}
+
+.order-list .selectable {
+    cursor: pointer;
+}
+
+.order-list .selectable:hover td {
+    background: #f1f5f9;
+}
+
+.order-list .selectable.selected td {
+    background: #dff1f3;
+}
+
+.order-list .selectable:focus {
+    outline: none;
+}
+
+.popup .picker-confirm {
+    display: block;
+    width: 30%;
+    min-width: 160px;
+    height: 50px;
+    margin: 20px auto 0;
+    font-size: 20px;
+    color: black;
+    background: #fff3b0;
+    border: 1px solid #e0c96a;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.popup .picker-confirm:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.choose-button {
+    background: linear-gradient(110deg, #172b4d, #203b5e);
 }

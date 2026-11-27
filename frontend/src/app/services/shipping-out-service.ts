@@ -42,4 +42,8 @@ export class ShippingService {
     assignCarton(toteBarcode: string) {
         return this.httpClient.post<LoadUnit>(`${this.url}/${toteBarcode}/carton`, {})
     }
+
+    loadUnitsAtOut() {
+        return this.httpClient.get<{ barcode: string, type: string, order: string }[]>(`${this.url}/at-out`)
+    }
 }

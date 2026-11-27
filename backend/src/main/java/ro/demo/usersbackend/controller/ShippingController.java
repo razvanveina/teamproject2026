@@ -1,5 +1,6 @@
 package ro.demo.usersbackend.controller;
 
+import java.util.List;
 import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
@@ -140,5 +141,10 @@ public class ShippingController {
 			log.warn("Shipping: carton not assigned {}", e.getReason());
 			throw e;
 		}
+	}
+
+	@GetMapping("/at-out")
+	public List<Map<String, String>> loadUnitsAtOut() {
+		return loadUnitService.findLoadUnitsAtOut();
 	}
 }
