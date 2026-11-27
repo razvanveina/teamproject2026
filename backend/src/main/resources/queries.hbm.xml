@@ -4,24 +4,10 @@
 
 <hibernate-mapping>
 
-	<query name="TransportOrder.findByLoadUnitBarcode">
-    <![CDATA[
-        select count(o) from TransportOrder o
-        where o.loadUnit.barcode = :barcode
-    ]]>
-	</query>
-
 	<query name="RetrievalOrder.findByShippingUserAndStatus">
         <![CDATA[
             from RetrievalOrder o
             where o.shippingUser = :user and o.status = :status
-        ]]>
-	</query>
-
-	<query name="LoadUnit.findByLocationName">
-        <![CDATA[
-            from LoadUnit lu
-            where lu.location.name = :name
         ]]>
 	</query>
 
@@ -36,7 +22,7 @@
     	]]>
 	</query>
 
-	<query name="RetrievalOrder.findPickingTotesForAutomaticOrders">
+	<query name="RetrievalOrder.findAutomaticByStatusAndArea">
     	<![CDATA[
         	select distinct o
         	from RetrievalOrder o
@@ -126,12 +112,6 @@
 	    ]]>
 	</query>
 
-	<query name="ReceivingOrder.countByOrderId">
-	    <![CDATA[
-	        select count(o) from ReceivingOrder o where o.orderId = :id
-	    ]]>
-	</query>
-
 	<query name="StorageLocation.findFreeStorageLocations">
 	    <![CDATA[
 	        from StorageLocation l
@@ -166,12 +146,6 @@
 	        select count(s) from StockItem s
 	        where s.loadUnit.barcode = :barcode
 	        and s.reservation.retrievalOrderLine.order.automatic = true
-	    ]]>
-	</query>
-
-	<query name="Destination.findByName">
-	    <![CDATA[
-	        from Destination d where d.name = :name
 	    ]]>
 	</query>
 
@@ -244,16 +218,6 @@
 	    <![CDATA[
 	        select count(u) from LoadUnit u where u.location.name = :name and u.barcode <> :barcode
 	    ]]>
-	</query>
-
-	<query name="TransportOrder.findIdsToSendToConveyor">
-    <![CDATA[
-        select t.id from TransportOrder t
-        where t.status = :status
-        and (t.target.name in :stations
-             or (t.source.name = :decanting and t.loadUnit.type = :tote))
-        order by t.id
-    ]]>
 	</query>
 
 </hibernate-mapping>

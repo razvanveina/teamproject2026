@@ -23,10 +23,13 @@ import jakarta.persistence.Table;
 		@NamedQuery(name = "ReceivingOrder.findByOrderId", //
 				query = "from ReceivingOrder o where o.orderId = :orderId"), //
 		@NamedQuery(name = "ReceivingOrder.findOrderIdsLike", //
-				query = "select o.orderId from ReceivingOrder o where o.orderId like :pattern") //
-})
+				query = "select o.orderId from ReceivingOrder o where o.orderId like :pattern"), //
+		@NamedQuery(name = "ReceivingOrder.countByOrderId", //
+				query = "select count(o) from ReceivingOrder o where o.orderId = :id") })
 public class ReceivingOrder {
 	public static final String BY_ORDER_ID = "ReceivingOrder.findByOrderId";
+	public static final String FIND_IDS_LIKE = "ReceivingOrder.findOrderIdsLike";
+	public static final String COUNT_BY_ORDER_ID = "ReceivingOrder.countByOrderId";
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

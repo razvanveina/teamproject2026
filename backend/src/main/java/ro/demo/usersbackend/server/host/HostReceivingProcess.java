@@ -87,7 +87,7 @@ public class HostReceivingProcess extends AbstractProcess {
 
 				@Override
 				protected void executeBusinessLogic(Session session) {
-					Long existing = session.createNamedQuery("ReceivingOrder.countByOrderId", Long.class)
+					Long existing = session.createNamedQuery(ReceivingOrder.COUNT_BY_ORDER_ID, Long.class)
 							.setParameter("id", orderId).getSingleResult();
 					if (existing > 0) {
 						setReturnValue(false);
@@ -103,7 +103,7 @@ public class HostReceivingProcess extends AbstractProcess {
 						Element line = (Element) lines.item(i);
 						String barcode = value(line, "article");
 
-						List<Article> found = session.createNamedQuery("Article.findByBarcode", Article.class)
+						List<Article> found = session.createNamedQuery(Article.BY_BARCODE, Article.class)
 								.setParameter("barcode", barcode).getResultList();
 
 						if (found.isEmpty()) {

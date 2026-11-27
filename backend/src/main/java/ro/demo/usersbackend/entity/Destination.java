@@ -11,10 +11,14 @@ import jakarta.persistence.Id;
 
 @Entity
 @NamedQueries({ //
-		@NamedQuery(name = "Destination.findAll", //
-				query = "from Destination d order by d.name") //
-})
+		@NamedQuery(name = Destination.FIND_ALL, //
+				query = "from Destination d order by d.name"), //
+		@NamedQuery(name = Destination.BY_NAME, //
+				query = "from Destination d where d.name = :name") })
 public class Destination {
+	public static final String FIND_ALL = "Destination.findAll";
+	public static final String BY_NAME = "Destination.findByName";
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;

@@ -40,13 +40,13 @@ public class TestTransportOrder {
 	}
 
 	private boolean transportOrderExists(String barcode) {
-		Long count = session.createNamedQuery("TransportOrder.findByLoadUnitBarcode", Long.class)
+		Long count = session.createNamedQuery(TransportOrder.COUNT_BY_LOAD_UNIT_BARCODE, Long.class)
 				.setParameter("barcode", barcode).getSingleResult();
 		return count > 0;
 	}
 
 	private Location findLocation(String name) {
-		Location location = session.createNamedQuery("Location.findByName", Location.class).setParameter("name", name)
+		Location location = session.createNamedQuery(Location.BY_NAME, Location.class).setParameter("name", name)
 				.uniqueResult();
 		if (location == null) {
 			throw new IllegalStateException("Location " + name + " does not exist");
@@ -55,7 +55,7 @@ public class TestTransportOrder {
 	}
 
 	private LoadUnit findLoadUnit(String barcode) {
-		return session.createNamedQuery("LoadUnit.findByBarcode", LoadUnit.class).setParameter("barcode", barcode)
+		return session.createNamedQuery(LoadUnit.BY_BARCODE, LoadUnit.class).setParameter("barcode", barcode)
 				.uniqueResultOptional()
 				.orElseThrow(() -> new IllegalStateException("Load unit " + barcode + " does not exist"));
 	}

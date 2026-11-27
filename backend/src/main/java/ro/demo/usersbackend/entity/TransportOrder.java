@@ -17,15 +17,15 @@ import jakarta.persistence.ManyToOne;
 
 @Entity
 @NamedQueries({ //
-		@NamedQuery(name = "TransportOrder.findByStatusAndNotSourceOrderByIdAsc", //
+		@NamedQuery(name = TransportOrder.FIND_BY_STATUS_AND_NOT_SOURCE_ODERED_BY_ID, //
 				query = "from TransportOrder o where o.status = :status and not o.source = :source order by o.id asc"),
-		@NamedQuery(name = "TransportOrder.findByStatusAndSourceOrderByIdAsc", //
+		@NamedQuery(name = TransportOrder.FIND_BY_STATUS_AND_SOURCE_ODERED_BY_ID, //
 				query = "from TransportOrder o where o.status = :status and o.source = :source order by o.id asc"),
-		@NamedQuery(name = "TransportOrder.findByStatusAndAssignedToOrderByIdAsc", //
+		@NamedQuery(name = TransportOrder.FIND_BY_STATUS_AND_ASSIGNED_TO_ODERED_BY_ID, //
 				query = "from TransportOrder o where o.assignedTo = :assignedTo and o.status in :statuses order by o.id asc"),
-		@NamedQuery(name = "TransportOrder.findByStatusAndAssignedToIsNullOrderByIdAsc", //
+		@NamedQuery(name = TransportOrder.FIND_BY_STATUS_AND_ASSIGNED_TO_IS_NULL_ODERED_BY_ID, //
 				query = "from TransportOrder o where o.assignedTo is null and o.status in :statuses order by o.id asc"),
-		@NamedQuery(name = "TransportOrder.findActiveByLoadUnit", //
+		@NamedQuery(name = TransportOrder.FIND_ACTIVE_BY_LOAD_UNIT, //
 				query = "from TransportOrder o where o.status = :status and o.loadUnit = :loadUnit"), //
 		@NamedQuery(name = TransportOrder.FIND_ACTIVE_BY_LOAD_UNIT_AND_TARGET, //
 				query = "from TransportOrder t where t.loadUnit = :loadUnit and t.target = :target and t.status = :active"), //
@@ -34,8 +34,13 @@ import jakarta.persistence.ManyToOne;
 		@NamedQuery(name = TransportOrder.COUNT_IN_LANE_TO_TARGET, //
 				query = "select count(t) from TransportOrder t where t.status = :active and t.target.name = :target"
 						+ " and t.loadUnit.location.name = :point and t.loadUnit.barcode <> :barcode"), //
-		@NamedQuery(name = "TransportOrder.countOpenByTargetName", //
-				query = "select count(t) from TransportOrder t where t.target.name = :target and t.status in :open") })
+		@NamedQuery(name = TransportOrder.COUNT_BY_LOAD_UNIT_BARCODE, //
+				query = "select count(o) from TransportOrder o where o.loadUnit.barcode = :barcode"),
+		@NamedQuery(name = TransportOrder.COUNT_OPEN_BY_TARGET_NAME, //
+				query = "select count(t) from TransportOrder t where t.target.name = :target and t.status in :open"),
+		@NamedQuery(name = TransportOrder.FIND_IDS_TO_SEND_TO_CONVEYOR, //
+				query = "select t.id from TransportOrder t where t.status = :status and (t.target.name in :stations or (t.source.name = :decanting and t.loadUnit.type = :tote)) order by t.id") //
+})
 public class TransportOrder {
 	public static final String FIND_BY_STATUS_AND_NOT_SOURCE_ODERED_BY_ID = "TransportOrder.findByStatusAndNotSourceOrderByIdAsc";
 	public static final String FIND_BY_STATUS_AND_SOURCE_ODERED_BY_ID = "TransportOrder.findByStatusAndSourceOrderByIdAsc";
@@ -46,6 +51,8 @@ public class TransportOrder {
 	public static final String FIND_ACTIVE_TARGET_NAME = "TransportOrder.findActiveTargetName";
 	public static final String COUNT_IN_LANE_TO_TARGET = "TransportOrder.countInLaneToTarget";
 	public static final String COUNT_OPEN_BY_TARGET_NAME = "TransportOrder.countOpenByTargetName";
+	public static final String COUNT_BY_LOAD_UNIT_BARCODE = "TransportOrder.countOpenByLoadUnitBarcode";
+	public static final String FIND_IDS_TO_SEND_TO_CONVEYOR = "TransportOrder.findIdsToSendToConveyor";
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

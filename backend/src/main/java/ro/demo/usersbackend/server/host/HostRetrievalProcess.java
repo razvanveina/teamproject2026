@@ -97,7 +97,7 @@ public class HostRetrievalProcess extends AbstractProcess {
 
 					String destinationName = value(xml.getDocumentElement(), "destination");
 
-					Destination destination = session.createNamedQuery("Destination.findByName", Destination.class)
+					Destination destination = session.createNamedQuery(Destination.BY_NAME, Destination.class)
 							.setParameter("name", destinationName).getSingleResult();
 
 					order.setOrderId(orderId);
@@ -111,7 +111,7 @@ public class HostRetrievalProcess extends AbstractProcess {
 						Element line = (Element) lines.item(i);
 						String barcode = value(line, "article");
 
-						List<Article> found = session.createNamedQuery("Article.findByBarcode", Article.class)
+						List<Article> found = session.createNamedQuery(Article.BY_BARCODE, Article.class)
 								.setParameter("barcode", barcode).getResultList();
 
 						if (found.isEmpty()) {

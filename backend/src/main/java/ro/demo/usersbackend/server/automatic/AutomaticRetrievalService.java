@@ -16,6 +16,7 @@ import jakarta.jms.JMSException;
 import jakarta.jms.Message;
 import jakarta.jms.TextMessage;
 import ro.demo.usersbackend.common.Constants;
+import ro.demo.usersbackend.common.Queries;
 import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
 import ro.demo.usersbackend.entity.Area;
 import ro.demo.usersbackend.entity.LoadUnit;
@@ -116,7 +117,7 @@ public class AutomaticRetrievalService extends AbstractProcess {
 		List<Long> orderIds = new WithSessionAndTransaction<List<Long>>() {
 			@Override
 			protected void executeBusinessLogic(Session session) {
-				setReturnValue(session.createNamedQuery("TransportOrder.findIdsToSendToConveyor", Long.class)
+				setReturnValue(session.createNamedQuery(TransportOrder.FIND_IDS_TO_SEND_TO_CONVEYOR, Long.class)
 						.setParameter("status", TransportOrderStatus.NEW)
 						.setParameterList("stations", Constants.PTTS_POINTS)
 						.setParameter("decanting", Constants.DECANTING).setParameter("tote", LoadUnitType.TOTE)
@@ -166,7 +167,8 @@ public class AutomaticRetrievalService extends AbstractProcess {
 				}
 
 				List<RetrievalOrder> orders = session
-						.createNamedQuery("RetrievalOrder.findPickingTotesForAutomaticOrders", RetrievalOrder.class)
+						.createNamedQuery(Queries.RETRIEVAL_ORDER_FIND_AUTOMATIC_BY_STATUS_AND_AREA,
+								RetrievalOrder.class)
 						.setParameter("status", RetrievalOrderStatus.ACTIVE).setParameter("area", pickingArea.get())
 						.setParameterList("open", Constants.OPEN_TRANSPORT_STATUSES).getResultList();
 
@@ -207,8 +209,8 @@ public class AutomaticRetrievalService extends AbstractProcess {
 	private void createTransportOrder(Session session, LoadUnit loadUnit) {
 		String stationName = stationChooser.sourceStationFor(session, automaticOrderId(loadUnit),
 				loadUnit.getBarcode());
-		Location station = session.createNamedQuery("Location.findByName", Location.class)
-				.setParameter("name", stationName).uniqueResultOptional().orElse(null);
+		Location station = session.createNamedQuery(Location.BY_NAME, Location.class).setParameter("name", stationName)
+				.uniqueResultOptional().orElse(null);
 		if (station == null) {
 			log.error("Automatic retrieval: location {} is missing", stationName);
 			return;

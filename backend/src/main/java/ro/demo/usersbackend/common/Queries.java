@@ -7,4 +7,5 @@ public class Queries {
 	public static final String FIND_FREE_BY_ARTICLE = "StockItem.findFreeByArticle";
 	public static final String COUNT_AUTOMATIC_BY_LOAD_UNIT_BARCODE = "StockItem.countAutomaticByLoadUnitBarcode";
 	public static final String COUNT_OPEN_TO_TARGET_FOR_ORDER = "TransportOrder.countOpenToTargetForOrder";
+	public static final String RETRIEVAL_ORDER_FIND_AUTOMATIC_BY_STATUS_AND_AREA = "RetrievalOrder.findAutomaticByStatusAndArea";
 }
