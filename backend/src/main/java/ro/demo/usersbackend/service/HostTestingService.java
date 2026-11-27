@@ -31,6 +31,7 @@ import ro.demo.usersbackend.dto.ReservedLoadUnit;
 import ro.demo.usersbackend.entity.Article;
 import ro.demo.usersbackend.entity.Destination;
 import ro.demo.usersbackend.entity.LoadUnit;
+import ro.demo.usersbackend.entity.ReceivingOrder;
 import ro.demo.usersbackend.entity.Reservation;
 import ro.demo.usersbackend.entity.RetrievalOrder;
 import ro.demo.usersbackend.entity.RetrievalOrderLine;
@@ -52,7 +53,7 @@ public class HostTestingService {
 	private final Random random = new Random();
 
 	public synchronized String createReceivingOrder() throws IOException {
-		String orderId = nextTestOrderId("ReceivingOrder.findOrderIdsLike", Constants.HOST_RECEIVING_FOLDER);
+		String orderId = nextTestOrderId(ReceivingOrder.FIND_IDS_LIKE, Constants.HOST_RECEIVING_FOLDER);
 		List<String> articleBarcodes = pickRandomArticleBarcodes();
 		return writeOrderFile(Constants.HOST_RECEIVING_FOLDER, orderId,
 				buildReceivingOrderXml(orderId, articleBarcodes));
@@ -207,14 +208,14 @@ public class HostTestingService {
 			@Override
 			protected void executeBusinessLogic(Session session) {
 				Map<Article, Integer> freePieces = new HashMap<>();
-				for (StockItem item : session.createNamedQuery("StockItem.findFreeInStorage", StockItem.class)
+				for (StockItem item : session.createNamedQuery(StockItem.FIND_FREE_IN_STORAGE, StockItem.class)
 						.getResultList()) {
 					Article article = item.getArticlePackagingUnitType().getArticle();
 					freePieces.put(article, freePieces.getOrDefault(article, 0) + item.getTotalQuantity());
 				}
 
 				List<OrderCheckResponse> result = new ArrayList<>();
-				for (RetrievalOrder order : session.createNamedQuery("RetrievalOrder.findAllById", RetrievalOrder.class)
+				for (RetrievalOrder order : session.createNamedQuery(RetrievalOrder.FIND_ALL_BY_ID, RetrievalOrder.class)
 						.getResultList()) {
 					boolean isNew = order.getStatus() == RetrievalOrderStatus.NEW;
 					// copie a stocului liber: orderul il consuma doar daca poate fi rezervat tot

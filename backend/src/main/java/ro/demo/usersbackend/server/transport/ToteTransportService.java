@@ -7,6 +7,7 @@ import org.apache.logging.log4j.Logger;
 import org.hibernate.Session;
 
 import ro.demo.usersbackend.common.Constants;
+import ro.demo.usersbackend.common.Queries;
 import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
 import ro.demo.usersbackend.entity.Article;
 import ro.demo.usersbackend.entity.ArticlePickingLocation;
@@ -43,7 +44,7 @@ public class ToteTransportService extends AbstractProcess {
 	}
 
 	private void moveTotes(Session session) {
-		List<LoadUnit> totes = session.createNamedQuery("LoadUnit.findByTypeInDecantingOrTpt1", LoadUnit.class)
+		List<LoadUnit> totes = session.createNamedQuery(LoadUnit.FIND_BY_TYPE_IN_DECANTING_OR_TPT1, LoadUnit.class)
 				.setParameter("type", LoadUnitType.TOTE).setParameterList("places", List.of(Constants.DECANTING))
 				.getResultList();
 
@@ -71,7 +72,7 @@ public class ToteTransportService extends AbstractProcess {
 	public static StorageLocation choosePickingPlace(Session session, LoadUnit tote) {
 		Article article = tote.getStockItems().get(0).getArticlePackagingUnitType().getArticle();
 		List<ArticlePickingLocation> places = session
-				.createNamedQuery("ArticlePickingLocation.findByArticle", ArticlePickingLocation.class)
+				.createNamedQuery(ArticlePickingLocation.FIND_BY_ARTICLE, ArticlePickingLocation.class)
 				.setParameter("article", article).getResultList();
 
 		// daca articolul nu are inca niciun loc de picking, ii dam cel mai apropiat loc
@@ -107,7 +108,7 @@ public class ToteTransportService extends AbstractProcess {
 	// articol
 	private static StorageLocation findNearestFreePlace(Session session, StorageLocation from) {
 		List<StorageLocation> free = session
-				.createNamedQuery("StorageLocation.findFreePickingLocations", StorageLocation.class)
+				.createNamedQuery(Queries.FIND_FREE_PICKING_LOCATIONS, StorageLocation.class)
 				.setParameter("pick", Constants.PICK_PREFIX + "%").getResultList();
 
 		StorageLocation nearest = null;
@@ -129,7 +130,7 @@ public class ToteTransportService extends AbstractProcess {
 	}
 
 	private static boolean hasTransportTo(Session session, StorageLocation location) {
-		Long open = session.createNamedQuery("TransportOrder.countActiveByTarget", Long.class)
+		Long open = session.createNamedQuery(TransportOrder.COUNT_ACTIVE_BY_TARGET, Long.class)
 				.setParameter("location", location).setParameterList("open", Constants.OPEN_TRANSPORT_STATUSES)
 				.getSingleResult();
 		return open > 0;
@@ -138,7 +139,7 @@ public class ToteTransportService extends AbstractProcess {
 	// nu facem al doilea transport order pentru un tote care are deja unul NEW sau
 	// ACTIVE
 	private boolean hasOpenTransport(Session session, LoadUnit tote) {
-		Long open = session.createNamedQuery("TransportOrder.countOpenByLoadUnit", Long.class)
+		Long open = session.createNamedQuery(TransportOrder.COUNT_OPEN_BY_LOAD_UNIT, Long.class)
 				.setParameter("tote", tote).setParameterList("open", Constants.OPEN_TRANSPORT_STATUSES)
 				.getSingleResult();
 		return open > 0;
