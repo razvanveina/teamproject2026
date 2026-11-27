@@ -18,13 +18,15 @@ export class SimTesting {
   orders = signal<OrderCheck[]>([]);
   ordersError = signal(false);
   selectedOrderId = signal('');
+  statusFilter = signal(''); // gol = toate statusurile
+  resultFilter = signal(''); // gol = toate rezultatele
 
-  // tabelul se reincarca la 2 s, cat dureaza o tura a proceselor din backend
+  // tabelul se reincarca la fiecare secunda, ca locatiile load unit-urilor sa fie la zi
   private ordersTimer: ReturnType<typeof setInterval> | undefined;
 
   ngOnInit(): void {
     this.loadOrders();
-    this.ordersTimer = setInterval(() => this.loadOrders(), 2000);
+    this.ordersTimer = setInterval(() => this.loadOrders(), 1000);
   }
 
   ngOnDestroy(): void {
@@ -39,6 +41,19 @@ export class SimTesting {
       },
       error: () => this.ordersError.set(true)
     });
+  }
+
+  // orderele care trec de ambele filtre
+  filteredOrders(): OrderCheck[] {
+    const result: OrderCheck[] = [];
+    for (const order of this.orders()) {
+      const statusOk = this.statusFilter() === '' || order.status === this.statusFilter();
+      const resultOk = this.resultFilter() === '' || order.result === this.resultFilter();
+      if (statusOk && resultOk) {
+        result.push(order);
+      }
+    }
+    return result;
   }
 
   select(order: OrderCheck): void {

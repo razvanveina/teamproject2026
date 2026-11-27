@@ -9,7 +9,6 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -28,8 +27,10 @@ import ro.demo.usersbackend.common.Constants;
 import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
 import ro.demo.usersbackend.dto.OrderCheckLine;
 import ro.demo.usersbackend.dto.OrderCheckResponse;
+import ro.demo.usersbackend.dto.ReservedLoadUnit;
 import ro.demo.usersbackend.entity.Article;
 import ro.demo.usersbackend.entity.Destination;
+import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.Reservation;
 import ro.demo.usersbackend.entity.RetrievalOrder;
 import ro.demo.usersbackend.entity.RetrievalOrderLine;
@@ -41,6 +42,7 @@ public class HostTestingService {
 	public static final String RESERVED = "RESERVED";
 	public static final String RESERVING = "RESERVING"; // NEW, dar stocul ajunge: se rezerva la urmatoarea tura
 	public static final String CANNOT_BE_FULFILLED = "CANNOT_BE_FULFILLED";
+	public static final String FINISHED = "FINISHED";
 
 	private final Logger log = LogManager.getLogger("application");
 	private final String testOrderIdFormat = "T%04d";
@@ -212,56 +214,68 @@ public class HostTestingService {
 				}
 
 				List<OrderCheckResponse> result = new ArrayList<>();
-				for (RetrievalOrder order : session
-						.createNamedQuery("RetrievalOrder.findNotFinished", RetrievalOrder.class)
-						.setParameter("finished", RetrievalOrderStatus.FINISHED).getResultList()) {
-					if (order.getStatus() != RetrievalOrderStatus.NEW) {
-						result.add(new OrderCheckResponse(order.getOrderId(), order.getStatus().toString(), RESERVED,
-								List.of()));
-						continue;
-					}
+				for (RetrievalOrder order : session.createNamedQuery("RetrievalOrder.findAllById", RetrievalOrder.class)
+						.getResultList()) {
+					boolean isNew = order.getStatus() == RetrievalOrderStatus.NEW;
+					// copie a stocului liber: orderul il consuma doar daca poate fi rezervat tot
+					Map<Article, Integer> freeLeft = new HashMap<>(freePieces);
+					boolean enoughStock = true;
 
-					// cate bucati mai trebuie rezervate din fiecare articol
-					Map<Article, Integer> neededPieces = new LinkedHashMap<>();
+					List<OrderCheckLine> lines = new ArrayList<>();
 					for (RetrievalOrderLine line : order.getLines()) {
 						int reserved = 0;
+						List<ReservedLoadUnit> loadUnits = new ArrayList<>();
+						List<String> seenBarcodes = new ArrayList<>(); // fiecare load unit o singura data
 						for (Reservation reservation : line.getReservations()) {
-							reserved = reserved + reservation.getStockItem().getTotalQuantity();
+							StockItem item = reservation.getStockItem();
+							reserved = reserved + item.getTotalQuantity();
+							String barcode = item.getLoadUnit().getBarcode();
+							if (!seenBarcodes.contains(barcode)) {
+								seenBarcodes.add(barcode);
+								loadUnits.add(new ReservedLoadUnit(barcode, locationName(item.getLoadUnit())));
+							}
 						}
+
 						Article article = line.getArticle();
-						neededPieces.put(article,
-								neededPieces.getOrDefault(article, 0) + line.getQuantity() - reserved);
-					}
-
-					// un rand pentru fiecare articol al orderului, si cate lipsesc (0 daca ajunge stocul)
-					List<OrderCheckLine> lines = new ArrayList<>();
-					boolean enoughStock = true;
-					for (Article article : neededPieces.keySet()) {
-						int needed = neededPieces.get(article);
-						int free = freePieces.getOrDefault(article, 0);
+						int free = freeLeft.getOrDefault(article, 0);
 						int missing = 0;
-						if (needed > free) {
-							missing = needed - free;
-							enoughStock = false;
+						if (isNew) {
+							int needed = line.getQuantity() - reserved;
+							if (needed > free) {
+								missing = needed - free;
+								enoughStock = false;
+								freeLeft.put(article, 0);
+							} else {
+								freeLeft.put(article, free - needed);
+							}
 						}
-						lines.add(new OrderCheckLine(article.getBarcode(), article.getDescription(), needed, free,
-								missing));
+						lines.add(new OrderCheckLine(article.getBarcode(), article.getDescription(),
+								line.getQuantity(), reserved, free, missing, loadUnits));
 					}
 
-					if (enoughStock) {
-						// orderul ia stocul inaintea urmatorului order
-						for (Article article : neededPieces.keySet()) {
-							freePieces.put(article, freePieces.getOrDefault(article, 0) - neededPieces.get(article));
-						}
-						result.add(new OrderCheckResponse(order.getOrderId(), order.getStatus().toString(),
-								RESERVING, lines));
+					String orderResult;
+					if (order.getStatus() == RetrievalOrderStatus.FINISHED) {
+						orderResult = FINISHED;
+					} else if (!isNew) {
+						orderResult = RESERVED;
+					} else if (enoughStock) {
+						orderResult = RESERVING;
+						freePieces = freeLeft; // orderul ia stocul inaintea urmatorului order
 					} else {
-						result.add(new OrderCheckResponse(order.getOrderId(), order.getStatus().toString(),
-								CANNOT_BE_FULFILLED, lines));
+						orderResult = CANNOT_BE_FULFILLED;
 					}
+					result.add(new OrderCheckResponse(order.getOrderId(), order.getStatus().toString(), orderResult,
+							lines));
 				}
 				setReturnValue(result);
 			}
 		}.run();
+	}
+
+	private String locationName(LoadUnit loadUnit) {
+		if (loadUnit.getLocation() == null) {
+			return "-";
+		}
+		return loadUnit.getLocation().getName();
 	}
 }

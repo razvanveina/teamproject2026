@@ -134,9 +134,9 @@
 	    ]]>
 	</query>
 
-	<query name="RetrievalOrder.findNotFinished">
+	<query name="RetrievalOrder.findAllById">
 	    <![CDATA[
-	        from RetrievalOrder o where o.status <> :finished order by o.id
+	        from RetrievalOrder o order by o.id
 	    ]]>
 	</query>
 

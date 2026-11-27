@@ -1,9 +1,16 @@
+export interface ReservedLoadUnit {
+  barcode: string;
+  location: string;
+}
+
 export interface OrderCheckLine {
   article: string;
   description: string;
-  needed: number;
+  quantity: number;
+  reserved: number;
   free: number;
   missing: number;
+  loadUnits: ReservedLoadUnit[];
 }
 
 export interface OrderCheck {

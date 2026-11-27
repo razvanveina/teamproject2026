@@ -1,4 +1,7 @@
 package ro.demo.usersbackend.dto;
 
-public record OrderCheckLine(String article, String description, int needed, int free, int missing) {
+import java.util.List;
+
+public record OrderCheckLine(String article, String description, int quantity, int reserved, int free, int missing,
+		List<ReservedLoadUnit> loadUnits) {
 }
