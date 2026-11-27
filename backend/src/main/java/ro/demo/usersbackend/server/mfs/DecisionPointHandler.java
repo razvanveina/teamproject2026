@@ -22,7 +22,7 @@ import ro.demo.usersbackend.messaging.MfsMessages;
 import ro.demo.usersbackend.messaging.MfsMessages.Arrived;
 
 public abstract class DecisionPointHandler extends PointHandler {
-	private static final Logger mfsLog = LogManager.getLogger("mfsMessages");
+	public static final Logger mfsLog = LogManager.getLogger("mfsMessages");
 
 	private final String point;
 	private static final int WAIT = -1;
@@ -132,8 +132,8 @@ public abstract class DecisionPointHandler extends PointHandler {
 
 				LoadUnit tote = session.createNamedQuery(LoadUnit.BY_BARCODE, LoadUnit.class)
 						.setParameter("barcode", loadUnit).getSingleResult();
-				Location zone = session.createNamedQuery(Location.BY_NAME, Location.class)
-						.setParameter("name", pttt).getSingleResult();
+				Location zone = session.createNamedQuery(Location.BY_NAME, Location.class).setParameter("name", pttt)
+						.getSingleResult();
 				session.persist(new TransportOrder(tote.getLocation(), zone, TransportOrderStatus.ACTIVE, tote));
 				setReturnValue(0);
 			}

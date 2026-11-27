@@ -42,4 +42,9 @@ public class TransportOrderRepository extends BaseRepository<TransportOrder, Lon
 				.setParameterList("status", List.of(TransportOrderStatus.NEW, TransportOrderStatus.ACTIVE))
 				.setParameter("loadUnit", loadUnit).getResultList();
 	}
+
+	public List<TransportOrder> findActiveByLoadUnit(LoadUnit loadUnit) {
+		return session.createNamedQuery(TransportOrder.FIND_ACTIVE_BY_LOAD_UNIT, TransportOrder.class)
+				.setParameter("status", TransportOrderStatus.ACTIVE).setParameter("loadUnit", loadUnit).getResultList();
+	}
 }

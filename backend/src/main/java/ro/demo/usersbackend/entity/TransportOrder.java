@@ -25,8 +25,10 @@ import jakarta.persistence.ManyToOne;
 				query = "from TransportOrder o where o.assignedTo = :assignedTo and o.status in :statuses order by o.id asc"),
 		@NamedQuery(name = TransportOrder.FIND_BY_STATUS_AND_ASSIGNED_TO_IS_NULL_ODERED_BY_ID, //
 				query = "from TransportOrder o where o.assignedTo is null and o.status in :statuses order by o.id asc"),
-		@NamedQuery(name = TransportOrder.FIND_ACTIVE_BY_LOAD_UNIT, //
+		@NamedQuery(name = TransportOrder.FIND_ACTIVE_AND_NEW_BY_LOAD_UNIT, //
 				query = "from TransportOrder o where o.status in :status and o.loadUnit = :loadUnit"), //
+		@NamedQuery(name = TransportOrder.FIND_ACTIVE_BY_LOAD_UNIT, //
+				query = "from TransportOrder o where o.status = :status and o.loadUnit = :loadUnit"), //
 		@NamedQuery(name = TransportOrder.COUNT_ACTIVE_BY_TARGET, //
 				query = "select count(t) from TransportOrder t where t.target = :location and t.status in :open"), //
 		@NamedQuery(name = TransportOrder.COUNT_OPEN_BY_LOAD_UNIT, //
@@ -50,6 +52,7 @@ public class TransportOrder {
 	public static final String FIND_BY_STATUS_AND_SOURCE_ODERED_BY_ID = "TransportOrder.findByStatusAndSourceOrderByIdAsc";
 	public static final String FIND_BY_STATUS_AND_ASSIGNED_TO_ODERED_BY_ID = "TransportOrder.findByStatusAndAssignedToOrderByIdAsc";
 	public static final String FIND_BY_STATUS_AND_ASSIGNED_TO_IS_NULL_ODERED_BY_ID = "TransportOrder.findByStatusAndAssignedToIsNullOrderByIdAsc";
+	public static final String FIND_ACTIVE_AND_NEW_BY_LOAD_UNIT = "TransportOrder.findActiveAndNewByLoadUnit";
 	public static final String FIND_ACTIVE_BY_LOAD_UNIT = "TransportOrder.findActiveByLoadUnit";
 	public static final String FIND_ACTIVE_BY_LOAD_UNIT_AND_TARGET = "TransportOrder.findActiveByLoadUnitAndTarget";
 	public static final String FIND_ACTIVE_TARGET_NAME = "TransportOrder.findActiveTargetName";
