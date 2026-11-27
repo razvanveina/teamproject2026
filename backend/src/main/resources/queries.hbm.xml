@@ -126,14 +126,6 @@
 	    ]]>
 	</query>
 
-	<query name="ArticlePackagingUnitType.findSingleUnitByArticle">
-	    <![CDATA[
-	        from ArticlePackagingUnitType p
-	        where p.article = :article and p.packagingUnitType.quantity = 1
-	        order by p.id
-	    ]]>
-	</query>
-
 	<query name="RetrievalOrder.findAllById">
 	    <![CDATA[
 	        from RetrievalOrder o order by o.id
@@ -146,12 +138,6 @@
 	        join s.loadUnit u
 	        join u.location l
 	        where s.reservation is null and type(l) = StorageLocation
-	    ]]>
-	</query>
-
-	<query name="RetrievalOrder.findOrderIdsByStatus">
-	    <![CDATA[
-	        select o.orderId from RetrievalOrder o where o.status = :status order by o.id
 	    ]]>
 	</query>
 

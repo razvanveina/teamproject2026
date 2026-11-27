@@ -9,6 +9,7 @@ import org.apache.logging.log4j.Logger;
 import org.hibernate.Session;
 
 import ro.demo.usersbackend.common.Constants;
+import ro.demo.usersbackend.common.Queries;
 import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
 import ro.demo.usersbackend.entity.Article;
 import ro.demo.usersbackend.entity.ArticlePackagingUnitType;
@@ -37,7 +38,7 @@ public class ReservationService extends AbstractProcess {
 			List<String> orderIds = new WithSessionAndTransaction<List<String>>() {
 				@Override
 				protected void executeBusinessLogic(Session session) {
-					setReturnValue(session.createNamedQuery("RetrievalOrder.findOrderIdsByStatus", String.class)
+					setReturnValue(session.createNamedQuery(RetrievalOrder.ORDER_IDS_BY_STATUS, String.class)
 							.setParameter("status", RetrievalOrderStatus.NEW).getResultList());
 				}
 			}.run();
@@ -56,8 +57,7 @@ public class ReservationService extends AbstractProcess {
 			boolean reserved = new WithSessionAndTransaction<Boolean>() {
 				@Override
 				protected void executeBusinessLogic(Session session) {
-					RetrievalOrder order = session
-							.createNamedQuery("RetrievalOrder.findByOrderId", RetrievalOrder.class)
+					RetrievalOrder order = session.createNamedQuery(RetrievalOrder.BY_ORDER_ID, RetrievalOrder.class)
 							.setParameter("id", orderId).getSingleResult();
 					setReturnValue(reserve(session, order, items));
 				}
@@ -166,8 +166,7 @@ public class ReservationService extends AbstractProcess {
 	}
 
 	private ArticlePackagingUnitType findPiecePackaging(Session session, Article article) {
-		return session
-				.createNamedQuery("ArticlePackagingUnitType.findSingleUnitByArticle", ArticlePackagingUnitType.class)
+		return session.createNamedQuery(ArticlePackagingUnitType.SINGLE_UNIT_BY_ARTICLE, ArticlePackagingUnitType.class)
 				.setParameter("article", article).setMaxResults(1).uniqueResultOptional().orElseThrow(
 						() -> new IllegalStateException("article " + article.getBarcode() + " has no piece packaging"));
 	}
@@ -207,7 +206,7 @@ public class ReservationService extends AbstractProcess {
 
 	// stocul liber al articolului, cu cel din locatiile de picking primul
 	private List<StockItem> findAvailableStock(Session session, Article article) {
-		return session.createNamedQuery("StockItem.findFreeByArticle", StockItem.class).setParameter("article", article)
+		return session.createNamedQuery(Queries.FIND_FREE_BY_ARTICLE, StockItem.class).setParameter("article", article)
 				.setParameter("pick", Constants.PICK_PREFIX + "%").getResultList();
 	}
 }

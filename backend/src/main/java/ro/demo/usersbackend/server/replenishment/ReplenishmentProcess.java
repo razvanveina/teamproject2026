@@ -7,6 +7,7 @@ import org.apache.logging.log4j.Logger;
 import org.hibernate.Session;
 
 import ro.demo.usersbackend.common.Constants;
+import ro.demo.usersbackend.common.Queries;
 import ro.demo.usersbackend.core.persistence.WithSessionAndTransaction;
 import ro.demo.usersbackend.entity.LoadUnit;
 import ro.demo.usersbackend.entity.LoadUnitType;
@@ -40,7 +41,7 @@ public class ReplenishmentProcess extends AbstractProcess {
 
 			@Override
 			protected void executeBusinessLogic(Session session) {
-				List<Long> loadUnitIds = session.createNamedQuery("LoadUnit.findReservedIdsInStorage", Long.class)
+				List<Long> loadUnitIds = session.createNamedQuery(Queries.FIND_RESERVED_IDS_IN_STORAGE, Long.class)
 						.setParameterList("open", Constants.OPEN_TRANSPORT_STATUSES).getResultList();
 
 				loadUnitIds.forEach(loadUnitId -> process(session, loadUnitId, true));
@@ -54,7 +55,7 @@ public class ReplenishmentProcess extends AbstractProcess {
 
 			@Override
 			protected void executeBusinessLogic(Session session) {
-				List<Long> loadUnitIds = session.createNamedQuery("LoadUnit.findFreePalletIdsInDecanting", Long.class)
+				List<Long> loadUnitIds = session.createNamedQuery(Queries.FIND_FREE_PALLET_IDS_IN_DECANTING, Long.class)
 						.setParameter("pallet", LoadUnitType.PALLET).setParameter("decanting", Constants.DECANTING)
 						.setParameterList("open", Constants.OPEN_TRANSPORT_STATUSES).getResultList();
 
@@ -73,7 +74,7 @@ public class ReplenishmentProcess extends AbstractProcess {
 	}
 
 	private void replenish(Session session, LoadUnit loadUnit) {
-		Location decanting = session.createNamedQuery("Location.findByName", Location.class)
+		Location decanting = session.createNamedQuery(Location.BY_NAME, Location.class)
 				.setParameter("name", Constants.DECANTING).uniqueResultOptional().orElse(null);
 		if (decanting == null) {
 			Log.error("location {} is missing", Constants.DECANTING);
@@ -87,8 +88,7 @@ public class ReplenishmentProcess extends AbstractProcess {
 
 	// prima locatie libera din HBW spre care nu vine niciun to deschis
 	private void store(Session session, LoadUnit loadUnit) {
-		StorageLocation target = session
-				.createNamedQuery("StorageLocation.findFreeStorageLocations", StorageLocation.class)
+		StorageLocation target = session.createNamedQuery(Queries.FIND_FREE_STORAGE_LOCATIONS, StorageLocation.class)
 				.setParameterList("open", Constants.OPEN_TRANSPORT_STATUSES).setMaxResults(1).uniqueResultOptional()
 				.orElse(null);
 		if (target == null) {

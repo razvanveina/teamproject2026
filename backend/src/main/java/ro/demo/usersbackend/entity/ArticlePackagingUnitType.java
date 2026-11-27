@@ -18,12 +18,15 @@ import jakarta.persistence.ManyToOne;
 		@NamedQuery(name = "ArticlePackagingUnitType.findByBarcode", //
 				query = "from ArticlePackagingUnitType a where a.barcode = :barcode"), //
 		@NamedQuery(name = "ArticlePackagingUnitType.findByArticleBarcodeIn", //
-				query = "from ArticlePackagingUnitType a where a.article.barcode in :barcodes")//
+				query = "from ArticlePackagingUnitType a where a.article.barcode in :barcodes"), //
+		@NamedQuery(name = "ArticlePackagingUnitType.findSingleUnitByArticle", //
+				query = "from ArticlePackagingUnitType a where a.article = :article and a.packagingUnitType.quantity = 1 order by a.id")//
 })
 public class ArticlePackagingUnitType {
 	public static final String BY_ARTICLE_AND_PACK = "ArticlePackagingUnitType.findByArticleAndPackagingUnitType";
 	public static final String BY_BARCODE = "ArticlePackagingUnitType.findByBarcode";
 	public static final String BY_ARTICLE_BARCODES = "ArticlePackagingUnitType.findByArticleBarcodeIn";
+	public static final String SINGLE_UNIT_BY_ARTICLE = "ArticlePackagingUnitType.findSingleUnitByArticle";
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
