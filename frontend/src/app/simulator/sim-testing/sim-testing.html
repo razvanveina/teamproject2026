@@ -48,7 +48,6 @@
                 <select [value]="resultFilter()" (change)="resultFilter.set($any($event.target).value)">
                     <option value="">All</option>
                     <option value="RESERVED">Reserved</option>
-                    <option value="RESERVING">Reserving...</option>
                     <option value="CANNOT_BE_FULFILLED">Cannot be fulfilled</option>
                     <option value="FINISHED">Finished</option>
                 </select>
