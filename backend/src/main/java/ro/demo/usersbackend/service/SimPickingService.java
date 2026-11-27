@@ -193,7 +193,7 @@ public class SimPickingService {
 		// un tote are un singur drum: daca are deja un TO activ (Confirm apasat de doua ori), nu mai cream altul
 		List<TransportOrder> activeOrders = session
 				.createNamedQuery("TransportOrder.findActiveByLoadUnit", TransportOrder.class)
-				.setParameter("loadUnit", source).setParameter("active", TransportOrderStatus.ACTIVE)
+				.setParameter("loadUnit", source).setParameter("status", TransportOrderStatus.ACTIVE)
 				.getResultList();
 		if (!activeOrders.isEmpty()) {
 			log.warn("Sim picking: tote {} already goes to {}, no second transport order", source.getBarcode(),
