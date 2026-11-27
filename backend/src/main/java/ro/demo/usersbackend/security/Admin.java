@@ -21,15 +21,27 @@ public class Admin implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) {
-		Account admin = new Account(USERNAME, encoder.encode(PASSWORD));
 		new WithSessionAndTransaction<>() {
 			@Override
 			protected void executeBusinessLogic(Session session) {
-				AccountRepository ar = new AccountRepository(session);
-				if (!ar.existsByUsername(USERNAME)) {
-					ar.insert(admin);
-				}
+				createUser(session, USERNAME, PASSWORD);
+				createUser(session, "rve", "rve");
+				createUser(session, "spo", "spo");
+				createUser(session, "rni", "rni");
+				createUser(session, "aba", "aba");
+				createUser(session, "aca", "aca");
+				createUser(session, "mta", "mta");
+				createUser(session, "fto", "fto");
 			}
+
 		}.run();
+	}
+
+	public void createUser(Session session, String username, String password) {
+		Account admin = new Account(username, encoder.encode(password));
+		AccountRepository ar = new AccountRepository(session);
+		if (!ar.existsByUsername(username)) {
+			ar.insert(admin);
+		}
 	}
 }

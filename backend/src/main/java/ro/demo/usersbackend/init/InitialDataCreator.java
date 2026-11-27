@@ -19,6 +19,7 @@ import ro.demo.usersbackend.entity.Printer;
 import ro.demo.usersbackend.entity.PrinterType;
 import ro.demo.usersbackend.entity.StorageLocation;
 import ro.demo.usersbackend.entity.TransitLocation;
+import ro.demo.usersbackend.entity.Workplace;
 import ro.demo.usersbackend.repository.AreaRepository;
 import ro.demo.usersbackend.repository.ArticlePackagingUnitTypeRepository;
 import ro.demo.usersbackend.repository.ArticleRepository;
@@ -29,7 +30,7 @@ import ro.demo.usersbackend.repository.PackagingUnitTypeRepository;
 @Component
 public class InitialDataCreator implements CommandLineRunner {
 	// destinatia de pe pozitia i merge la poarta GATE(i + 1)
-	private static final String[] DESTINATIONS = { "Bucharest", "Timisoara", "Brasov", "Iasi", "Arad" };
+	private static final String[] DESTINATIONS = { "Bucharest", "Timisoara", "Brasov", "Iasi" };
 
 	@Override
 	public void run(String... args) {
@@ -47,8 +48,23 @@ public class InitialDataCreator implements CommandLineRunner {
 				createDestinations(session);
 				createDestinationGates(session);
 				createArticles(session);
+				createWorkplaces(session);
 			}
 		}.run();
+	}
+
+	protected void createWorkplaces(Session session) {
+		createWorkplace(session, "picking_1", "TIMW0322.wamas.com");
+		createWorkplace(session, "picking_2", "TIMW0342.wamas.com");
+		createWorkplace(session, "picking_3", "TIMW0328.wamas.com");
+		createWorkplace(session, "decanting", "TIMW0320.wamas.com");
+		createWorkplace(session, "transport", "TIMW0334.wamas.com");
+		createWorkplace(session, "receiving", "TIMW0330.wamas.com");
+		createWorkplace(session, "shipping", "TIMW0357.wamas.com");
+	}
+
+	private void createWorkplace(Session session, String name, String ip) {
+		session.persist(new Workplace(name, ip));
 	}
 
 	private void createPrinters(Session session) {
